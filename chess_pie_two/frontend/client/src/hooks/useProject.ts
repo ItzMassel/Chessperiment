@@ -3,14 +3,16 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { Project } from '@/types/Project';
 import { getProjectAction, saveProjectAction, saveProjectBoardAction } from '@/app/actions/editor';
+import { getMarketplaceProjectAction } from '@/app/actions/marketplace';
 import { LocalProjectStore } from '@/lib/local-persistence';
 
 export interface UseProjectOptions {
     suppressRedirect?: boolean;
+    fromMarketplace?: boolean;
 }
 
 export function useProject(projectId: string, options: UseProjectOptions = {}) {
-    const { suppressRedirect = false } = options;
+    const { suppressRedirect = false, fromMarketplace = false } = options;
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [project, setProject] = useState<Project | null>(null);
@@ -27,12 +29,20 @@ export function useProject(projectId: string, options: UseProjectOptions = {}) {
     const isGuest = projectId.startsWith('guest-');
 
     const loadProject = useCallback(async () => {
-        if (authLoading) return;
+        if (authLoading && !fromMarketplace) return; // Marketplace doesn't require auth to read
 
         setLoading(true);
         setError(null);
         try {
-            if (isGuest) {
+            if (fromMarketplace) {
+                const result = await getMarketplaceProjectAction(projectId);
+                if (result.success && result.data) {
+                    setProject(result.data);
+                } else {
+                    if (!suppressRedirect) router.push('/marketplace');
+                    setError(result.error || 'Project not found');
+                }
+            } else if (isGuest) {
                 const guestProject = LocalProjectStore.getProject(projectId);
                 if (guestProject) {
                     setProject(guestProject);
@@ -59,7 +69,7 @@ export function useProject(projectId: string, options: UseProjectOptions = {}) {
         } finally {
             setLoading(false);
         }
-    }, [user, authLoading, projectId, router, isGuest, suppressRedirect]);
+    }, [user, authLoading, projectId, router, isGuest, suppressRedirect, fromMarketplace]);
 
     useEffect(() => {
         loadProject();

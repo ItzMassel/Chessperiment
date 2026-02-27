@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Game } from '@/engine/game';
 import { BoardClass } from '@/engine/board';
 import { Piece } from '@/engine/piece';
@@ -105,9 +105,11 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
 // Wrapper interface to adapt to project structure
 interface PlayBoardProps {
     project: Project | null;
-    projectId: string;
+    projectId?: string;
     roomId?: string;
-    mode?: 'online';
+    mode?: 'online' | 'local';
+    isMarketplace?: boolean;
+    initialBoardState?: any;
 }
 
 // Helper to create piece instance
@@ -117,13 +119,17 @@ function createPieceFromData(id: string, type: string, color: string, position: 
     let newPiece: Piece;
 
     if (customProto) {
+        // Handle both 'rules' (Piece.ts) and 'moves' (Firestore) naming conventions
+        const rules = customProto.rules || customProto.moves || [];
+        const logic = customProto.logic || [];
+
         newPiece = Piece.create(
             id,
             type,
             color as any,
             position as any,
-            customProto.moves || [],
-            customProto.logic || []
+            rules,
+            logic
         );
         if ((customProto as any).variables) (newPiece as any).variables = JSON.parse(JSON.stringify((customProto as any).variables));
         (newPiece as any).isCustom = true;
@@ -136,7 +142,7 @@ function createPieceFromData(id: string, type: string, color: string, position: 
     return newPiece;
 }
 
-export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoardProps) {
+export default function PlayBoard({ project, projectId, roomId, mode, isMarketplace, initialBoardState }: PlayBoardProps) {
     const router = useRouter();
     const socket = useSocket();
     const { data: session } = useSession();
@@ -159,7 +165,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
     // Online State
     const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-    const [isOnline, setIsOnline] = useState(mode === 'online');
+    const [isOnline, setIsOnline] = useState(mode !== 'local'); // Default to online unless explicitly local
     const [waitingForOpponent, setWaitingForOpponent] = useState(isOnline);
     const [pendingHistory, setPendingHistory] = useState<string[] | null>(null);
 
@@ -177,16 +183,59 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
     );
+    const initializedProjectIdRef = useRef<string | null>(null);
+    const lastLocalMoveRef = useRef<{ from: string, to: string } | null>(null);
+    const myColorRef = useRef<"white" | "black" | null>(null);
+    const gameRef = useRef<Game | null>(null);
+    const boardRef = useRef<BoardClass | null>(null);
 
     useEffect(() => {
-        if (project) setActiveProject(project);
+        if (project) {
+            console.log("[PlayBoard] Project prop changed/received:", project.id);
+            setActiveProject(project);
+        }
     }, [project]);
+
+    // -- Helpers --
+    const toAlgebraic = (coord: string, bH: number): string => {
+        if (!coord.includes(',')) return coord;
+        const [x, y] = coord.split(',').map(Number);
+        const file = String.fromCharCode(97 + x);
+        const rank = bH - y;
+        return `${file}${rank}`;
+    };
+
+    const getNormalizedSquareLogic = (project: Project) => {
+        const normalizedSquareLogic: Record<string, any> = {};
+        const actualHeight = project.rows || 8;
+        if (project.squareLogic) {
+            Object.entries(project.squareLogic).forEach(([sqId, def]) => {
+                const algSq = toAlgebraic(sqId, actualHeight);
+                const varRecord: Record<string, any> = {};
+                if (def.variables && Array.isArray(def.variables)) {
+                    def.variables.forEach((v: any) => {
+                        varRecord[v.name || v.id] = v.value;
+                    });
+                }
+                normalizedSquareLogic[algSq] = {
+                    logic: def.logic || [],
+                    variables: varRecord,
+                    squareId: algSq
+                };
+            });
+        }
+        return normalizedSquareLogic;
+    };
 
     // Initial Setup Effect
     useEffect(() => {
         setIsMounted(true);
-        if (!activeProject) return;
+        if (!activeProject) {
+            console.log("[PlayBoard] No active project for initialization");
+            return;
+        }
         try {
+            console.log("[PlayBoard] Initializing board with project:", activeProject.id);
             // Reconstruct the board from project data
             const {
                 rows = 8,
@@ -198,54 +247,41 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
             // Create squares map for board constructor
             const initialSquares: Record<string, Piece | null> = {};
-
-            const toAlgebraic = (coord: string, bH: number): string => {
-                if (!coord.includes(',')) return coord;
-                const [x, y] = coord.split(',').map(Number);
-                const file = String.fromCharCode(97 + x);
-                const rank = bH - y;
-                return `${file}${rank}`;
-            };
-
             const actualHeight = activeProject.rows || 8;
 
-            Object.entries(placedPieces).forEach(([sq, pData]: [string, any]) => {
-                const normalizedSq = toAlgebraic(sq, actualHeight);
+            // If we have an initial board state from the server, use it. Otherwise use project defaults.
+            if (initialBoardState && initialBoardState.squares) {
+                console.log("[PlayBoard] Initializing from server boardState");
+                Object.entries(initialBoardState.squares).forEach(([sq, pData]: [string, any]) => {
+                    if (!pData) return;
+                    // For custom pieces, we still need the original definitions for assets/logic
+                    const newPiece = createPieceFromData(pData.id, pData.type, pData.color, sq, customPieces);
+                    if (newPiece) {
+                        if (pData.variables) (newPiece as any).variables = { ...pData.variables };
+                        newPiece.hasMoved = pData.hasMoved || false;
+                        initialSquares[sq] = newPiece;
+                    }
+                });
+            } else {
+                console.log("[PlayBoard] Initializing from project placedPieces");
+                Object.entries(placedPieces).forEach(([sq, pData]: [string, any]) => {
+                    const normalizedSq = toAlgebraic(sq, actualHeight);
 
-                if (activeSquares.length > 0) {
-                    const normalizedActive = activeSquares.map((a: string) => toAlgebraic(a, actualHeight));
-                    if (!normalizedActive.includes(normalizedSq)) return;
-                }
-
-                const pieceId = `${normalizedSq}_${pData.color}_${pData.type}_${Date.now()}`;
-                const newPiece = createPieceFromData(pieceId, pData.type, pData.color, normalizedSq, customPieces);
-
-                if (newPiece) {
-                    initialSquares[normalizedSq] = newPiece;
-                }
-            });
-
-            // Normalize Square Logic
-            const normalizedSquareLogic: Record<string, any> = {};
-            if (activeProject.squareLogic) {
-                Object.entries(activeProject.squareLogic).forEach(([sqId, def]) => {
-                    const algSq = toAlgebraic(sqId, actualHeight);
-
-                    // Convert variables array to Record<string, any>
-                    const varRecord: Record<string, any> = {};
-                    if (def.variables && Array.isArray(def.variables)) {
-                        def.variables.forEach((v: any) => {
-                            varRecord[v.name || v.id] = v.value;
-                        });
+                    if (activeSquares.length > 0) {
+                        const normalizedActive = activeSquares.map((a: string) => toAlgebraic(a, actualHeight));
+                        if (!normalizedActive.includes(normalizedSq)) return;
                     }
 
-                    normalizedSquareLogic[algSq] = {
-                        logic: def.logic || [],
-                        variables: varRecord,
-                        squareId: algSq
-                    };
+                    const pieceId = `${normalizedSq}_${pData.color}_${pData.type}_${Date.now()}`;
+                    const newPiece = createPieceFromData(pieceId, pData.type, pData.color, normalizedSq, customPieces);
+
+                    if (newPiece) {
+                        initialSquares[normalizedSq] = newPiece;
+                    }
                 });
             }
+
+            const normalizedSquareLogic = getNormalizedSquareLogic(activeProject);
 
             const newBoard = new BoardClass(
                 initialSquares,
@@ -258,17 +294,24 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
             const newGame = new Game(newBoard);
             setGame(newGame);
+            gameRef.current = newGame;
             setBoard(newGame.getBoard());
+            boardRef.current = newGame.getBoard();
 
             const initialSnapshot = JSON.parse(JSON.stringify(newGame.getBoard().getSquares()));
             setHistorySnapshots([initialSnapshot]);
-            setMoveHistory([]);
-            setViewIndex(0);
+
+            // Only clear local move history if the project ID has changed or we have no moves yet
+            if (initializedProjectIdRef.current !== activeProject.id || moveHistory.length === 0) {
+                setMoveHistory(activeProject.history || []);
+                setViewIndex(activeProject.history ? activeProject.history.length : 0);
+                initializedProjectIdRef.current = activeProject.id || null;
+            }
 
             setLogs([{ msg: 'Game Initialized', type: 'info' }]);
 
         } catch (err) {
-            console.error(err);
+            console.error("[PlayBoard] Initialization error:", err);
             toast.error("Failed to load game");
         }
     }, [activeProject]);
@@ -287,6 +330,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
                 pId = Math.random().toString(36).substring(2, 15);
                 localStorage.setItem("chess_player_id", pId);
             }
+            console.log("[Socket] Registering player:", pId, "for room:", roomId);
             socket.emit("register_player", { playerId: pId });
             socket.emit("join_room", { roomId, pId });
         };
@@ -336,19 +380,24 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         if (!socket || !isOnline) return;
 
         const onRoomCreated = (data: any) => {
+            console.log("[Socket] Room created:", data);
             setMyColor(data.color);
             setWaitingForOpponent(true);
         };
 
         const onJoinedRoom = (data: any) => {
+            console.log("[Socket] Joined room:", data);
             setMyColor(data.color);
+            myColorRef.current = data.color;
             setWaitingForOpponent(true);
             if (data.customData) {
+                console.log("[Socket] Received custom data from joined room");
                 setActiveProject(data.customData);
             }
         };
 
         const onStartGame = (data: any) => {
+            console.log("[Socket] Game started!");
             setWaitingForOpponent(false);
             toast.success("Game Started!");
             if (data.customData) {
@@ -357,12 +406,15 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         };
 
         const onRejoinGame = (data: any) => {
-            // Correctly handle spectator (color "")
+            console.log("[Socket] Rejoining game:", data);
             const colorMap: any = { 'white': 'white', 'black': 'black' };
-            setMyColor(colorMap[data.color] || null);
+            const resolvedColor = colorMap[data.color] || null;
+            setMyColor(resolvedColor);
+            myColorRef.current = resolvedColor;
 
             if (data.status === 'playing') setWaitingForOpponent(false);
             if (data.customData) {
+                console.log("[Socket] Received custom data from rejoin");
                 setActiveProject(data.customData);
             }
             if (data.history && data.history.length > 0) {
@@ -370,24 +422,61 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
             }
         };
 
+        const onRoomNotFound = (data: any) => {
+            console.log("[Socket] Room not found:", data.roomId);
+            // If we have active project data, we should CREATE the room instead
+            if (activeProject && roomId) {
+                console.log("[Socket] Creating room with custom data for:", roomId);
+                socket.emit("create_room", {
+                    roomId: roomId,
+                    customData: activeProject,
+                    isCustom: true
+                });
+            } else {
+                console.warn("[Socket] Cannot create room: missing project data");
+                toast.error("Room not found and no game data available to create it.");
+            }
+        };
+
         const onMove = (data: any) => {
-            if (!game || !board) return;
-            // Remote move
+            const currentGame = gameRef.current;
+            if (!currentGame) {
+                console.warn('[onMove] game not ready yet, ignoring move');
+                return;
+            }
+
+            // Check if this is our own move that we already applied optimistically
+            const lastLocal = lastLocalMoveRef.current;
+            const isOwnMove = lastLocal && lastLocal.from === data.from && lastLocal.to === data.to;
+            if (isOwnMove) {
+                lastLocalMoveRef.current = null;
+                const moveDesc = data.san || `${data.from} -> ${data.to}`;
+                const snapshot = JSON.parse(JSON.stringify(currentGame.getBoard().getSquares()));
+                setHistorySnapshots(prev => [...prev, snapshot]);
+                setMoveHistory(prev => [...prev, moveDesc]);
+                setViewIndex(prev => prev + 1);
+                const newBoard = currentGame.getBoard().clone();
+                setBoard(newBoard);
+                boardRef.current = newBoard;
+                return;
+            }
+
+            // Remote move from opponent
             if (data.from && data.to) {
-                const success = game.makeMove(data.from, data.to);
+                const success = currentGame.forceMove(data.from, data.to);
                 if (success) {
                     const moveDesc = data.san || `${data.from} -> ${data.to}`;
                     addLog(`Opponent: ${moveDesc}`, 'move');
-                    const sound = new Audio('/sounds/move-self.mp3');
-                    sound.play().catch(() => { });
+                    new Audio('/sounds/move-self.mp3').play().catch(() => { });
 
-                    const snapshot = JSON.parse(JSON.stringify(game.getBoard().getSquares()));
+                    const snapshot = JSON.parse(JSON.stringify(currentGame.getBoard().getSquares()));
                     setHistorySnapshots(prev => [...prev, snapshot]);
                     setMoveHistory(prev => [...prev, moveDesc]);
                     setViewIndex(prev => prev + 1);
 
-                    const newBoard = game.getBoard().clone();
+                    const newBoard = currentGame.getBoard().clone();
                     setBoard(newBoard);
+                    boardRef.current = newBoard;
                 }
             }
         };
@@ -396,6 +485,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         socket.on("joined_room", onJoinedRoom);
         socket.on("start_game", onStartGame);
         socket.on("rejoin_game", onRejoinGame);
+        socket.on("room_not_found", onRoomNotFound);
         socket.on("move", onMove);
 
         return () => {
@@ -403,9 +493,31 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
             socket.off("joined_room", onJoinedRoom);
             socket.off("start_game", onStartGame);
             socket.off("rejoin_game", onRejoinGame);
+            socket.off("room_not_found", onRoomNotFound);
             socket.off("move", onMove);
         };
-    }, [socket, isOnline, game, board]);
+    }, [socket, isOnline, game, board, activeProject, roomId]);
+
+    // Engine Move Execution
+    useEffect(() => {
+        if (!engineEnabled || !game || !board || isOnline) return;
+
+        const currentTurn = board.getTurn();
+        if (currentTurn !== engineColor) return;
+
+        // Only move if we are at the latest state in history (prevent engine moving during undo/viewing)
+        if (viewIndex !== historySnapshots.length - 1) return;
+
+        const timer = setTimeout(() => {
+            const legalMoves = game.getLegalMoves(engineColor);
+            if (legalMoves.length > 0) {
+                const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+                executeMove(move.from, move.to);
+            }
+        }, 800);
+
+        return () => clearTimeout(timer);
+    }, [engineEnabled, engineColor, board, game, viewIndex, historySnapshots.length, isOnline]);
 
 
     // -- Prototype Logic --
@@ -439,6 +551,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
         const snapshotSquares = historySnapshots[index];
         const hydratedSquares: Record<string, Piece | null> = {};
+        const actualHeight = activeProject.rows || 8;
 
         Object.entries(snapshotSquares).forEach(([sq, pData]: [string, any]) => {
             if (!pData) {
@@ -454,10 +567,13 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
         const restoredBoard = new BoardClass(
             hydratedSquares,
-            activeProject.activeSquares?.length ? activeProject.activeSquares : undefined,
+            activeProject.activeSquares?.length
+                ? activeProject.activeSquares.map(asq => toAlgebraic(asq, actualHeight))
+                : undefined,
             activeProject.cols || 8,
-            activeProject.rows || 8,
-            activeProject.gridType || 'square'
+            actualHeight,
+            activeProject.gridType || 'square',
+            getNormalizedSquareLogic(activeProject)
         );
 
         const restoredGame = new Game(restoredBoard);
@@ -505,11 +621,12 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
             // Emit to server if online
             if (isOnline && socket) {
+                lastLocalMoveRef.current = { from, to }; // Track for dedup in onMove
                 socket.emit("move", {
                     from,
                     to,
                     san: moveDesc,
-                    fen: "CUSTOM_FEN_PLACEHOLDER" // Server uses this to update state, we don't have true FEN for custom yet, but sending dummy or custom serialization helps
+                    fen: "CUSTOM_FEN_PLACEHOLDER"
                 });
             }
         } else {
@@ -558,7 +675,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         // Find if it's a custom piece
         const customProto = activeProject.customPieces.find(cp => cp.name === piece.type || cp.id === piece.type);
 
-        if (customProto) {
+        if (customProto && !isMarketplace) {
             toast(`Edit ${customProto.name}?`, {
                 action: {
                     label: 'Edit',
@@ -676,14 +793,20 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
 
     const bW = board.width || 8;
     const bH = board.height || 8;
-    const files = allFiles.slice(0, bW);
-    const ranks = allRanks.slice(Math.max(0, 8 - bH));
+    const isFlipped = myColor === 'black';
+    const files = isFlipped
+        ? allFiles.slice(0, bW).reverse()
+        : allFiles.slice(0, bW);
+    const ranks = isFlipped
+        ? allRanks.slice(Math.max(0, 8 - bH)).reverse()
+        : allRanks.slice(Math.max(0, 8 - bH));
+
 
     return (
         <div className="min-h-screen flex flex-col">
             {/* Simple Header */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-stone-800 z-50">
-                <button onClick={() => router.push(`/editor/${projectId}`)} className="text-stone-400 hover:text-white flex items-center gap-2">
+                <button onClick={() => isMarketplace ? router.push('/marketplace') : router.push(`/editor/${projectId}`)} className="text-stone-400 hover:text-white flex items-center gap-2">
                     <ArrowLeft size={18} /> Back
                 </button>
                 {isOnline && roomId && (

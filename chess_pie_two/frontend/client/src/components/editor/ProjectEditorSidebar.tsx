@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Grid3x3, Crown, Square } from 'lucide-react';
+import { Grid3x3, Crown, Square, Play } from 'lucide-react';
 import { useState } from 'react';
 
 export interface ProjectEditorSidebarProps {
@@ -82,6 +82,25 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
                         </div>
                     );
                 })}
+
+                <div className="relative">
+                    <button
+                        onClick={() => router.push(`/editor/${projectId}/play?mode=local`)}
+                        onMouseEnter={() => handleMouseEnter('play')}
+                        onMouseLeave={handleMouseLeave}
+                        className="w-full flex flex-col items-center gap-1 px-3 py-3 transition-colors text-gray-600 dark:text-gray-400 hover:text-accent dark:hover:text-accent"
+                    >
+                        <Play className="w-6 h-6" />
+                    </button>
+
+                    {/* Tooltip */}
+                    {hoveredItem === 'play' && (
+                        <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-md text-sm whitespace-nowrap shadow-lg">
+                            {t('playButton')}
+                            <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-900 dark:border-l-gray-700"></div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

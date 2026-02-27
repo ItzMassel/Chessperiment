@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'chessperiment',
-    short_name: 'chessperiment',
+    name: 'Chessperiment',
+    short_name: 'Chessperiment',
     description: 'Play, Create & Share Custom Chess Variants',
     start_url: '/',
     display: 'standalone',

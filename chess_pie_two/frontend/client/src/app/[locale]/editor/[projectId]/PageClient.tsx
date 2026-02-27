@@ -60,9 +60,9 @@ export default function PageClient({ projectId }: PageClientProps) {
         const onRoomCreated = (data: { roomId: string, isCustom: boolean }) => {
             console.log('📥 room_created event received:', data);
             if (data.isCustom && project) {
-                console.log('✅ Navigating to game with room:', data.roomId);
-                // Auto-join the created game with correct URL pattern
-                router.push(`/game/${data.roomId}`);
+                console.log('✅ Navigating to custom game with room:', data.roomId);
+                // Redirect to the editor's play page which handles custom data correctly
+                router.push(`/editor/${projectId}/play?roomId=${data.roomId}&mode=online`);
             } else {
                 console.warn('⚠️ Not navigating - isCustom:', data.isCustom, 'project:', !!project);
             }
@@ -289,7 +289,7 @@ export default function PageClient({ projectId }: PageClientProps) {
 
                             {/* Play Local - Secondary */}
                             <button
-                                onClick={() => router.push(`/editor/${projectId}/play`)}
+                                onClick={() => router.push(`/editor/${projectId}/play?mode=local`)}
                                 className="flex-1 inline-flex items-center justify-center gap-3 px-8 py-5 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-white rounded-xl font-bold text-lg hover:bg-stone-300 dark:hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                                 <Gamepad2 size={24} />

@@ -15,8 +15,10 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 // Load the loadEngine module - it's a CommonJS module that exports a function
 // The IIFE in loadEngine.js executes and should export the function directly
-const loadEnginePath = path.join(__dirname, "loadEngine.js");
-const fs = require("fs");
+import { BoardClass } from "./engine/board.js";
+import { Piece } from "./engine/piece.js";
+import { EngineGame } from "./engine/game.js";
+
 const loadEngineCode = fs.readFileSync(loadEnginePath, "utf8");
 // Create a temporary module context to execute the IIFE
 const vm = require("vm");
@@ -148,9 +150,10 @@ const io = new Server(server, {
     origin: "*",
     methods: ["GET", "POST"],
   },
+  maxHttpBufferSize: 1e8, // 100 MB for custom assets
 });
 class Game {
-  constructor(creatorPlayerId) {
+  constructor(creatorPlayerId, customData = null) {
     this.roomId = uuidv4().substring(0, 8).trim().toUpperCase();
     this.players = { white: creatorPlayerId };
     this.status = "waiting";
@@ -160,13 +163,42 @@ class Game {
     this.pendingMove = null;
     this.rematchRequests = [];
     this.lastActivity = Date.now(); // Track last activity for cleanup
-    this.customData = null;
-    this.isCustom = false;
+    this.customData = customData;
+    this.isCustom = !!customData;
     this.turn = "w"; // Track turn for custom games
     this.engine = null; // BoardClass instance for custom games
     this.gameEngine = null; // Game engine wrapper for custom games
     this.boardState = null; // Serialized board state for custom games
+
+    if (this.isCustom && this.customData) {
+      this.initializeEngine();
+    }
   }
+
+  initializeEngine() {
+    try {
+      const data = this.customData;
+      // New BoardClass takes a config object
+      const board = new BoardClass({
+        width: data.cols || 8,
+        height: data.rows || 8,
+        topology: data.gridType || "square",
+        activeSquares: data.activeSquares || [],
+        pieces: data.placedPieces || {},
+        squareLogic: data.squareLogic || {},
+      });
+
+      this.engine = board;
+      this.gameEngine = new EngineGame(board);
+      console.log(`[Engine] Initialized custom board for room ${this.roomId}`);
+    } catch (err) {
+      console.error(
+        `[Engine] Failed to initialize for room ${this.roomId}:`,
+        err,
+      );
+    }
+  }
+
   addPlayer(playerId) {
     if (!this.players.black) {
       this.players.black = playerId;
@@ -216,8 +248,14 @@ async function getGame(roomId) {
     const data = await redisClient.get(`game:${roomId}`);
     if (data) {
       const parsed = JSON.parse(data);
-      const game = new Game(parsed.players.white);
+      const game = new Game(parsed.players.white, parsed.customData);
       Object.assign(game, parsed);
+
+      // Ensure engine is initialized if it's a custom game
+      if (game.isCustom && game.customData && !game.gameEngine) {
+        game.initializeEngine();
+      }
+
       games.set(roomId, game);
       // Re-map players
       if (game.players.white) playerToRoom.set(game.players.white, roomId);
@@ -620,6 +658,9 @@ io.on("connection", (socket) => {
       game.isCustom = true;
       // Optionally set initial FEN/turn if provided, otherwise default
       if (data.initialFen) game.board_fen = data.initialFen;
+
+      // Initialize the engine now that we have customData
+      game.initializeEngine();
     }
 
     games.set(game.roomId.toUpperCase(), game);
@@ -751,6 +792,8 @@ io.on("connection", (socket) => {
         customData: game.customData,
         isCustom: game.isCustom,
         turn: game.turn,
+        boardState:
+          game.isCustom && game.engine ? game.engine.getSnapshot() : null,
       });
       return;
     }
@@ -764,6 +807,8 @@ io.on("connection", (socket) => {
       color: "black",
       customData: game.customData,
       isCustom: game.isCustom,
+      boardState:
+        game.isCustom && game.engine ? game.engine.getSnapshot() : null,
     });
     if (game.players.white && game.players.black) {
       game.status = "playing";
@@ -774,6 +819,8 @@ io.on("connection", (socket) => {
         status: "playing",
         customData: game.customData,
         isCustom: game.isCustom,
+        boardState:
+          game.isCustom && game.engine ? game.engine.getSnapshot() : null,
       });
     }
   });
@@ -794,7 +841,18 @@ io.on("connection", (socket) => {
     try {
       // --- CUSTOM GAME LOGIC ---
       if (game.isCustom) {
-        const expectedTurn = game.turn || "w";
+        if (!game.gameEngine) {
+          console.error(`[Custom Move] No engine for room ${roomId}`);
+          game.initializeEngine(); // Try to recovery
+        }
+
+        const expectedTurn =
+          game.turn ||
+          (game.gameEngine
+            ? game.gameEngine.getBoard().getTurn() === "white"
+              ? "w"
+              : "b"
+            : "w");
         if (color !== expectedTurn) {
           console.warn(
             `[Custom Move Rejected] Wrong turn. Expected ${expectedTurn}, Got ${color}`,
@@ -803,33 +861,52 @@ io.on("connection", (socket) => {
           return;
         }
 
-        // In custom games, we trust the client's FEN and Move SAN
-        // We expect data.fen and data.san to be provided
-        if (!data.fen) {
-          console.warn(`[Custom Move Rejected] No FEN provided`);
-          return;
+        let success = false;
+        if (game.gameEngine) {
+          // For custom games, we validate the move using the engine
+          success = game.gameEngine.makeMove(data.from, data.to);
+        } else {
+          // Fallback to trust if engine failed to init
+          success = true;
         }
 
-        console.log(
-          `[Custom Move] Room: ${roomId}, Move: ${data.from}->${data.to}`,
-        );
+        if (success) {
+          console.log(
+            `[Custom Move] Room: ${roomId}, Move: ${data.from}->${data.to} (Success)`,
+          );
 
-        game.board_fen = data.fen;
-        if (data.san) game.history.push(data.san);
+          // Update game state
+          if (data.fen) game.board_fen = data.fen;
+          if (data.san) game.history.push(data.san);
+          else game.history.push(`${data.from} -> ${data.to}`);
 
-        // Swap turn
-        game.turn = game.turn === "w" ? "b" : "w";
-        game.updateActivity();
-        await saveGame(game);
+          // Update turn from engine if possible
+          if (game.gameEngine) {
+            game.turn =
+              game.gameEngine.getBoard().getTurn() === "white" ? "w" : "b";
+          } else {
+            game.turn = game.turn === "w" ? "b" : "w";
+          }
 
-        io.to(roomId).emit("move", {
-          from: data.from,
-          to: data.to,
-          promotion: data.promotion,
-          san: data.san,
-          fen: game.board_fen,
-          gameStatus: game.status,
-        });
+          game.updateActivity();
+          await saveGame(game);
+
+          io.to(roomId).emit("move", {
+            from: data.from,
+            to: data.to,
+            promotion: data.promotion,
+            san: data.san || `${data.from} -> ${data.to}`,
+            fen: game.board_fen,
+            gameStatus: game.status,
+            turn: game.turn,
+            boardState: game.engine.getSnapshot(),
+          });
+        } else {
+          console.warn(
+            `[Custom Move Rejected] Invalid move: ${data.from}->${data.to}`,
+          );
+          socket.emit("error", { message: "Invalid move" });
+        }
         return;
       }
       // -------------------------

@@ -243,6 +243,23 @@ export class ValidatorClass {
         return effectExecutor.wasMoveCancelled() || context.movePrevented;
     }
 
+    getLegalMoves(color: 'white' | 'black'): { from: Square, to: Square }[] {
+        const legalMoves: { from: Square, to: Square }[] = [];
+        const squares = this.board.getSquares();
+
+        for (const from in squares) {
+            const piece = squares[from as Square];
+            if (piece && piece.color === color) {
+                for (const to in squares) {
+                    if (this.isLegal(from as Square, to as Square)) {
+                        legalMoves.push({ from: from as Square, to: to as Square });
+                    }
+                }
+            }
+        }
+        return legalMoves;
+    }
+
     private findKing(color: 'white' | 'black', board: Board): Square | null {
         const squares = board.getSquares();
         for (const s in squares) {

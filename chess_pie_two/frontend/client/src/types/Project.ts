@@ -19,4 +19,5 @@ export interface Project {
   // Custom pieces for this project
   customPieces: CustomPiece[];
   squareLogic?: Record<string, SquareLogicDefinition>;
+  history?: string[];
 }

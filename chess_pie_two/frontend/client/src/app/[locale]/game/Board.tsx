@@ -296,6 +296,10 @@ export default function Board({
   const [customData, setCustomData] = useState<any>(null);
   const [isCustomGame, setIsCustomGame] = useState(false);
   const [customBoard, setCustomBoard] = useState<BoardClass | null>(null);
+  const boardColsRef = useRef(8);
+  const boardRowsRef = useRef(8);
+  const isCustomGameRef = useRef(false);
+  const customBoardRef = useRef<BoardClass | null>(null);
 
   // --- Stockfish & Local Logic ---
   const [chess] = useState(() => new Chess());
@@ -304,7 +308,12 @@ export default function Board({
   // Initialize custom board from project data
   const initializeCustomBoard = useCallback((projectData: Project): BoardClass | null => {
     try {
-      console.log('[Custom Board] Initializing from project data:', projectData);
+      console.log('[Custom Board] Initializing from project data:', {
+        cols: projectData.cols,
+        rows: projectData.rows,
+        piecesCount: Object.keys(projectData.placedPieces || {}).length,
+        customPiecesCount: (projectData.customPieces || []).length
+      });
 
       const gridType = projectData.gridType || 'square';
       const board = new BoardClass(
@@ -313,23 +322,37 @@ export default function Board({
         projectData.cols, // width
         projectData.rows, // height
         gridType // gridType
-        // TODO: Handle squareLogic type conversion
       );
 
       // Place pieces on the board
-      for (const [square, pieceData] of Object.entries(projectData.placedPieces)) {
+      const customPieceDefs = projectData.customPieces || [];
+      const placedPieces = projectData.placedPieces || {};
+
+      let validPieces = 0;
+      for (const [square, pieceData] of Object.entries(placedPieces)) {
+        // Find custom piece definition if it exists
+        const def = customPieceDefs.find((cp: any) => cp.name === pieceData.type) as any;
+        // Handle both 'rules' (Piece.ts) and 'moves' (Firestore) naming conventions
+        const rules = def ? (def.rules || def.moves || []) : [];
+        const logic = def ? (def.logic || []) : [];
+
         const piece = EngPiece.create(
           `${square}_${pieceData.color}_${pieceData.type}`,
           pieceData.type as any,
           pieceData.color as 'white' | 'black',
-          square as EngSquare
+          square as EngSquare,
+          rules,
+          logic,
+          pieceData.type // name
         );
         if (piece) {
           board.setPiece(square as EngSquare, piece);
+          validPieces++;
         }
       }
+      console.log(`[Custom Board] Placed ${validPieces} pieces with custom logic`);
 
-      console.log('[Custom Board] Board initialized successfully');
+      console.log('[Custom Board] Board initialized successfully with width:', board.width, 'height:', board.height);
       return board;
     } catch (error) {
       console.error('[Custom Board] Failed to initialize:', error);
@@ -339,11 +362,16 @@ export default function Board({
 
   // Effect to initialize custom board when customData changes
   useEffect(() => {
+    console.log("Board Init Check:", { isCustomGame, hasCustomData: !!customData });
+    isCustomGameRef.current = isCustomGame;
     if (customData && isCustomGame) {
       console.log('[Custom Board] customData received, initializing board');
       const board = initializeCustomBoard(customData);
       if (board) {
         setCustomBoard(board);
+        customBoardRef.current = board;
+      } else {
+        console.error('[Custom Board] Initialization returned null');
       }
     }
   }, [customData, isCustomGame, initializeCustomBoard]);
@@ -353,12 +381,15 @@ export default function Board({
     setBoardPieces(newPieces);
     const parts = fen.split(' ');
     if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
-    // Sink with local engine
-    try {
-      if (chess.fen() !== fen) {
-        chess.load(fen);
-      }
-    } catch (e) { }
+
+    // Sink with local engine (use ref to avoid stale closure)
+    if (!isCustomGameRef.current) {
+      try {
+        if (chess.fen() !== fen) {
+          chess.load(fen);
+        }
+      } catch (e) { }
+    }
   }, [chess]);
 
   const startComputerGame = useCallback((elo = 1200, forceNew = false) => {
@@ -445,6 +476,9 @@ export default function Board({
         updateBoardState(data.fen);
         setHistoryFens(prev => [...prev, data.fen]);
       }
+      if (data.turn) {
+        setCurrentTurn(data.turn as 'w' | 'b');
+      }
 
       // Determine if sound should play (don't play if it matches our optimistic move)
       const isNewMove = data.from !== previousStateRef.current?.lastMoveFrom ||
@@ -468,20 +502,15 @@ export default function Board({
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
 
-      // Update Custom Board if applicable
-      if ((isCustomGame || data.isCustom) && customBoard) {
-        // Optimistically move piece on custom board
-        // Note: The server sends 'fen' which we might interpret differently later,
-        // but for now we rely on the move event to sync the board class.
-        // If we want exact sync, we should implement serialize/deserialize on updateBoardState.
-        // For now, re-executing the move ensures visual consistency.
-
+      // Update Custom Board if applicable (use refs to avoid stale closure)
+      const currentCustomBoard = customBoardRef.current;
+      const currentIsCustom = isCustomGameRef.current;
+      if ((currentIsCustom || data.isCustom) && currentCustomBoard && isNewMove) {
         try {
-          // We need to check if it's a capture to play capture sound? (Already handled by server 'san'?)
-          // Just move the piece
-          customBoard.movePiece(data.from as any, data.to as any, data.promotion);
-          // Force re-render
-          setCustomBoard(customBoard.clone());
+          currentCustomBoard.movePiece(data.from as any, data.to as any, data.promotion);
+          const cloned = currentCustomBoard.clone();
+          setCustomBoard(cloned);
+          customBoardRef.current = cloned;
         } catch (e) {
           console.error("Failed to update custom board on move:", e);
         }
@@ -506,7 +535,7 @@ export default function Board({
         setIsCustomGame(true);
       }
 
-      if (data.fen) {
+      if (data.fen && !data.customData && !data.isCustom) {
         updateBoardState(data.fen);
       }
 
@@ -780,7 +809,9 @@ export default function Board({
 
         // Ensure non-negative
         const minDim = Math.max(0, Math.min(availW, availH));
-        const calculated = Math.floor(minDim / 8);
+        // Use the larger of boardCols/boardRows for square sizing
+        const maxBoardDim = Math.max(boardColsRef.current, boardRowsRef.current);
+        const calculated = Math.floor(minDim / maxBoardDim);
 
         // Clamp between 20 and 120px per square
         setBlockSize(Math.max(Math.min(calculated, 120), 20));
@@ -789,7 +820,7 @@ export default function Board({
 
     resizeObserver.observe(boardContainerRef.current);
     return () => resizeObserver.disconnect();
-  }, [gameStatus, isSearching]); // Re-run when layout changes
+  }, [gameStatus, isSearching, customBoard]); // Re-run when layout changes or custom board initializes
 
 
   const displayPieces = useMemo(() => {
@@ -900,7 +931,9 @@ export default function Board({
           // Updating local custom board optimistically
           try {
             customBoard.movePiece(from as any, to as any, promotion);
-            setCustomBoard(customBoard.clone());
+            const cloned = customBoard.clone();
+            setCustomBoard(cloned);
+            customBoardRef.current = cloned;
             new Audio("/sounds/move-self.mp3").play().catch(() => { });
             // We should also update history logs if needed
           } catch (e) {
@@ -920,9 +953,11 @@ export default function Board({
         }
 
         // Update local chess instance optimistically
-        try {
-          chess.move({ from, to, promotion: promotion || 'q' });
-        } catch (e) { console.error("Optimistic chess update failed", e); }
+        if (!isCustomGame) {
+          try {
+            chess.move({ from, to, promotion: promotion || 'q' });
+          } catch (e) { console.error("Optimistic chess update failed", e); }
+        }
 
         const newPieces = boardPieces
           .filter(p => p.position !== to && p.position !== from)
@@ -1054,8 +1089,8 @@ export default function Board({
       const from = active.id as string, to = over.id as string;
       const p = getPieceAt(from);
       const toRank = parseInt(to.match(/\d+/)?.[0] || "0", 10);
-      const boardHeight = 8; // Default for chess.js in this component
-      if (p?.type === 'Pawn' && (toRank === boardHeight || toRank === 1)) {
+      const curBoardHeight = customBoard ? customBoard.height : 8;
+      if (p?.type === 'Pawn' && (toRank === curBoardHeight || toRank === 1)) {
         setPromotionMove({ from, to }); setShowPromotionDialog(true);
       } else executeMove(from, to);
     }
@@ -1084,8 +1119,8 @@ export default function Board({
         const p = getEffectivePieceAt(selectedPos);
         if (!p) return;
         const toRank = parseInt(pos.match(/\d+/)?.[0] || "0", 10);
-        const boardHeight = 8;
-        if (p.type === 'Pawn' && (toRank === boardHeight || toRank === 1)) {
+        const curBoardHeight = customBoard ? customBoard.height : 8;
+        if (p.type === 'Pawn' && (toRank === curBoardHeight || toRank === 1)) {
           setPromotionMove({ from: selectedPos, to: pos }); setShowPromotionDialog(true);
         } else {
           const target = getEffectivePieceAt(pos);
@@ -1181,6 +1216,8 @@ export default function Board({
   // Calculate board dimensions based on custom board or default 8x8
   const boardCols = customBoard ? customBoard.width : 8;
   const boardRows = customBoard ? customBoard.height : 8;
+  boardColsRef.current = boardCols;
+  boardRowsRef.current = boardRows;
   const gridColsClass = customBoard ? `` : 'grid-cols-8'; // Use inline style for custom
 
   const boardContent = [];
@@ -1308,6 +1345,7 @@ export default function Board({
         currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); window.location.href = `/${params.locale}/game`; }}
         onMoveClick={onMoveClick}
         boardPieces={displayPieces}
+        isCustomGame={isCustomGame}
         onRematch={handleRematchRequest}
         onNextGame={handleNextGame}
         rematchRequested={rematchRequested}

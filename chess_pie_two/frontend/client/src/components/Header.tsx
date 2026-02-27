@@ -25,7 +25,7 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
                     <div className="relative">
                         <img
                             src="/logo.png"
-                            alt="chessperiment Logo"
+                            alt="Chessperiment Logo"
                             className={`transition-all duration-500 ${small ? "h-8 w-8" : "h-12 w-12"} object-contain group-hover/logo:rotate-12 group-hover/logo:scale-110`}
                         />
                         <div className="absolute inset-0 bg-amber-400 blur-xl opacity-0 group-hover/logo:opacity-20 transition-opacity duration-700 rounded-full" />
@@ -33,7 +33,7 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
                     <div className="flex items-center">
                         <span className={`${outfit.className} tracking-tight leading-none ${small ? "text-2xl md:text-3xl" : "text-4xl md:text-5xl lg:text-6xl"} select-none pr-1`}>
                             <span className="font-black bg-clip-text text-transparent bg-linear-to-br from-amber-300 via-amber-500 to-orange-600 drop-shadow-sm">
-                                chess
+                                Chess
                             </span>
                         </span>
                         <div className="flex items-center relative group/periment">

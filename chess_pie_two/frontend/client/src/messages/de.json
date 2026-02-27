@@ -16,43 +16,52 @@
         "feedback": "Feedback",
         "editor": "Editor"
     },
+    "filters": {
+      "all": "Alle Elemente",
+      "board": "Bretter",
+      "piece": "Figuren",
+      "design": "Designs",
+      "free": "Kostenlos",
+      "paid": "Premium"
+    },
     "Marketplace": {
         "title": "Marktplatz",
-        "subtitle": "Entdecke einzigartige Bretter, Figuren und Designs von der Community.",
+        "accessDenied": "Zugriff verweigert",
+        "createItem": "Element erstellen",
+        "form": {
+            "description": "Beschreibung",
+            "descriptionPlaceholder": "z.B. Ein neon-thematisiertes Schachset mit leuchtenden Figuren.",
+            "imageUrl": "Bild-URL",
+            "imageUrlHelp": "Lasse dies leer, um automatisch eine Vorschau zu generieren.",
+            "price": "Preis (USD)",
+            "title": "Titel",
+            "titlePlaceholder": "z.B. Neon Schachset",
+            "type": "Typ"
+        },
+        "subtitle": "Entdecke einzigartige Bretter, beeindruckende Figurensätze und exklusive Designs aus der Community.",
         "searchPlaceholder": "Suche nach Brettern, Figuren...",
-        "loading": "Lade fantastische Elemente...",
+        "loading": "Lade tolle Elemente...",
         "noResults": "Keine passenden Elemente gefunden.",
         "backToMarketplace": "Zurück zum Marktplatz",
         "noImage": "Keine Vorschau",
-        "price": "Preis",
-        "free": "Kostenlos",
         "importToProject": "In Projekt importieren",
         "buyNow": "Jetzt kaufen",
-        "noDescription": "Keine Beschreibung vorhanden.",
-        "accessDenied": "Zugriff verweigert",
-        "loginRequired": "Bitte melde dich an, um Marketplace-Elemente zu erstellen.",
-        "createItem": "Element erstellen",
+        "noDescription": "Keine Beschreibung verfügbar.",
         "publishItem": "Element veröffentlichen",
-        "form": {
-            "title": "Titel",
-            "titlePlaceholder": "z.B. Neon Schachset",
-            "type": "Typ",
-            "price": "Preis (USD)",
-            "description": "Beschreibung",
-            "descriptionPlaceholder": "Erzähl uns von deiner Kreation...",
-            "imageUrl": "Bild-URL",
-            "imageUrlHelp": "Füge einen direkten Link zu einem Bild ein (z.B. Imgur, S3)"
-        },
+        "loginRequired": "Bitte melde dich an, um Marktplatz-Elemente zu erstellen.",
+        "inProduction": "Creator Studio",
+        "marketplaceBetaMessage": "Der Marktplatz befindet sich aktuell in der Beta-Phase und ist nur für ausgewählte Ersteller verfügbar. Wir arbeiten hart daran, tolle Inhalte für alle bereitzustellen!",
+        "free": "Kostenlos",
+        "new": "Neu",
+        "newArrival": "Neu eingetroffen",
+        "playLocal": "Lokal spielen",
+        "playFriend": "Gegen Freund spielen",
+        "price": "Preis",
         "filters": {
-            "all": "Alle Elemente",
-            "board": "Bretter",
-            "piece": "Figuren",
-            "design": "Designs",
-            "free": "Kostenlos",
-            "paid": "Premium"
-        },
-        "inProduction": "In Produktion",
-        "marketplaceBetaMessage": "Unser Marktplatz wird zurzeit stark weiterentwickelt. Freu dich auf einzigartige Figuren-Designs und benutzerdefinierte Bretter!"
+            "type": "Typ",
+            "price": "Preis",
+            "sort": "Sortieren nach"
+        }
     },
     "Homepage": {
         "play": "Spiel starten",
@@ -64,7 +73,7 @@
         "statistics": "Statistik"
     },
     "Multiplayer": {
-        "title": "chessperiment Multiplayer",
+        "title": "Chessperiment Multiplayer",
         "description": "Tritt gegen Freunde oder die KI an in spannenden Schachpartien",
         "createRoom": "Raum erstellen",
         "roomCode": "Raumcode",
@@ -190,7 +199,7 @@
         "copied": "Kopiert",
         "typeMessage": "Nachricht eingeben...",
         "practiceVsComputer": "Gegen Computer üben",
-        "joinMyGameTitle": "Tritt meinem chessperiment-Spiel bei!",
+        "joinMyGameTitle": "Tritt meinem Chessperiment-Spiel bei!",
         "joinMyGameText": "Tritt meinem Schachspiel bei! Raumcode: {room}",
         "connecting": "Verbinden...",
         "quicksearch": "Schnelle Suche",
@@ -201,22 +210,22 @@
         "drawAccepted": "Remis akzeptiert",
         "drawOfferDeclined": "Remis-Angebot abgelehnt",
         "drawOfferDeclinedByYou": "Du hast das Remis-Angebot abgelehnt",
-        "drawOfferReceived": "Remis-Angebot erhalten",
-        "GameSidebar": {
-            "info": "Info",
-            "moves": "Züge",
-            "chat": "Chat",
-            "live": "LIVE",
-            "placeholder": "Schreib etwas...",
-            "gameStatus": "Spielstatus",
-            "gameStats": "Spielstatistiken",
-            "gameStat": "Spielstatistik",
-            "roomCode": "Raumcode",
-            "players": "Spieler",
-            "youArePlaying": "Du spielst",
-            "yourSide": "Deine Seite",
-            "connecting": "Verbinde..."
-        }
+        "drawOfferReceived": "Remis-Angebot erhalten"
+    },
+    "GameSidebar": {
+        "info": "Info",
+        "moves": "Züge",
+        "chat": "Chat",
+        "live": "LIVE",
+        "placeholder": "Schreib etwas...",
+        "gameStatus": "Spielstatus",
+        "gameStats": "Spielstatistiken",
+        "gameStat": "Spielstatistik",
+        "roomCode": "Raumcode",
+        "players": "Spieler",
+        "youArePlaying": "Du spielst",
+        "yourSide": "Deine Seite",
+        "connecting": "Verbinde..."
     },
     "Analyze": {
         "title": "Analyse-Funktion kommt bald",
@@ -348,7 +357,10 @@
                 "noCustomPieces": "Noch keine eigenen Figuren"
             },
             "boardName": "Brett-Name",
-            "namePrompt": "Gib deinem Brett einen Namen"
+            "namePrompt": "Gib deinem Brett einen Namen",
+            "white": "Weiß",
+            "black": "Schwarz",
+            "attribution": "Schachfigur-Vektoren von Vecteezy"
         },
         "Piece": {
             "title": "Entwirf deine <accent>Schachfiguren</accent>",
@@ -386,8 +398,13 @@
             "noRules": "Noch keine Bewegungsmuster definiert.",
             "createFirstRule": "Erstelle deine erste Regel",
             "invert": "Invertieren",
-
+            "switchSet": "Set wechseln",
+            "selectCollection": "Sammlung wählen",
+            "newSet": "Neues Set",
+            "activeSet": "Aktives Set",
+            "noSetSelected": "Kein Set ausgewählt",
             "pieceName": "Figurenname",
+            "piecesInSet": "Figuren im Set ({count})",
             "totalPieces": "Figuren im Projekt ({count})",
             "addNew": "Neu hinzufügen",
             "noPieces": "Noch keine Figuren",
@@ -600,7 +617,7 @@
     "LegalNotice": {
         "title": "Impressum - Kontakt & Info",
         "providerHeading": "Anbieter",
-        "providerName": "Lasse Thoroe - chessperiment",
+        "providerName": "Lasse Thoroe - Chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
         "contactHeading": "Kontakt",
         "emailLabel": "E-Mail:",
@@ -623,7 +640,7 @@
         "title": "Datenschutzerklärung (DSGVO)",
         "lastUpdated": "(Stand: Juli 2024)",
         "controllerHeading": "1. Verantwortlicher",
-        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Thoroe - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+        "controllerText": "Verantwortlich für die Daten verarbeitung auf dieser Website ist:\n\nLasse Thoroe - Chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. Allgemeine Hinweise",
         "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
         "collectionHeading": "3. Von uns erhobene Daten",
@@ -655,52 +672,62 @@
     "SEO": {
         "About": {
             "title": "Über Chessperiment | Die Plattform für individuelles Schach",
-            "description": "Erfahre mehr über chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
+            "description": "Erfahre mehr über Chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
         },
         "Feedback": {
-
             "title": "Feedback",
-            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
+            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für Chessperiment vor"
+        },
+        "Marketplace": {
+            "title": "Chessperiment Marktplatz | Lade individuelle Schachsets herunter",
+            "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensätze herunter. Verbessere dein Spiel mit einzigartigen Designs.",
+            "h1": "Schachvarianten-Marktplatz",
+            "seoContent": {
+                "heading": "Entdecke und teile individuelle Schach-Assets",
+                "text": "Der Chessperiment-Marktplatz ist die zentrale Anlaufstelle für unsere kreative Community. Erkunde eine umfangreiche Sammlung von individuellen Schachbreittern, pixelgenauen Figurensätzen und einzigartigen Brett-Designs, die von Nutzern weltweit geteilt werden."
+            }
         },
         "Footer": {
             "title": "Häufig gestellte Fragen",
-            "whatIschessperiment": "Was ist chessperiment?",
-            "whatIschessperimentAnswer": "chessperiment ist eine Plattform zum Erstellen und Spielen von benutzerdefinierten Schachvarianten. Gestalten Sie einzigartige Bretter, erstellen Sie benutzerdefinierte Figuren mit besonderen Fähigkeiten und spielen Sie mit Ihren eigenen Regeln gegen Freunde oder KI.",
-            "isItFree": "Ist chessperiment kostenlos?",
-            "isItFreeAnswer": "Ja! chessperiment ist vollständig kostenlos nutzbar. Sie können unbegrenzt benutzerdefinierte Bretter und Figuren erstellen, Spiele spielen und Ihre Kreationen kostenlos mit der Community teilen.",
+            "whatIsChessperiment": "Was ist Chessperiment?",
+            "whatIsChessperimentAnswer": "Chessperiment ist eine Plattform zum Erstellen und Spielen von benutzerdefinierten Schachvarianten. Gestalten Sie einzigartige Bretter, erstellen Sie benutzerdefinierte Figuren mit besonderen Fähigkeiten und spielen Sie mit Ihren eigenen Regeln gegen Freunde oder KI.",
+            "isItFree": "Ist Chessperiment kostenlos?",
+            "isItFreeAnswer": "Ja! Chessperiment ist vollständig kostenlos nutzbar. Sie können unbegrenzt benutzerdefinierte Bretter und Figuren erstellen, Spiele spielen und Ihre Kreationen kostenlos mit der Community teilen.",
             "canIPlayFriends": "Kann ich mit meinen Freunden spielen?",
             "canIPlayFriendsAnswer": "Auf jeden Fall! Sie können private Spielräume erstellen und Ihre Freunde einladen, Ihre benutzerdefinierten Schachvarianten zusammen zu spielen. Teilen Sie einfach den Spiel-Link mit ihnen.",
             "legal": "Rechtliches",
             "about": "Über uns",
             "privacyPolicy": "Datenschutzerklärung",
-            "legalNotice": "Impressum"
+            "legalNotice": "Impressum",
+            "feedback": "Feedback",
+            "builtBy": "Mit viel Liebe zum Detail für Schachbegeisterte entwickelt."
         },
         "Home": {
-            "title": "chessperiment - Plattform für individuelle Schachvarianten | Designe dein eigenes Schach",
+            "title": "Chessperiment - Plattform für individuelle Schachvarianten | Designe dein eigenes Schach",
             "description": "Erstelle individuelle Schachfiguren, designe einzigartige Bretter und spiele innovative Schachvarianten online. Kostenlose Plattform für Schach-Kreativität.",
-            "h1": "chessperiment - Die individuelle Schach-Plattform",
+            "h1": "Chessperiment - Die individuelle Schach-Plattform",
             "p": "Designe einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
         },
         "Game": {
-            "title": "Schachvarianten online spielen - Multiplayer-Schachspiele | chessperiment",
+            "title": "Schachvarianten online spielen - Multiplayer-Schachspiele | Chessperiment",
             "description": "Spiele innovative Schachvarianten online mit Freunden. Multiplayer-Schach mit individuellen Brettern und Figuren. Kostenlos spielbar, kein Download erforderlich.",
             "h1": "Spiele individuelle Schachvarianten online",
             "seoContent": {
                 "heading": "Erlebe die nächste Generation der Schachvarianten",
-                "text": "Tritt der chessperiment-Community bei und spiele einzigartige Schachvarianten online mit Freunden oder gegen unsere integrierte Stockfish-KI. Unsere Plattform ermöglicht dir die Verwendung von benutzerdefinierten Brettern und Figurensätzen, die von Kreativen aus der ganzen Welt entworfen wurden. Egal, ob du eine neue Figurenlogik testen möchtest, die du gerade erstellt hast, oder ein Match mit Standardregeln auf einem unregelmäßigen Brett spielen willst – unser reibungsloses Multiplayer-Erlebnis bietet dir alles, was du brauchst. Starte ein privates Match, indem du einen Raumcode teilst, oder tritt der Lobby bei, um andere Spieler zu finden. Mit Echtzeit-Zugvalidierung und fortschrittlicher Engine-Analyse bietet chessperiment eine robuste Umgebung für sowohl Gelegenheitsspiele als auch für das kompetitive Testen neuer Spielmechaniken."
+                "text": "Tritt der Chessperiment-Community bei und spiele einzigartige Schachvarianten online mit Freunden oder gegen unsere integrierte Stockfish-KI. Unsere Plattform ermöglicht dir die Verwendung von benutzerdefinierten Brettern und Figurensätzen, die von Kreativen aus der ganzen Welt entworfen wurden. Egal, ob du eine neue Figurenlogik testen möchtest, die du gerade erstellt hast, oder ein Match mit Standardregeln auf einem unregelmäßigen Brett spielen willst – unser reibungsloses Multiplayer-Erlebnis bietet dir alles, was du brauchst. Starte ein privates Match, indem du einen Raumcode teilst, oder tritt der Lobby bei, um andere Spieler zu finden. Mit Echtzeit-Zugvalidierung und fortschrittlicher Engine-Analyse bietet Chessperiment eine robuste Umgebung für sowohl Gelegenheitsspiele als auch für das kompetitive Testen neuer Spielmechaniken."
             }
         },
         "Editor": {
-            "title": "Projekt-Editor | individuelles chessperiment",
+            "title": "Projekt-Editor | individuelles Chessperiment",
             "description": "Verwalte deine individuellen Schachprojekte. Erstelle einzigartige Schlachtfelder, designe Figurensätze und organisiere deine Kreationen.",
             "h1": "Dein Projekt-Arbeitsplatz"
         },
         "PieceEditor": {
-            "title": "Figuren-Editor | individuelles chessperiment",
+            "title": "Figuren-Editor | individuelles Chessperiment",
             "description": "Erstelle und passe deine eigenen Schachfiguren mit einzigartigen Bewegungsmustern und Logik an."
         },
         "SquareEditor": {
-            "title": "Felder-Editor | individuelles chessperiment",
+            "title": "Felder-Editor | individuelles Chessperiment",
             "description": "Definiere benutzerdefinierte Logik und Verhaltensweisen für einzelne Felder auf deinem Brett."
         },
         "BoardEditor": {
@@ -709,12 +736,12 @@
             "h1": "Individueller Schachbrett-Editor",
             "seoContent": {
                 "heading": "Erstelle und teile individuelle Schachbretter",
-                "text": "Mit dem chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8-, 10x10- oder andere Brettgrößen entwerfen. Passe Farben an, erstelle komplexe Startpositionen und teile deine Kreationen mit der Welt. Ob du eine klassische Schachvariante baust, Fairy-Schach-Konzepte erkundest oder kreative Schachpuzzles entwirfst – unser gitterbasierter Editor bietet dir die Flexibilität, die du brauchst."
+                "text": "Mit dem Chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8-, 10x10- oder andere Brettgrößen entwerfen. Passe Farben an, erstelle komplexe Startpositionen und teile deine Kreationen mit der Welt. Ob du eine klassische Schachvariante baust, Fairy-Schach-Konzepte erkundest oder kreative Schachpuzzles entwirfst – unser gitterbasierter Editor bietet dir die Flexibilität, die du brauchst."
             }
         },
         "Announcements": {
-            "title": "chessperiment Neuigkeiten & Ankündigungen",
-            "description": "Bleibe auf dem Laufenden über die neuesten Funktionen, Updates und Community-Neuigkeiten von chessperiment.",
+            "title": "Chessperiment Neuigkeiten & Ankündigungen",
+            "description": "Bleibe auf dem Laufenden über die neuesten Funktionen, Updates und Community-Neuigkeiten von Chessperiment.",
             "h1": "Neueste Nachrichten"
         },
         "Analyze": {
@@ -724,28 +751,68 @@
         },
         "LegalNotice": {
             "title": "Impressum - Kontakt & Info",
-            "description": "Kontaktinformationen, Anbieterdetails und rechtliche Hinweise für chessperiment. Finden Sie E-Mail, Telefon und Urheberrechtsinformationen."
+            "description": "Kontaktinformationen, Anbieterdetails und rechtliche Hinweise für Chessperiment. Finden Sie E-Mail, Telefon und Urheberrechtsinformationen.",
+            "providerHeading": "Anbieter",
+            "providerName": "Lasse Thoroe - Chessperiment",
+            "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
+            "contactHeading": "Kontakt",
+            "emailLabel": "E-Mail:",
+            "emailValue": "contact.chessperiment@gmail.com",
+            "phoneLabel": "Telefon:",
+            "phoneValue": "+49 1517 4288065",
+            "copyrightHeading": "Urheberrechtshinweis",
+            "copyrightText": "Die auf unserer Internetseite vorhandenen Texte, Bilder, Fotos, Videos oder Grafiken unterliegen in der Regel dem Schutz des Urheberrechts. Jede unberechtigte Verwendung (insbesondere die Vervielfältigung, Bearbeitung oder Verbreitung) dieser urheberrechtsgeschützten Inhalte ist daher untersagt. Wenn Sie beabsichtigen, diese Inhalte oder Teile davon zu verwenden, kontaktieren Sie uns bitte im Voraus unter den oben stehenden Angaben. Soweit wir nicht selbst Inhaber der benötigten urheberrechtlichen Nutzungsrechte sein sollten, bemühen wir uns, einen Kontakt zum Berechtigten zu vermitteln.",
+            "socialMediaHeading": "Social-Media-Profile",
+            "socialMediaText": "Dieses Impressum gilt auch für folgende Social-Media-Profile:",
+            "youtubeLabel": "YouTube:",
+            "otherProfilesLabel": "Andere Profile:",
+            "madeWith": "Erstellt mit freundlicher Unterstützung von",
+            "dieterLinkText": "Dieter macht den Datenschutz",
+            "disputeResolutionHeading": "Streitbeilegung",
+            "odrText": "Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit, die Sie unter folgendem Link finden:",
+            "vsbgText": "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."
         },
         "Login": {
-            "title": "Bei chessperiment anmelden | Speichere deine Kreationen",
-            "description": "Melde dich bei chessperiment an, um deine individuellen Schachbretter und Figuren zu speichern und auf dein Spielerprofil zuzugreifen.",
-            "h1": "Bei chessperiment anmelden"
+            "title": "Bei Chessperiment anmelden | Speichere deine Kreationen",
+            "description": "Melde dich bei Chessperiment an, um deine individuellen Schachbretter und Figuren zu speichern und auf dein Spielerprofil zuzugreifen.",
+            "h1": "Bei Chessperiment anmelden"
         },
         "PrivacyPolicy": {
             "title": "Datenschutzerklärung (DSGVO)",
-            "description": "Erfahre, wie chessperiment deine Daten verarbeitet. Unsere DSGVO-konforme Datenschutzerklärung behandelt Nutzerdaten, Cookies, Firebase-Hosting und deine Rechte."
-        },
-        "Marketplace": {
-            "title": "chessperiment Marktplatz | Lade individuelle Schachsets herunter",
-            "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensätze herunter. Verbessere dein Spiel mit einzigartigen Designs.",
-            "h1": "Schachvarianten-Marktplatz",
-            "seoContent": {
-                "heading": "Entdecke und teile individuelle Schach-Assets",
-                "text": "Der chessperiment-Marktplatz ist die zentrale Anlaufstelle für unsere kreative Community. Erkunde eine umfangreiche Sammlung von individuellen Schachbrettern, pixelgenauen Figurensätzen und einzigartigen Brett-Designs, die von Nutzern weltweit geteilt werden."
-            }
+            "description": "Erfahre, wie Chessperiment deine Daten verarbeitet. Unsere DSGVO-konforme Datenschutzerklärung behandelt Nutzerdaten, Cookies, Firebase-Hosting und deine Rechte.",
+            "lastUpdated": "(Stand: Juli 2024)",
+            "controllerHeading": "1. Verantwortlicher",
+            "controllerText": "Verantwortlich für die Daten verarbeitung auf dieser Website ist:\n\nLasse Thoroe - Chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+            "generalHeading": "2. Allgemeine Hinweise",
+            "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
+            "collectionHeading": "3. Von uns erhobene Daten",
+            "accountsSubheading": "a) Nutzerkonten",
+            "accountsText": "Wenn Sie ein Konto erstellen, speichern wir Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild. Diese Daten sind nicht öffentlich und dienen der Plattformfunktionalität. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+            "contentSubheading": "b) Nutzergenerierte Inhalte",
+            "contentText": "Wir speichern von Ihnen erstellte Inhalte wie Schachbretter und Figuren. Je nach Ihren Einstellungen können diese öffentlich sichtbar sein. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+            "chatSubheading": "c) Chat-Funktion",
+            "chatText": "Chat-Nachrichten werden gespeichert und auf verbotene Wörter gefiltert, um die Sicherheit zu gewährleisten. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
+            "analyticsHeading": "4. Analysedienste",
+            "analyticsText": "Wir nutzen Vercel Analytics und Speed Insights, um die Leistung unserer Website zu messen. Diese Dienste sind datenschutzfreundlich, verwenden keine Cookies und erheben keine personenbezogenen Daten. Es werden anonyme Nutzungsstatistiken wie besuchte Seiten und Ladezeiten erfasst. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
+            "hostingHeading": "5. Datenbank und Hosting",
+            "hostingText": "Wir verwenden Google Firebase (Firestore) als Datenbank. Ihre Daten (Nutzerkonten, Spielverläufe, erstellte Inhalte) werden dort gespeichert. Daten können in den USA verarbeitet werden. Google ist nach dem EU-US Data Privacy Framework zertifiziert. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+            "cookiesHeading": "6. Cookies",
+            "cookiesText": "Wir verwenden keine Cookies für Tracking oder Werbung. Einzig ein technisch notwendiger Sitzungs-Cookie (JWT) wird beim Login gesetzt, um Ihre Sitzung aufrechtzuerhalten. Dieser Cookie ist für die Funktion der Website unerlässlich. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+            "retentionHeading": "7. Speicherdauer",
+            "retentionText": "Wir speichern Ihre Daten, solange Sie ein Konto bei uns haben. Spielverläufe und erstellte Inhalte werden länger gespeichert, um die Plattformintegrität zu wahren. Sie können die Löschung Ihres Kontos und der damit verbundenen personenbezogenen Daten jederzeit beantragen.",
+            "minorsHeading": "8. Minderjährige",
+            "minorsText": "Personen unter 16 Jahren sollten unsere Dienste nur mit Zustimmung der Eltern nutzen.",
+            "rightsHeading": "9. Ihre Rechte",
+            "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Bitte kontaktieren Sie uns unter der oben angegebenen E-Mail-Adresse.",
+            "complaintHeading": "10. Beschwerderecht",
+            "complaintText": "Sie haben das Recht, eine Beschwerde bei einer Datenschutzaufsichtsbehörde einzureichen.",
+            "changesHeading": "11. Änderungen",
+            "changesText": "Wir können diese Datenschutzerklärung anpassen. Es gilt die jeweils aktuelle Fassung.",
+            "madeWith": "Erstellt mit freundlicher Unterstützung von",
+            "dieterLinkText": "Dieter macht den Datenschutz"
         },
         "ProjectView": {
-            "title": "Projektübersicht | individuelles chessperiment",
+            "title": "Projektübersicht | individuelles Chessperiment",
             "description": "Betrachte und verwalte dein Schachprojekt. Bearbeite dein Brett und deine Figuren an einem Ort."
         },
         "GameEnd": {
@@ -755,47 +822,48 @@
             "rematch": "Revanche",
             "newGame": "Neues Spiel",
             "rematchRequested": "Angefragt"
+        },
+        "PieceEditorFAQ": {
+            "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | Chessperiment",
+            "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
+            "h1": "Figuren-Editor Technische FAQ",
+            "sections": {
+                "general": {
+                    "title": "Allgemein",
+                    "q1": "Was ist der Figuren-Editor?",
+                    "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
+                    "q2": "Wie speichere ich meine Figur?",
+                    "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
+                },
+                "moveEditor": {
+                    "title": "Bewegungs-Editor",
+                    "q1": "Wie definiere ich Bewegungen?",
+                    "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
+                    "q2": "Was sind „springende“ Züge?",
+                    "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
+                },
+                "logicEditor": {
+                    "title": "Logik-Editor",
+                    "q1": "Was ist der Logik-Editor?",
+                    "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
+                    "q2": "Wie funktionieren Auslöser?",
+                    "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
+                    "q3": "Kann ich Variablen verwenden?",
+                    "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
+                    "q4": "Welche Effekte gibt es?",
+                    "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern.",
+                    "q5": "Was ist der „explode“ Effekt?",
+                    "a5": "Der „explode“ Effekt ermöglicht es einer Figur, alle Figuren in einem bestimmten Radius zu zerstören. Du kannst den Radius individuell einstellen."
+                },
+                "troubleshooting": {
+                    "title": "Fehlerbehebung",
+                    "q1": "Warum bewegt sich meine Figur nicht?",
+                    "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
+                    "q2": "Meine Logik funktioniert nicht.",
+                    "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslösebedingung erfüllt ist."
+                }
+            }
         }
-    },
-
-    "PieceEditorFAQ": {
-      "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | chessperiment",
-      "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
-      "h1": "Figuren-Editor Technische FAQ",
-      "sections": {
-        "general": {
-          "title": "Allgemein",
-          "q1": "Was ist der Figuren-Editor?",
-          "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
-          "q2": "Wie speichere ich meine Figur?",
-          "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
-        },
-        "moveEditor": {
-          "title": "Bewegungs-Editor",
-          "q1": "Wie definiere ich Bewegungen?",
-          "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
-          "q2": "Was sind „springende“ Züge?",
-          "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
-        },
-        "logicEditor": {
-          "title": "Logik-Editor",
-          "q1": "Was ist der Logik-Editor?",
-          "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
-          "q2": "Wie funktionieren Auslöser?",
-          "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
-          "q3": "Kann ich Variablen verwenden?",
-          "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
-          "q4": "Welche Effekte gibt es?",
-          "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern."
-        },
-        "troubleshooting": {
-          "title": "Fehlerbehebung",
-          "q1": "Warum bewegt sich meine Figur nicht?",
-          "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
-          "q2": "Meine Logik funktioniert nicht.",
-          "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslöser-Bedingung erfüllt ist."
-        }
-      }
     },
     "NotFound": {
         "title": "404 - Figur nicht gefunden",
@@ -845,7 +913,7 @@
     },
     "Feedback": {
         "title": "Teilen Sie Ihr Feedback",
-        "subtitle": "Helfen Sie uns, chessperiment zu verbessern, indem Sie Ihre Gedanken teilen",
+        "subtitle": "Helfen Sie uns, Chessperiment zu verbessern, indem Sie Ihre Gedanken teilen",
         "selectPrompt": "Was möchten Sie teilen?",
         "reportBug": {
             "title": "Fehler melden",
@@ -871,4 +939,5 @@
         "emailPlaceholder": "Ihre E-Mail (optional)",
         "messageLabel": "Nachricht",
         "backToHome": "Zurück zur Startseite"
-    }}
+    }
+}

@@ -1,11 +1,23 @@
 export interface MarketplaceItem {
     id: string;
     title: string;
-    author: string;
+    creator_handle: string; // @handle
     type: 'board' | 'pieces' | 'design' | 'game';
-    price: number;
-    rating: number;
+    price: number | 'Free'; // Updated to allow 'Free' string or number
+    
+    // Rating system
+    rating: number; // Average
     reviewCount: number;
+    stars_total: number;
+    stars_count: number;
+    reviews: string[]; // IDs or objects, keep simple for now
+
+    // Metadata
+    views: number;
+    date_published: Date;
+    config_data?: any; // The logic blob (loaded lazily)
+    
+    // UI flags
     isNew: boolean;
     imageUrl: string;
     description: string;

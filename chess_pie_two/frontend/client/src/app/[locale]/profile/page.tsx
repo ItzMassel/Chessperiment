@@ -12,6 +12,7 @@ import { signOut } from "next-auth/react";
 import { updateUserNameAction, deleteUserAccountAction } from "@/app/actions/user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import CreatorProfileSection from "@/components/dashboard/CreatorProfileSection";
 
 const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chessperiment.app');
 

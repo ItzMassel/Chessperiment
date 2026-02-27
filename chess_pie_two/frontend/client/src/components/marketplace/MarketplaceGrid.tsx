@@ -32,12 +32,12 @@ export function MarketplaceGrid() {
     const filteredItems = items.filter((item) => {
         const matchesFilter =
             activeFilter === 'all' ||
-            (activeFilter === 'free' ? item.price === 0 : false) ||
-            (activeFilter === 'paid' ? item.price > 0 : false) ||
+            (activeFilter === 'free' ? (item.price === 0 || item.price === 'Free') : false) ||
+            (activeFilter === 'paid' ? (typeof item.price === 'number' && item.price > 0) : false) ||
             item.type === activeFilter;
 
         const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.author.toLowerCase().includes(searchQuery.toLowerCase());
+            item.creator_handle.toLowerCase().includes(searchQuery.toLowerCase());
 
         return matchesFilter && matchesSearch;
     });

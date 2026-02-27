@@ -12,7 +12,7 @@ interface EngineToggleCardProps {
 export default function EngineToggleCard({ enabled, color, onToggle, onColorChange }: EngineToggleCardProps) {
     return (
         <div className={`
-            relative overflow-hidden rounded-2xl p-6 
+            relative rounded-2xl p-6 
             transition-all duration-300 ease-out
             ${enabled
                 ? 'bg-linear-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20 border-2 border-purple-400/50 shadow-2xl shadow-purple-500/30'
@@ -22,7 +22,7 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
         `}>
             {/* Background glow effect when enabled */}
             {enabled && (
-                <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 animate-pulse" />
+                <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 animate-pulse rounded-2xl" />
             )}
 
             <div className="relative z-10">
@@ -63,7 +63,7 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
                         <div className={`
                             absolute top-1 left-1 w-6 h-6 bg-white rounded-full 
                             transition-transform duration-300 ease-out
-                            ${enabled ? 'translate-x-8 shadow-lg' : 'translate-x-0'}
+                            ${enabled ? 'translate-x-6 shadow-lg' : 'translate-x-0'}
                             flex items-center justify-center
                         `}>
                             {enabled && <Zap size={14} className="text-purple-500" />}
@@ -73,14 +73,14 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
 
                 {/* Color Selection - only visible when enabled */}
                 <div className={`
-                    transition-all duration-300 ease-out overflow-hidden
-                    ${enabled ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'}
+                    transition-all duration-300 ease-out
+                    ${enabled ? 'max-h-96 opacity-100 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'}
                 `}>
                     <div className="pt-4 border-t border-stone-300/50 dark:border-stone-600/50">
                         <label className="block text-sm font-bold text-stone-700 dark:text-stone-300 mb-3">
                             Engine plays as:
                         </label>
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 pb-10 px-2">
                             {/* White Option */}
                             <button
                                 onClick={() => onColorChange('white')}

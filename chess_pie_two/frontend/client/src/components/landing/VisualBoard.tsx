@@ -1,11 +1,11 @@
 "use client"
 
-import React from 'react';
+import { Sword, Wand2 } from 'lucide-react';
 
 const VisualBoard: React.FC = () => {
     return (
         <div className="relative w-full aspect-video bg-white dark:bg-stone-900/40 rounded-3xl border border-gray-100 dark:border-stone-800 shadow-xl overflow-hidden flex items-center justify-center max-w-5xl mx-auto transform hover:scale-[1.01] transition-transform duration-500">
-            <div className="absolute inset-0 bg-[#f8f9fa] dark:bg-stone-900 opacity-50"></div>
+            <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-purple-500/5 opacity-50"></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center perspective-distant scale-90 sm:scale-100">
 
                 {/* The 3D Grid Board */}
@@ -13,30 +13,32 @@ const VisualBoard: React.FC = () => {
                     <div className="w-full h-full grid grid-cols-4 grid-rows-4 gap-1">
                         {/* Generating grid cells manually to match design pattern */}
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
-                        <div className="bg-gray-200 dark:bg-stone-600 rounded-sm"></div>
+                        <div className="bg-amber-100/50 dark:bg-amber-900/40 rounded-sm"></div>
                         <div className="bg-gray-100 dark:bg-stone-700 rounded-sm"></div>
                     </div>
                 </div>
 
                 {/* Floating Icons Card */}
-                <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[260px] h-[200px] bg-amber-400/10 border border-amber-400/30 rounded-2xl backdrop-blur-sm transform rotate-x-60 rotate-z-[-10deg] z-20 flex items-center justify-center shadow-lg">
+                <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[260px] h-[200px] bg-white/20 dark:bg-stone-800/20 border border-white/30 dark:border-stone-700/30 rounded-2xl backdrop-blur-md transform rotate-x-60 rotate-z-[-10deg] z-20 flex items-center justify-center shadow-xl">
                     <div className="flex gap-6 transform -rotate-x-60">
-                        <div className="bg-white dark:bg-stone-700 p-4 rounded-xl shadow-md border border-amber-200 dark:border-amber-900/30">
+                        <div className="bg-white dark:bg-stone-800 p-4 rounded-xl shadow-lg border border-amber-200 dark:border-stone-700 group-hover:scale-110 transition-transform">
+                            <Sword className="text-amber-500" size={24} />
                         </div>
-                        <div className="bg-white dark:bg-stone-700 p-4 rounded-xl shadow-md border border-green-200 dark:border-green-900/30">
+                        <div className="bg-white dark:bg-stone-800 p-4 rounded-xl shadow-lg border border-purple-200 dark:border-stone-700 group-hover:scale-110 transition-transform delay-75">
+                            <Wand2 className="text-purple-500" size={24} />
                         </div>
                     </div>
                 </div>

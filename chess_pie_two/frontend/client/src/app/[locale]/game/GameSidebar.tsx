@@ -34,6 +34,7 @@ interface GameSidebarProps {
     onNextGame?: () => void;
     rematchRequested?: boolean;
     opponentRematchRequested?: boolean;
+    isCustomGame?: boolean;
 }
 
 export default function GameSidebar({
@@ -49,7 +50,8 @@ export default function GameSidebar({
     onRematch,
     onNextGame,
     rematchRequested,
-    opponentRematchRequested
+    opponentRematchRequested,
+    isCustomGame
 }: GameSidebarProps) {
     const t = useTranslations();
     const router = useRouter();
@@ -60,6 +62,8 @@ export default function GameSidebar({
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     const materialStats = useMemo(() => {
+        if (isCustomGame) return null;
+
         const values: Record<string, number> = { 'Pawn': 1, 'Knight': 3, 'Bishop': 3, 'Rook': 5, 'Queen': 9, 'King': 0 };
         const initialCounts: Record<string, number> = { 'Pawn': 8, 'Knight': 2, 'Bishop': 2, 'Rook': 2, 'Queen': 1, 'King': 1 };
 
@@ -119,7 +123,9 @@ export default function GameSidebar({
         if (chatMessages.length > 0 && activeTab !== "chat") {
             setHasUnreadChat(true);
         }
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (activeTab === "chat") {
+            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
     }, [chatMessages, activeTab]);
 
     const handleSend = () => {
@@ -154,6 +160,7 @@ export default function GameSidebar({
     };
 
     const renderMaterialInfo = (playerColor: 'white' | 'black') => {
+        if (!materialStats) return null;
         const isWhite = playerColor === 'white';
         const captured = isWhite ? materialStats.capturedByWhite : materialStats.capturedByBlack; // Pieces this player HAS CAPTURED
         const scoreDiff = isWhite ? materialStats.diff : -materialStats.diff;

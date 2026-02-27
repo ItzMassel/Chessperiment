@@ -49,7 +49,7 @@ export default function CreateMarketplaceItemPage() {
                 price: isNaN(price) ? 0 : price,
                 type,
                 imageUrl,
-                author: session?.user?.name || 'Anonymous',
+                creator_handle: session?.user?.name ? `@${session.user.name.replace(/\s+/g, '').toLowerCase()}` : '@anonymous',
             });
 
             router.push(`/marketplace/${id}`);

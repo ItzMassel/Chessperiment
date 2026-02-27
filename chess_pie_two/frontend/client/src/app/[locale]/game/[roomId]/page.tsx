@@ -2,7 +2,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import Board from '../Board';
+import BoardRouter from './BoardRouter';
 import { ArrowLeft } from 'lucide-react';
 
 export default function Game() {
@@ -69,10 +69,9 @@ export default function Game() {
                 <span className="sm:hidden">{t('leaveGame').split(' ')[0]}</span>
             </button>
 
-            {/* Board Component with room context */}
-            <Board
-                initialRoomId={roomId}
-                gameModeVar={mode === 'computer' ? 'computer' : 'online'}
+            {/* Board Router handles switching between standard and custom boards */}
+            <BoardRouter
+                roomId={roomId}
                 mode={mode as any}
             />
         </div>

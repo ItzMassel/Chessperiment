@@ -15,6 +15,8 @@ import {
 import { LocalProjectStore } from '@/lib/local-persistence';
 import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import ProjectList from '@/components/editor/ProjectList';
+import CreatorProfileSection from '@/components/dashboard/CreatorProfileSection';
+import { toast } from 'sonner';
 
 export default function PageClient() {
     const t = useTranslations('Editor');
@@ -187,6 +189,51 @@ export default function PageClient() {
         }
     };
 
+    const handlePublish = async (projectId: string) => {
+        if (!user) {
+            toast.error("You must be logged in to publish.");
+            return;
+        }
+
+        const { publishProjectCmd } = await import('@/app/actions/marketplace');
+
+        const toastId = toast.loading("Publishing project...");
+
+        try {
+            const result = await publishProjectCmd(projectId);
+
+            if (result.success) {
+                toast.dismiss(toastId);
+                toast.success("Project published successfully!");
+                // Maybe redirect to the marketplace item page?
+                // router.push(`/marketplace/${result.marketplaceId}`);
+            } else {
+                toast.dismiss(toastId);
+                if (result.error === "CREATOR_PROFILE_MISSING") {
+                    toast.error("Creator Profile Required", {
+                        description: "You need to set up a creator profile before publishing.",
+                        action: {
+                            label: "Set up Profile",
+                            onClick: () => {
+                                // Scroll to top where the profile section is
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        },
+                        duration: 5000
+                    });
+                    // Also scroll up automatically just in case they miss the button
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    toast.error(`Publish failed: ${result.error}`);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            toast.dismiss(toastId);
+            toast.error("Publish failed due to an unexpected error.");
+        }
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -213,8 +260,12 @@ export default function PageClient() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-32 max-w-7xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="container mx-auto px-4 md:py-16 max-w-7xl -mt-10 pb relative">
+            {/* Background decoration */}
+            <div className="absolute top-0 inset-x-0 h-96 bg-linear-to-b from-amber-500/5 to-transparent pointer-events-none -z-10 blur-3xl" />
+
+            {user && <CreatorProfileSection />}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
                         {t('myProjects')}
@@ -249,6 +300,7 @@ export default function PageClient() {
                 onToggleStar={handleToggleStar}
                 onDelete={handleDeleteProject}
                 onCreateNew={handleCreateNew}
+                onPublish={handlePublish}
             />
         </div>
     );

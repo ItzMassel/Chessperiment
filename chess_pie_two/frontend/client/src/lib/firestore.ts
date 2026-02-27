@@ -61,21 +61,53 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
 export async function getUserGameHistory(userId: string, limit: number = 10) {
     if (!db) throw new Error("Firestore not initialized")
 
-    const snapshot = await db
-        .collection("gameHistory")
-        .where("userId", "==", userId)
-        .orderBy("timestamp", "desc")
-        .limit(limit)
-        .get()
+    try {
+        const snapshot = await db
+            .collection("gameHistory")
+            .where("userId", "==", userId)
+            .orderBy("timestamp", "desc")
+            .limit(limit)
+            .get();
 
-    return snapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-            id: doc.id,
-            ...data,
-            timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp,
+        return snapshot.docs.map((doc) => {
+            const data = doc.data()
+            return {
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp,
+            }
+        }) as GameResult[];
+    } catch (error: any) {
+        // Fallback for missing index: fetch recent docs (without order) and sort in memory
+        // Note: This might not get the absolute latest if there are many docs, but it's better than crashing
+        console.warn("Firestore index missing, falling back to client-side sort:", error.message);
+        
+        try {
+            const snapshot = await db
+                .collection("gameHistory")
+                .where("userId", "==", userId)
+                .limit(50) // Fetch a bit more to increase chance of getting latest
+                .get();
+
+            const results = snapshot.docs.map((doc) => {
+                const data = doc.data()
+                return {
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp,
+                }
+            }) as GameResult[];
+
+            return results.sort((a, b) => {
+                const tA = a.timestamp instanceof Date ? a.timestamp.getTime() : 0;
+                const tB = b.timestamp instanceof Date ? b.timestamp.getTime() : 0;
+                return tB - tA;
+            }).slice(0, limit);
+        } catch (innerError) {
+            console.error("Failed to fetch game history:", innerError);
+            return [];
         }
-    }) as GameResult[]
+    }
 }
 
 

@@ -29,4 +29,8 @@ export class Game {
     getTurn(): "white" | "black" {
         return this.board.getTurn();
     }
+
+    getLegalMoves(color?: 'white' | 'black'): { from: Square, to: Square }[] {
+        return this.validator.getLegalMoves(color || this.getTurn());
+    }
 }

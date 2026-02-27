@@ -12,9 +12,7 @@ import { UserPanel } from "@/components/auth/UserPanel";
 import { generateBreadcrumbs } from "@/lib/breadcrumbs";
 import { headers } from "next/headers";
 import { Providers } from "../providers";
-import { Analytics } from "@vercel/analytics/next"
 import { SEOFooter } from "@/components/SEOFooter";
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ReferralSurvey } from "@/components/ReferralSurvey";
 
 import { AuthProvider } from "@/context/AuthContext";
@@ -89,7 +87,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     twitter: {
       card: "summary_large_image",
-      title: "chessperiment | Custom Chess Sandbox",
+      title: "Chessperiment | Custom Chess Sandbox",
       description: "Create your own chess world. Design pieces, boards and play online.",
       images: ["/images/seo/twitter-image.png"],
     },
@@ -147,8 +145,6 @@ export default async function RootLayout({
               >
                 <Providers>
 
-                  <Analytics />
-                  <SpeedInsights />
                   <UserPanel />
                   <ThemeToggle />
                   <ReferralSurvey />

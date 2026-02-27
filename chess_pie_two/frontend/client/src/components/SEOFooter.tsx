@@ -7,7 +7,7 @@ export function SEOFooter() {
     const t = useTranslations('SEO.Footer');
 
     const faqs = [
-        { q: 'whatIschessperiment', a: 'whatIschessperimentAnswer' },
+        { q: 'whatIsChessperiment', a: 'whatIsChessperimentAnswer' },
         { q: 'isItFree', a: 'isItFreeAnswer' },
         { q: 'canIPlayFriends', a: 'canIPlayFriendsAnswer' },
     ];
@@ -54,13 +54,18 @@ export function SEOFooter() {
                                         {t('legalNotice')}
                                     </Link>
                                 </li>
+                                <li>
+                                    <Link href="/feedback" className="text-stone-500 hover:text-accent transition-colors text-sm">
+                                        {t('feedback')}
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>chessperiment</h3>
+                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>Chessperiment</h3>
                             <p className='text-stone-500 text-sm'>
-                                Designed and built for chess enthusiasts. <br />
-                                &copy; {new Date().getFullYear()} chessperiment.
+                                {t('builtBy')} <br />
+                                &copy; {new Date().getFullYear()} Chessperiment.
                             </p>
                         </div>
                     </div>
