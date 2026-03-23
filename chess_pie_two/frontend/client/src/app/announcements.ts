@@ -22,6 +22,96 @@ export interface Announcement {
 
 const announcements: Announcement[] = [
     {
+        id: 'marketplace-launch',
+        date: '2026-03-23',
+        author: 'Lasse T.',
+        image: '/announcements/marketplace-launch.png',
+        title: {
+            en: 'The Marketplace Is Here: Share Your Creations with the World',
+            de: 'Der Marktplatz ist da: Teile deine Kreationen mit der Welt'
+        },
+        shortDescription: {
+            en: 'Upload your bots, pieces, and entire games to the new Marketplace. Browse, review, and rate creations from the community.',
+            de: 'Lade deine Bots, Figuren und komplette Spiele auf den neuen Marktplatz hoch. Durchstöbere, bewerte und entdecke Kreationen der Community.'
+        },
+        content: {
+            en: `
+                <p>We are thrilled to announce the launch of the <strong>Chessperiment Marketplace</strong> — a brand-new hub where creativity meets community. Starting today, every user can share their custom creations with the world and discover amazing work from fellow game designers.</p>
+
+                <h3>What is the Marketplace?</h3>
+
+                <p>The Marketplace is a central place where you can upload, browse, and download custom content created by the Chessperiment community. Whether it's a cleverly programmed bot, a beautifully designed piece, or an entirely new game with custom rules and boards — the Marketplace is where it all comes together.</p>
+
+                <h3>How to Get Started</h3>
+
+                <p><strong>Create a Creator Account:</strong> To upload content to the Marketplace, you first need to set up a Creator Account. Head to your profile settings and activate your creator profile. It only takes a moment and unlocks the full publishing experience.</p>
+
+                <p><strong>Upload Your Work:</strong> Once your Creator Account is active, you can publish your bots, individual pieces, or complete game projects directly to the Marketplace. Add a title, description, and tags so others can easily find your work.</p>
+
+                <p><strong>Browse & Discover:</strong> Explore a growing library of community-made content. Filter by category — bots, pieces, or full games — and find your next favorite creation.</p>
+
+                <h3>Community Reviews & Ratings</h3>
+
+                <p><strong>Star Ratings:</strong> Every listing can be rated on a five-star scale. Help the best creations rise to the top by rating the content you play with.</p>
+
+                <p><strong>Written Reviews:</strong> Share your thoughts and feedback. Let creators know what you love about their work or suggest improvements. Reviews help everyone build better games.</p>
+
+                <h3>What Can You Upload?</h3>
+
+                <ul>
+                    <li><strong>Bots:</strong> Custom AI opponents with unique strategies and play styles.</li>
+                    <li><strong>Pieces:</strong> Individual pieces with custom pixel-art designs and logic — ready for others to drop into their own projects.</li>
+                    <li><strong>Full Games:</strong> Complete game projects including boards, pieces, rules, and starting positions — ready to play.</li>
+                </ul>
+
+                <h3>Built for the Community</h3>
+
+                <p>The Marketplace is more than a file-sharing tool — it's a living ecosystem. We want Chessperiment to be the place where game designers of all skill levels can learn from each other, remix ideas, and push the boundaries of what turn-based strategy games can be.</p>
+
+                <p>We can't wait to see your creations on the Marketplace. Happy creating!</p>
+
+                <p><strong>Lasse T.</strong><br>Project Lead, Chessperiment.app</p>
+            `,
+            de: `
+                <p>Wir freuen uns riesig, den Start des <strong>Chessperiment-Marktplatzes</strong> bekannt zu geben — ein brandneuer Ort, an dem Kreativität auf Community trifft. Ab heute kann jeder Nutzer seine eigenen Kreationen mit der Welt teilen und großartige Werke anderer Spieledesigner entdecken.</p>
+
+                <h3>Was ist der Marktplatz?</h3>
+
+                <p>Der Marktplatz ist eine zentrale Anlaufstelle, auf der du benutzerdefinierte Inhalte der Chessperiment-Community hochladen, durchstöbern und herunterladen kannst. Ob ein clever programmierter Bot, eine wunderschön gestaltete Figur oder ein komplett neues Spiel mit eigenen Regeln und Brettern — der Marktplatz bringt alles zusammen.</p>
+
+                <h3>So startest du</h3>
+
+                <p><strong>Erstelle ein Creator-Konto:</strong> Um Inhalte auf den Marktplatz hochzuladen, musst du zunächst ein Creator-Konto einrichten. Gehe zu deinen Profileinstellungen und aktiviere dein Creator-Profil. Es dauert nur einen Moment und schaltet das volle Veröffentlichungserlebnis frei.</p>
+
+                <p><strong>Lade deine Werke hoch:</strong> Sobald dein Creator-Konto aktiv ist, kannst du deine Bots, einzelne Figuren oder komplette Spielprojekte direkt auf dem Marktplatz veröffentlichen. Füge einen Titel, eine Beschreibung und Tags hinzu, damit andere deine Arbeit leicht finden können.</p>
+
+                <p><strong>Durchstöbern & Entdecken:</strong> Erkunde eine wachsende Bibliothek von Community-Inhalten. Filtere nach Kategorie — Bots, Figuren oder komplette Spiele — und finde deine nächste Lieblingskreation.</p>
+
+                <h3>Community-Bewertungen & Rezensionen</h3>
+
+                <p><strong>Sternebewertungen:</strong> Jeder Eintrag kann auf einer Fünf-Sterne-Skala bewertet werden. Hilf den besten Kreationen, nach oben zu steigen, indem du die Inhalte bewertest, mit denen du spielst.</p>
+
+                <p><strong>Schriftliche Rezensionen:</strong> Teile deine Gedanken und dein Feedback. Lass die Ersteller wissen, was du an ihrer Arbeit liebst, oder schlage Verbesserungen vor. Rezensionen helfen allen, bessere Spiele zu entwickeln.</p>
+
+                <h3>Was kannst du hochladen?</h3>
+
+                <ul>
+                    <li><strong>Bots:</strong> Benutzerdefinierte KI-Gegner mit einzigartigen Strategien und Spielstilen.</li>
+                    <li><strong>Figuren:</strong> Einzelne Figuren mit eigenen Pixel-Art-Designs und Logik — bereit, in eigene Projekte eingesetzt zu werden.</li>
+                    <li><strong>Komplette Spiele:</strong> Vollständige Spielprojekte inklusive Bretter, Figuren, Regeln und Startpositionen — sofort spielbar.</li>
+                </ul>
+
+                <h3>Für die Community gebaut</h3>
+
+                <p>Der Marktplatz ist mehr als ein Datei-Sharing-Tool — er ist ein lebendiges Ökosystem. Wir möchten, dass Chessperiment der Ort wird, an dem Spieledesigner aller Erfahrungsstufen voneinander lernen, Ideen remixen und die Grenzen dessen erweitern, was rundenbasierte Strategiespiele sein können.</p>
+
+                <p>Wir können es kaum erwarten, eure Kreationen auf dem Marktplatz zu sehen. Viel Spaß beim Erstellen!</p>
+
+                <p><strong>Lasse T.</strong><br>Projektleiter, Chessperiment.app</p>
+            `
+        }
+    },
+    {
         id: 'projects-launch',
         date: '2026-02-03',
         author: 'Lasse T.',

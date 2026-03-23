@@ -22,7 +22,6 @@ export async function publishToMarketplace(
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) {
-        console.error("Publish failed: No user session. Session:", session);
         return { success: false, error: "Unauthorized - Please log in" };
     }
     if (!db) return { success: false, error: "Database not initialized" };
@@ -93,15 +92,7 @@ export async function publishToMarketplace(
             config_data: null, // Don't store config - fetch from source when needed for forking
         };
 
-        console.log('💾 [PUBLISH] Publishing marketplace item:', {
-            title: marketplaceItem.title,
-            type: marketplaceItem.type,
-            sourceType: marketplaceItem.sourceType,
-            sourceId: marketplaceItem.sourceId,
-            creator_handle: marketplaceItem.creator_handle
-        });
         const res = await db.collection('marketplace').add(marketplaceItem);
-        console.log('✅ [PUBLISH] Published to marketplace with ID:', res.id);
 
         revalidatePath('/marketplace');
         revalidatePath(`/u/${creator.handle}`);
@@ -109,8 +100,7 @@ export async function publishToMarketplace(
         return { success: true, marketplaceId: res.id };
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error("❌ [PUBLISH] Error publishing to marketplace:", errorMsg);
-        console.error("❌ [PUBLISH] Full error:", error);
+        console.error("Error publishing to marketplace:", errorMsg);
         return { success: false, error: "Failed to publish." };
     }
 }
@@ -145,53 +135,65 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
 
     try {
         const itemRef = db.collection('marketplace').doc(marketplaceId);
-        const itemDoc = await itemRef.get();
-        // Create the item doc if it doesn't exist (seed fallback)
-        if (!itemDoc.exists) {
-            await itemRef.set({
-                stars_total: 0,
-                stars_count: 0,
-                rating: 0,
-                reviewCount: 0,
+
+        // Use a transaction to ensure atomic rating update
+        await db.runTransaction(async (transaction) => {
+            const itemDoc = await transaction.get(itemRef);
+
+            // Create the item doc if it doesn't exist (seed fallback)
+            if (!itemDoc.exists) {
+                transaction.set(itemRef, {
+                    stars_total: 0,
+                    stars_count: 0,
+                    rating: 0,
+                    reviewCount: 0,
+                });
+            }
+
+            // Check for existing review by this user
+            const existing = await itemRef.collection('reviews')
+                .where('userId', '==', userId)
+                .limit(1)
+                .get();
+            if (!existing.empty) {
+                throw new Error("ALREADY_REVIEWED");
+            }
+
+            // Get creator profile for display info
+            const creator = await getCreatorProfile(userId);
+            const displayName = creator?.displayName || creator?.handle || 'Anonymous';
+
+            const review: Omit<Review, 'id'> = {
+                userId,
+                creatorHandle: creator?.handle,
+                displayName,
+                rating,
+                text: text.trim(),
+                createdAt: new Date(),
+            };
+
+            // Add review to subcollection
+            const reviewRef = itemRef.collection('reviews').doc();
+            transaction.set(reviewRef, review);
+
+            // Update parent document rating atomically within the transaction
+            const data = itemDoc.exists ? itemDoc.data()! : { stars_total: 0, stars_count: 0 };
+            const newStarsTotal = (data.stars_total || 0) + rating;
+            const newStarsCount = (data.stars_count || 0) + 1;
+            transaction.update(itemRef, {
+                stars_total: newStarsTotal,
+                stars_count: newStarsCount,
+                rating: parseFloat((newStarsTotal / newStarsCount).toFixed(1)),
+                reviewCount: FieldValue.increment(1),
             });
-        }
-
-        // Check for existing review by this user
-        const existing = await itemRef.collection('reviews')
-            .where('userId', '==', userId)
-            .limit(1)
-            .get();
-        if (!existing.empty) return { success: false, error: "You have already reviewed this item." };
-
-        // Get creator profile for display info
-        const creator = await getCreatorProfile(userId);
-        const displayName = creator?.displayName || creator?.handle || 'Anonymous';
-
-        const review: Omit<Review, 'id'> = {
-            userId,
-            creatorHandle: creator?.handle,
-            displayName,
-            rating,
-            text: text.trim(),
-            createdAt: new Date(),
-        };
-
-        await itemRef.collection('reviews').add(review);
-
-        // Update parent document rating atomically
-        const data = itemDoc.data()!;
-        const newStarsTotal = (data.stars_total || 0) + rating;
-        const newStarsCount = (data.stars_count || 0) + 1;
-        await itemRef.update({
-            stars_total: newStarsTotal,
-            stars_count: newStarsCount,
-            rating: parseFloat((newStarsTotal / newStarsCount).toFixed(1)),
-            reviewCount: FieldValue.increment(1),
         });
 
         revalidatePath(`/marketplace/${marketplaceId}`);
         return { success: true };
     } catch (error) {
+        if (error instanceof Error && error.message === "ALREADY_REVIEWED") {
+            return { success: false, error: "You have already reviewed this item." };
+        }
         console.error("Error submitting review:", error);
         return { success: false, error: "Failed to submit review." };
     }
@@ -223,32 +225,39 @@ export async function deleteReview(marketplaceId: string, reviewId: string) {
     if (!db) return { success: false, error: "Database error" };
 
     try {
-        const reviewRef = db.collection('marketplace').doc(marketplaceId).collection('reviews').doc(reviewId);
-        const reviewDoc = await reviewRef.get();
-        if (!reviewDoc.exists) return { success: false, error: "Review not found" };
-        if (reviewDoc.data()?.userId !== userId) return { success: false, error: "Not your review" };
-
-        const oldRating = reviewDoc.data()!.rating || 0;
-        await reviewRef.delete();
-
-        // Update parent document
         const itemRef = db.collection('marketplace').doc(marketplaceId);
-        const itemDoc = await itemRef.get();
-        if (itemDoc.exists) {
-            const data = itemDoc.data()!;
-            const newStarsTotal = Math.max(0, (data.stars_total || 0) - oldRating);
-            const newStarsCount = Math.max(0, (data.stars_count || 0) - 1);
-            await itemRef.update({
-                stars_total: newStarsTotal,
-                stars_count: newStarsCount,
-                rating: newStarsCount > 0 ? parseFloat((newStarsTotal / newStarsCount).toFixed(1)) : 0,
-                reviewCount: FieldValue.increment(-1),
-            });
-        }
+        const reviewRef = itemRef.collection('reviews').doc(reviewId);
+
+        // Use a transaction to ensure atomic rating update on delete
+        await db.runTransaction(async (transaction) => {
+            const reviewDoc = await transaction.get(reviewRef);
+            if (!reviewDoc.exists) throw new Error("REVIEW_NOT_FOUND");
+            if (reviewDoc.data()?.userId !== userId) throw new Error("NOT_OWNER");
+
+            const oldRating = reviewDoc.data()!.rating || 0;
+            transaction.delete(reviewRef);
+
+            const itemDoc = await transaction.get(itemRef);
+            if (itemDoc.exists) {
+                const data = itemDoc.data()!;
+                const newStarsTotal = Math.max(0, (data.stars_total || 0) - oldRating);
+                const newStarsCount = Math.max(0, (data.stars_count || 0) - 1);
+                transaction.update(itemRef, {
+                    stars_total: newStarsTotal,
+                    stars_count: newStarsCount,
+                    rating: newStarsCount > 0 ? parseFloat((newStarsTotal / newStarsCount).toFixed(1)) : 0,
+                    reviewCount: FieldValue.increment(-1),
+                });
+            }
+        });
 
         revalidatePath(`/marketplace/${marketplaceId}`);
         return { success: true };
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === "REVIEW_NOT_FOUND") return { success: false, error: "Review not found" };
+            if (error.message === "NOT_OWNER") return { success: false, error: "Not your review" };
+        }
         console.error("Error deleting review:", error);
         return { success: false, error: "Failed to delete review." };
     }
@@ -404,7 +413,7 @@ export async function updateMarketplaceItem(
             return { success: false, error: "You can only edit your own items" };
         }
 
-        const updateData: any = {};
+        const updateData: Record<string, string> = {};
         if (updates.title !== undefined) updateData.title = updates.title;
         if (updates.description !== undefined) updateData.description = updates.description;
         if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl;

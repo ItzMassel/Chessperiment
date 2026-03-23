@@ -16,53 +16,41 @@ export interface CreatorProfile {
     following: string[]; // User IDs
 }
 
+// Serialize Firestore Timestamp / Date / string to ISO string
+function serializeDateJoined(dateJoined: any): string | null {
+    if (!dateJoined) return null;
+    if (typeof dateJoined.toDate === 'function') {
+        return dateJoined.toDate().toISOString();
+    }
+    if (dateJoined instanceof Date) {
+        return dateJoined.toISOString();
+    }
+    if (typeof dateJoined === 'string') {
+        return dateJoined;
+    }
+    return null;
+}
+
 // Check if user has a profile
 export async function getMyCreatorProfile() {
     const session = await auth();
     const userId = session?.user?.id;
-    console.log(`🔍 [GET_PROFILE] session.user.id: "${userId}", session:`, JSON.stringify(session, null, 2));
-    if (!userId) {
-        console.warn('⚠️ [GET_PROFILE] No session or user ID');
-        return null;
-    }
+    if (!userId) return null;
 
     try {
-        if (!db) {
-            console.error('❌ [GET_PROFILE] Database connection failed');
-            return null;
-        }
+        if (!db) return null;
         const profileRef = db.collection('creators').doc(userId);
-        console.log(`📂 [GET_PROFILE] Fetching profile from creators/${userId}`);
         const doc = await profileRef.get();
-        console.log(`📄 [GET_PROFILE] Document exists? ${doc.exists}, docId: ${doc.id}`);
         if (doc.exists) {
             const data = doc.data() as CreatorProfile;
-            console.log(`✅ [GET_PROFILE] Profile data found for user ${userId}:`, JSON.stringify(data, null, 2));
-            // Serialize Firestore Timestamp to ISO string
-            let dateJoined = null;
-            if (data.date_joined) {
-                // Handle Firestore Timestamp (has toDate method)
-                if (typeof (data.date_joined as any).toDate === 'function') {
-                    dateJoined = (data.date_joined as any).toDate().toISOString();
-                }
-                // Handle JavaScript Date object
-                else if (data.date_joined instanceof Date) {
-                    dateJoined = data.date_joined.toISOString();
-                }
-                // Handle ISO string
-                else if (typeof data.date_joined === 'string') {
-                    dateJoined = data.date_joined;
-                }
-            }
             return {
                 ...data,
-                date_joined: dateJoined
+                date_joined: serializeDateJoined(data.date_joined),
             };
         }
-        console.warn(`⚠️ [GET_PROFILE] No profile document found at creators/${userId}`);
         return null;
     } catch (error) {
-        console.error(`❌ [GET_PROFILE] Error fetching profile for user ${userId}:`, error);
+        console.error("Error fetching creator profile:", error);
         return null;
     }
 }
@@ -75,22 +63,9 @@ export async function getCreatorProfileByHandle(handle: string) {
         if (snapshot.empty) return null;
 
         const data = snapshot.docs[0].data() as CreatorProfile;
-
-        // Serialize Firestore Timestamp to ISO string
-        let dateJoined = null;
-        if (data.date_joined) {
-            if (typeof (data.date_joined as any).toDate === 'function') {
-                dateJoined = (data.date_joined as any).toDate().toISOString();
-            } else if (data.date_joined instanceof Date) {
-                dateJoined = data.date_joined.toISOString();
-            } else if (typeof data.date_joined === 'string') {
-                dateJoined = data.date_joined;
-            }
-        }
-
         return {
             ...data,
-            date_joined: dateJoined
+            date_joined: serializeDateJoined(data.date_joined),
         };
     } catch (error) {
         console.error("Error fetching creator profile by handle:", error);
@@ -104,22 +79,9 @@ export async function getCreatorProfile(userId: string) {
         const doc = await db.collection('creators').doc(userId).get();
         if (doc.exists) {
             const data = doc.data() as CreatorProfile;
-
-            // Serialize Firestore Timestamp to ISO string
-            let dateJoined = null;
-            if (data.date_joined) {
-                if (typeof (data.date_joined as any).toDate === 'function') {
-                    dateJoined = (data.date_joined as any).toDate().toISOString();
-                } else if (data.date_joined instanceof Date) {
-                    dateJoined = data.date_joined.toISOString();
-                } else if (typeof data.date_joined === 'string') {
-                    dateJoined = data.date_joined;
-                }
-            }
-
             return {
                 ...data,
-                date_joined: dateJoined
+                date_joined: serializeDateJoined(data.date_joined),
             };
         }
         return null;
@@ -132,21 +94,15 @@ export async function getCreatorProfile(userId: string) {
 // Register a new creator handle
 export async function registerCreatorHandle(handle: string) {
     const session = await auth();
-    console.log('🔐 [REGISTER] Server session:', JSON.stringify(session, null, 2));
     const userId = session?.user?.id;
     const userName = session?.user?.name;
-    const userImage = session?.user?.image; // Basic auth image
-
-    console.log(`📝 [REGISTER] userId: "${userId}", userName: "${userName}", userImage: "${userImage}"`);
+    const userImage = session?.user?.image;
 
     if (!userId) {
-        console.error('❌ [REGISTER] Unauthorized - no userId in session');
         return { success: false, error: "Unauthorized" };
     }
 
-    // Validate handle format (alphanumeric, 3-20 chars)
     // Validate handle format (alphanumeric, 3-20 chars, optionally starting with @)
-    // We expect the handle to start with @ as per client logic, but let's be flexible
     const handleRegex = /^@?[a-zA-Z0-9_]{3,20}$/;
     if (!handleRegex.test(handle)) {
         return { success: false, error: "Handle must be 3-20 characters, alphanumeric or underscore." };
@@ -174,9 +130,7 @@ export async function registerCreatorHandle(handle: string) {
             following: []
         };
 
-        console.log(`💾 [REGISTER] Writing profile to Firestore at creators/${userId}:`, JSON.stringify(newProfile, null, 2));
         await db.collection('creators').doc(userId).set(newProfile);
-        console.log(`✅ [REGISTER] Profile written successfully to creators/${userId}`);
 
         revalidatePath('/editor');
         return { success: true };
@@ -196,14 +150,14 @@ export async function updateCreatorProfile(data: Partial<CreatorProfile>) {
 
     try {
          // Sanitize update data - only allow specific fields
-         const updateData: any = {};
+         const updateData: Record<string, string> = {};
          if (data.displayName) updateData.displayName = data.displayName;
          if (data.bio !== undefined) updateData.bio = data.bio;
          if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
 
          await db.collection('creators').doc(userId).update(updateData);
          revalidatePath('/dashboard');
-         revalidatePath(`/u/${data.handle}`); // If we had handle
+         revalidatePath(`/u/${data.handle}`);
          return { success: true };
     } catch (error) {
         console.error("Error updating profile:", error);

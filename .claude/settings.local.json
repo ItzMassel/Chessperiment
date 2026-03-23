@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment -type d -name *announcement* -o -type d -name *blog* -o -type d -name *article* -o -type d -name *post*)",
+      "Bash(ls -la /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app/[locale]/announcements/)",
+      "Bash(ls -la /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app/[locale]/announcements/[id]/)",
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment -path */node_modules -prune -o -type f \\\\\\(-name *announcement* -o -name *news* -o -name *article* \\\\\\) -print)",
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment -path */node_modules -prune -o -type f -path */backend* -name *.json -print)",
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/server -type f -name *.ts -o -name *.js)",
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app -path */node_modules -prune -o -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -print)",
+      "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client -path */node_modules -prune -o -type f -name *.json -path *messages* -print)",
+      "Bash(grep -r announcement /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app/[locale]/ --include=*.tsx --include=*.ts)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

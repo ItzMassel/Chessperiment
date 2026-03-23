@@ -81,7 +81,6 @@ function applySeedFilters(items: MarketplaceItem[], query?: MarketplaceQuery): M
 export async function getMarketplaceItems(query?: MarketplaceQuery): Promise<MarketplaceItem[]> {
     try {
         if (!db) {
-            console.error("Firestore not initialized");
             if (SEED_ITEMS_ENABLED) {
                 const { SEED_MARKETPLACE_ITEMS } = await import('./marketplace-seed');
                 return applySeedFilters(SEED_MARKETPLACE_ITEMS, query);
