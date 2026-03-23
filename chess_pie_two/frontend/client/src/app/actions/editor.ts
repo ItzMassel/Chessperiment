@@ -1,4 +1,5 @@
 "use server";
+import 'server-only';
 
 import { auth } from "@/auth";
 import { 
@@ -14,7 +15,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { Project } from "@/types/Project";
 
-import { adminAuth } from "@/lib/firebase";
+import { adminAuth } from "@/lib/firebase-admin";
 
 /**
  * Server action to trigger lazy data migration for the authenticated user.

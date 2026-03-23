@@ -1,0 +1,97 @@
+# Marketplace Verification Report
+
+**Date:** 2026-03-20 · **URL:** `http://localhost:3000`
+
+> [!NOTE]
+> The site auto-redirected to the German locale (`/de/`) due to browser settings. All tests were conducted under the DE locale, which also served to verify German translations throughout.
+
+## Summary
+
+| Section | Result | Details |
+|---------|--------|---------|
+| 1. Grid & Filters | ⚠️ PARTIAL | Grid loads ✅, filters ❌ |
+| 2. Sort Dropdown | ❌ FAIL | Dropdown exists but items don't reorder |
+| 3. Creator Handle Links | ✅ PASS | Both handle and card clicks navigate correctly |
+| 4. Reviews Section | ✅ PASS | Empty state, labels, and button all present |
+| 5. Fork Button | ✅ PASS | Correctly shows Fork vs. Import by type |
+| 6. Detail Creator Link | ✅ PASS | Navigates to `/u/{handle}` |
+| 7. German Translations | ✅ PASS | All UI text correctly translated |
+| 8. Home Page Trending | ✅ PASS | "Angesagt" section with clickable cards |
+
+---
+
+## 1. Marketplace Grid & Filters
+- [PASS] Grid loads with 8 seed items
+- [FAIL] **"Games" filter** — all 8 items remain visible (expected 5)
+- [FAIL] **"Boards" filter** — all 8 items remain visible (expected 2)
+- [FAIL] **"Pieces" filter** — all 8 items remain visible (expected 1)
+- [PASS] **"All" filter** — all 8 items visible
+
+> [!WARNING]
+> Filter pills update their visual state (highlighted when active), but the grid content does not change. The filtering logic appears non-functional.
+
+![Marketplace grid with all 8 items and "Alle" selected](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\.system_generated\click_feedback\click_feedback_1774036772189.png)
+
+## 2. Sort Dropdown
+- [PASS] Sort dropdown exists with 4 options: **Neueste**, **Bestbewertet**, **Meiste Bewertungen**, **Meistgesehen**
+- [FAIL] **"Bestbewertet"** — items remain in default order (4.0 → 4.2 → 4.5 → 4.8 → 5.0), not highest-first
+- [PASS] **"Meistgesehen"** — order matches default (2500 → 1500 → 1200 → …), but this is the default order so inconclusive
+- [FAIL] **"Neueste"** — items with "NEU" badge do not move to top
+
+> [!WARNING]
+> The sort dropdown is interactive but does not trigger any reordering of items.
+
+## 3. Creator Handle Links
+- [PASS] Clicking `@chessperiment` handle → navigated to `/de/u/chessperiment` ✅
+- [PASS] Clicking card body (Atomic Chess) → navigated to `/de/marketplace/seed-atomic` ✅
+
+> [!NOTE]
+> The `/u/chessperiment` page shows a "Creator Not Found" (404) error — the profile page content is not populated, but the navigation routing itself works correctly.
+
+## 4. Detail Page — Reviews Section
+- [PASS] Reviews section visible — heading: **"Bewertungen (0)"**
+- [PASS] Empty state message: **"Noch keine Bewertungen. Sei der Erste!"**
+- [PASS] "Write a Review" button: **"Bewertung schreiben"** (with login prompt: "Melde dich an, um eine Bewertung zu schreiben.")
+
+## 5. Detail Page — Fork Button
+- [PASS] Game detail (`seed-atomic`): button text **"Zum Editor kopieren"** ✅
+- [PASS] Board detail (`seed-neon-board`): button text **"In Bibliothek importieren"** ✅
+
+## 6. Detail Page — Creator Link
+- [PASS] Creator handle on detail page → navigated to `/de/u/chessperiment` ✅
+
+## 7. German Translations
+- [PASS] Filter pills: **"Alle"**, **"Spiele"**, **"Bretter"**, **"Figuren"**, **"Kostenlos"**
+- [PASS] Sort options: **"Neueste"**, **"Bestbewertet"**, **"Meiste Bewertungen"**, **"Meistgesehen"**
+- [PASS] Reviews section: **"Bewertungen"**, **"Bewertung schreiben"**, **"Noch keine Bewertungen. Sei der Erste!"**
+
+## 8. Home Page Trending
+- [PASS] Trending section found: **"Angesagt"**
+- [PASS] 3 cards rendered (Chess960, Horde Chess, Atomic Chess)
+- [PASS] Clicking Chess960 card → navigated to `/de/marketplace/seed-960` ✅
+
+---
+
+## Bugs Found
+
+| # | Severity | Issue |
+|---|----------|-------|
+| 1 | 🔴 High | **Filters non-functional** — clicking Games/Boards/Pieces pills does not filter the grid |
+| 2 | 🔴 High | **Sort non-functional** — changing sort option does not reorder items |
+| 3 | 🟡 Medium | **Creator profile 404** — `/u/{handle}` routes correctly but shows "Creator Not Found" |
+
+## Browser Recordings
+
+````carousel
+![Marketplace grid & filters test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\marketplace_filters_1774036513919.webp)
+<!-- slide -->
+![Sort dropdown test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\sort_dropdown_1774036638901.webp)
+<!-- slide -->
+![Creator handle links test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\creator_handle_links_1774036762585.webp)
+<!-- slide -->
+![Detail page reviews & fork test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\detail_page_reviews_1774036812820.webp)
+<!-- slide -->
+![German translations test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\german_translations_1774036957842.webp)
+<!-- slide -->
+![Home page trending test](C:\Users\lasse_xwl0mn6\.gemini\antigravity\brain\a8c4aabd-06c8-42ca-9603-70a57b5ce523\home_page_trending_1774036998457.webp)
+````

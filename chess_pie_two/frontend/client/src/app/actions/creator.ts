@@ -1,7 +1,7 @@
-'use server';
-
+"use server";
+import 'server-only';
 import { auth } from "@/auth";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
 
 export interface CreatorProfile {
@@ -19,23 +19,50 @@ export interface CreatorProfile {
 // Check if user has a profile
 export async function getMyCreatorProfile() {
     const session = await auth();
-    if (!session?.user?.id) return null;
+    const userId = session?.user?.id;
+    console.log(`🔍 [GET_PROFILE] session.user.id: "${userId}", session:`, JSON.stringify(session, null, 2));
+    if (!userId) {
+        console.warn('⚠️ [GET_PROFILE] No session or user ID');
+        return null;
+    }
 
     try {
-        if (!db) return null;
-        const profileRef = db.collection('creators').doc(session.user.id);
+        if (!db) {
+            console.error('❌ [GET_PROFILE] Database connection failed');
+            return null;
+        }
+        const profileRef = db.collection('creators').doc(userId);
+        console.log(`📂 [GET_PROFILE] Fetching profile from creators/${userId}`);
         const doc = await profileRef.get();
+        console.log(`📄 [GET_PROFILE] Document exists? ${doc.exists}, docId: ${doc.id}`);
         if (doc.exists) {
             const data = doc.data() as CreatorProfile;
-            // Serializing Date object
+            console.log(`✅ [GET_PROFILE] Profile data found for user ${userId}:`, JSON.stringify(data, null, 2));
+            // Serialize Firestore Timestamp to ISO string
+            let dateJoined = null;
+            if (data.date_joined) {
+                // Handle Firestore Timestamp (has toDate method)
+                if (typeof (data.date_joined as any).toDate === 'function') {
+                    dateJoined = (data.date_joined as any).toDate().toISOString();
+                }
+                // Handle JavaScript Date object
+                else if (data.date_joined instanceof Date) {
+                    dateJoined = data.date_joined.toISOString();
+                }
+                // Handle ISO string
+                else if (typeof data.date_joined === 'string') {
+                    dateJoined = data.date_joined;
+                }
+            }
             return {
                 ...data,
-                date_joined: data.date_joined ? data.date_joined.toISOString() : null
+                date_joined: dateJoined
             };
         }
+        console.warn(`⚠️ [GET_PROFILE] No profile document found at creators/${userId}`);
         return null;
     } catch (error) {
-        console.error("Error fetching my creator profile:", error);
+        console.error(`❌ [GET_PROFILE] Error fetching profile for user ${userId}:`, error);
         return null;
     }
 }
@@ -46,11 +73,24 @@ export async function getCreatorProfileByHandle(handle: string) {
         if (!db) return null;
         const snapshot = await db.collection('creators').where('handle', '==', handle).limit(1).get();
         if (snapshot.empty) return null;
-        
+
         const data = snapshot.docs[0].data() as CreatorProfile;
+
+        // Serialize Firestore Timestamp to ISO string
+        let dateJoined = null;
+        if (data.date_joined) {
+            if (typeof (data.date_joined as any).toDate === 'function') {
+                dateJoined = (data.date_joined as any).toDate().toISOString();
+            } else if (data.date_joined instanceof Date) {
+                dateJoined = data.date_joined.toISOString();
+            } else if (typeof data.date_joined === 'string') {
+                dateJoined = data.date_joined;
+            }
+        }
+
         return {
             ...data,
-            date_joined: data.date_joined ? data.date_joined.toISOString() : null
+            date_joined: dateJoined
         };
     } catch (error) {
         console.error("Error fetching creator profile by handle:", error);
@@ -63,10 +103,23 @@ export async function getCreatorProfile(userId: string) {
         if (!db) return null;
         const doc = await db.collection('creators').doc(userId).get();
         if (doc.exists) {
-             const data = doc.data() as CreatorProfile;
-             return {
+            const data = doc.data() as CreatorProfile;
+
+            // Serialize Firestore Timestamp to ISO string
+            let dateJoined = null;
+            if (data.date_joined) {
+                if (typeof (data.date_joined as any).toDate === 'function') {
+                    dateJoined = (data.date_joined as any).toDate().toISOString();
+                } else if (data.date_joined instanceof Date) {
+                    dateJoined = data.date_joined.toISOString();
+                } else if (typeof data.date_joined === 'string') {
+                    dateJoined = data.date_joined;
+                }
+            }
+
+            return {
                 ...data,
-                date_joined: data.date_joined ? data.date_joined.toISOString() : null
+                date_joined: dateJoined
             };
         }
         return null;
@@ -79,11 +132,15 @@ export async function getCreatorProfile(userId: string) {
 // Register a new creator handle
 export async function registerCreatorHandle(handle: string) {
     const session = await auth();
+    console.log('🔐 [REGISTER] Server session:', JSON.stringify(session, null, 2));
     const userId = session?.user?.id;
     const userName = session?.user?.name;
     const userImage = session?.user?.image; // Basic auth image
 
+    console.log(`📝 [REGISTER] userId: "${userId}", userName: "${userName}", userImage: "${userImage}"`);
+
     if (!userId) {
+        console.error('❌ [REGISTER] Unauthorized - no userId in session');
         return { success: false, error: "Unauthorized" };
     }
 
@@ -117,9 +174,11 @@ export async function registerCreatorHandle(handle: string) {
             following: []
         };
 
+        console.log(`💾 [REGISTER] Writing profile to Firestore at creators/${userId}:`, JSON.stringify(newProfile, null, 2));
         await db.collection('creators').doc(userId).set(newProfile);
-        
-        revalidatePath('/dashboard');
+        console.log(`✅ [REGISTER] Profile written successfully to creators/${userId}`);
+
+        revalidatePath('/editor');
         return { success: true };
 
     } catch (error) {

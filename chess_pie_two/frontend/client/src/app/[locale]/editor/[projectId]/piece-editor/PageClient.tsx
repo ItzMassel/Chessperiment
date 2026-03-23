@@ -13,6 +13,7 @@ import Link from 'next/link';
 import PieceEditorSidebar from '@/components/editor/PieceEditorSidebar';
 import PixelCanvas from '@/components/editor/PixelCanvas';
 import VisualMoveEditor from '@/components/editor/VisualMoveEditor';
+import PieceTestBoard from '@/components/editor/PieceTestBoard';
 import { invertLightness } from '@/lib/colors';
 
 export type EditMode = 'design' | 'moves';
@@ -37,6 +38,7 @@ export default function PageClient({ projectId }: PageClientProps) {
 
     const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
     const [mode, setMode] = useState<'design' | 'moves'>('design');
+    const [showTestBoard, setShowTestBoard] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     // Editor state for the CURRENTLY selected piece
@@ -302,15 +304,35 @@ export default function PageClient({ projectId }: PageClientProps) {
                         selectedPieceId={selectedPieceId || 'new'}
                     />
                 ) : (
-                    <VisualMoveEditor
-                        moves={currentMoves}
-                        onUpdate={(moves) => {
-                            setCurrentMoves(moves);
-                            handleSavePiece({ moves }, true);
-                        }}
-                        pieceId={selectedPieceId || undefined}
-                        projectId={projectId}
-                    />
+                    <div className="flex flex-col lg:flex-row gap-8 items-start justify-center max-w-6xl w-full">
+                        <div className="flex-1 w-full">
+                            <VisualMoveEditor
+                                moves={currentMoves}
+                                onUpdate={(moves) => {
+                                    setCurrentMoves(moves);
+                                    handleSavePiece({ moves }, true);
+                                }}
+                                pieceId={selectedPieceId || undefined}
+                                projectId={projectId}
+                            />
+                        </div>
+                        {showTestBoard && selectedPieceId && (
+                            <div className="mt-8 lg:mt-32 sticky top-32 animate-in fade-in slide-in-from-right-8 duration-500">
+                                <PieceTestBoard 
+                                    currentPiece={{
+                                        id: selectedPieceId,
+                                        name: currentName,
+                                        pixelsWhite: currentPixelsWhite,
+                                        pixelsBlack: currentPixelsBlack,
+                                        imageWhite: currentImageWhite,
+                                        imageBlack: currentImageBlack,
+                                        moves: currentMoves,
+                                    } as any}
+                                    pieceColor={editingColor}
+                                />
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -350,6 +372,12 @@ export default function PageClient({ projectId }: PageClientProps) {
                 }}
                 onImageUpload={handleImageUpload}
                 projectId={projectId}
+                onLoadPreset={(moves) => {
+                    setCurrentMoves(moves);
+                    handleSavePiece({ moves }, false);
+                }}
+                showTestBoard={showTestBoard}
+                onToggleTestBoard={() => setShowTestBoard(!showTestBoard)}
             />
         </div>
     );

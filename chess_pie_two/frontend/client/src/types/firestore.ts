@@ -23,6 +23,7 @@ export interface SavedBoard {
     description?: string
     isStarred: boolean
     projectId?: string // Reference to parent project (new architecture)
+    forkedFrom?: { marketplaceId: string; creatorHandle: string }
     
     // Topology (NEW)
     topologyType?: 'rectangular' | 'hex' | 'custom-graph'
@@ -61,6 +62,7 @@ export interface PieceSet {
     description?: string
     isStarred: boolean
     projectId?: string // Reference to parent project (new architecture)
+    forkedFrom?: { marketplaceId: string; creatorHandle: string }
     createdAt: Date
     updatedAt: Date
 }

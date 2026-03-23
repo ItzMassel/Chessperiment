@@ -8,7 +8,7 @@ import PieceRenderer from '@/components/game/PieceRenderer';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, TouchSensor, MeasuringStrategy } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2 } from 'lucide-react';
+import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2, Eye } from 'lucide-react';
 import KillEffect from '@/components/game/KillEffect';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
@@ -54,8 +54,94 @@ const DraggablePiece = React.memo(({ piece, size, amIAtTurn }: { piece: Piece; s
     }
 }, (prev, next) => prev.piece.id === next.piece.id && prev.piece.position === next.piece.position && prev.amIAtTurn === next.amIAtTurn);
 
+// Helper to render a human-readable summary of move rules
+const VAR_LABELS: Record<string, string> = {
+    absDiffX: '|ΔX|', absDiffY: '|ΔY|', diffX: 'ΔX', diffY: 'ΔY',
+    dist: 'dist', cooldown: 'cooldown', charge: 'charge', mode: 'mode'
+};
+
+function PieceTooltip({ piece, boardRef }: { piece: Piece; boardRef: React.RefObject<HTMLDivElement | null> }) {
+    const customPiece = piece as any;
+    const isCustom = customPiece.isCustom;
+    const rules = customPiece.rules || [];
+    const logic = customPiece.logic || [];
+    const variables = customPiece.variables || {};
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute left-full top-0 ml-3 z-200 w-64 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 p-4 pointer-events-none"
+        >
+            <div className="flex items-center gap-3 mb-3 pb-3 border-b border-stone-100 dark:border-stone-800">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${piece.color === 'white' ? 'bg-stone-100 text-stone-800' : 'bg-stone-800 text-white'}`}>
+                    {piece.type === 'king' ? '♚' : piece.type === 'queen' ? '♛' : piece.type === 'rook' ? '♜' : piece.type === 'bishop' ? '♝' : piece.type === 'knight' ? '♞' : piece.type === 'pawn' ? '♟' : '⚙'}
+                </div>
+                <div>
+                    <h4 className="font-black text-sm text-stone-900 dark:text-white uppercase tracking-tight">{piece.name || piece.type}</h4>
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{piece.color} • {piece.position}</p>
+                </div>
+            </div>
+
+            {/* Move Rules */}
+            {isCustom && rules.length > 0 && (
+                <div className="mb-3">
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">Move Rules</p>
+                    <div className="space-y-1 max-h-28 overflow-y-auto">
+                        {rules.map((rule: any, i: number) => (
+                            <div key={i} className={`text-[10px] font-bold px-2 py-1 rounded-lg ${rule.result === 'allow' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+                                {rule.conditions?.map((c: any, j: number) => (
+                                    <span key={j}>
+                                        {j > 0 && <span className="text-amber-500 mx-1">{rule.conditions[j-1]?.logic || 'AND'}</span>}
+                                        {VAR_LABELS[c.variable] || c.variable} {c.operator === '===' ? '=' : c.operator} {c.value}
+                                    </span>
+                                ))}
+                                <span className="ml-1 opacity-60">→ {rule.result} ({rule.type || 'jump'})</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Logic Triggers */}
+            {isCustom && logic.length > 0 && (
+                <div className="mb-3">
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">Logic Triggers</p>
+                    <div className="flex flex-wrap gap-1">
+                        {logic.map((block: any, i: number) => (
+                            <span key={i} className="text-[9px] font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md">
+                                {block.trigger || block.type || 'trigger'}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Variables */}
+            {isCustom && Object.keys(variables).length > 0 && (
+                <div>
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">Variables</p>
+                    <div className="grid grid-cols-2 gap-1">
+                        {Object.entries(variables).map(([key, val]) => (
+                            <div key={key} className="text-[10px] font-bold bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-lg">
+                                {key}: {String(val)}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Standard piece hint */}
+            {!isCustom && (
+                <p className="text-[10px] text-stone-400 italic">Standard {piece.type} — uses default chess movement</p>
+            )}
+        </motion.div>
+    );
+}
+
 // Low-dependency Square Component
-function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSelected, amIAtTurn, effects, onEffectComplete, hideCoordinates }: any) {
+function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSelected, amIAtTurn, effects, onEffectComplete, hideCoordinates, isHighlighted, isCapture, onHover, onHoverLeave }: any) {
     const { setNodeRef, isOver } = useDroppable({ id: pos });
 
     return (
@@ -66,6 +152,8 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
                 e.preventDefault();
                 onContextMenu(pos);
             }}
+            onMouseEnter={() => onHover?.(pos)}
+            onMouseLeave={() => onHoverLeave?.()}
             className={`aspect-square relative flex items-center justify-center box-border ${isOver ? 'ring-4 ring-inset ring-amber-400' : ''} ${isSelected ? 'after:content-[""] after:absolute after:inset-0 after:bg-amber-400/30 after:ring-4 after:ring-inset after:ring-amber-400' : ''}`}
             style={{
                 backgroundColor: isWhite ? '#ebecd0' : '#779556',
@@ -75,6 +163,29 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
         >
             {piece && (
                 <DraggablePiece piece={piece} size={size * 0.9} amIAtTurn={amIAtTurn} />
+            )}
+
+            {/* Legal-move highlight dot */}
+            {isHighlighted && !isCapture && (
+                <div
+                    className="absolute rounded-full pointer-events-none z-10"
+                    style={{
+                        width: `${size * 0.33}px`,
+                        height: `${size * 0.33}px`,
+                        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                    }}
+                />
+            )}
+            {/* Legal-move capture ring */}
+            {isHighlighted && isCapture && (
+                <div
+                    className="absolute rounded-full pointer-events-none z-10"
+                    style={{
+                        width: `${size * 0.95}px`,
+                        height: `${size * 0.95}px`,
+                        border: '5px solid rgba(0, 0, 0, 0.25)',
+                    }}
+                />
             )}
 
             <AnimatePresence>
@@ -162,6 +273,11 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     // -- New State for Replicated Features --
     const [zoom, setZoom] = useState(1);
     const [validationEnabled, setValidationEnabled] = useState(true);
+
+    // P1a: Piece hover tooltip
+    const [hoveredSquare, setHoveredSquare] = useState<Square | null>(null);
+    const [showPieceInfo, setShowPieceInfo] = useState(true);
+    const boardContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Online State
     const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
@@ -524,6 +640,19 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     const squares = useMemo(() => board ? board.getSquares() : {}, [board]);
     const currentTurn = board ? board.getTurn() : "white";
+
+    // P0: Compute legal moves for the selected piece
+    const highlightedSquares = useMemo(() => {
+        if (!selectedSquare || !game || !board) return new Set<string>();
+        const piece = board.getSquares()[selectedSquare];
+        if (!piece) return new Set<string>();
+        // Only highlight if it's the piece's turn (or validation is off)
+        if (validationEnabled && piece.color !== currentTurn) return new Set<string>();
+        if (isOnline && myColor && piece.color !== myColor) return new Set<string>();
+        const legalMoves = game.getLegalMoves(piece.color);
+        const movesFromSelected = legalMoves.filter(m => m.from === selectedSquare);
+        return new Set(movesFromSelected.map(m => m.to));
+    }, [selectedSquare, game, board, currentTurn, validationEnabled, isOnline, myColor]);
 
     const addLog = useCallback((msg: string, type: 'info' | 'move' | 'effect' = 'info') => {
         setLogs(prev => [{ msg, type }, ...prev].slice(0, 50));
@@ -907,11 +1036,26 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                                                 amIAtTurn={canInteract}
                                                 effects={activeEffects.filter(e => e.position === pos)}
                                                 onEffectComplete={handleEffectComplete}
+                                                isHighlighted={highlightedSquares.has(pos)}
+                                                isCapture={highlightedSquares.has(pos) && !!squares[pos]}
+                                                onHover={(p: Square) => setHoveredSquare(p)}
+                                                onHoverLeave={() => setHoveredSquare(null)}
                                             />
                                         );
                                     })
                                 ))}
                             </div>
+
+                            {/* P1a: Piece Hover Tooltip */}
+                            <AnimatePresence>
+                                {showPieceInfo && hoveredSquare && squares[hoveredSquare] && (
+                                    <PieceTooltip
+                                        key={hoveredSquare}
+                                        piece={squares[hoveredSquare]!}
+                                        boardRef={boardContainerRef}
+                                    />
+                                )}
+                            </AnimatePresence>
                         </div>
 
                         <DragOverlay>
@@ -991,6 +1135,20 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                                 className={`w-12 h-7 rounded-full transition-colors relative ${validationEnabled ? 'bg-green-500' : 'bg-stone-300 dark:bg-stone-700'}`}
                             >
                                 <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${validationEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+
+                        {/* Show Piece Info Toggle */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Eye size={14} className="text-stone-400" />
+                                <span className="text-sm font-bold text-stone-600 dark:text-stone-400">Piece Info on Hover</span>
+                            </div>
+                            <button
+                                onClick={() => setShowPieceInfo(!showPieceInfo)}
+                                className={`w-12 h-7 rounded-full transition-colors relative ${showPieceInfo ? 'bg-green-500' : 'bg-stone-300 dark:bg-stone-700'}`}
+                            >
+                                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${showPieceInfo ? 'translate-x-5' : 'translate-x-0'}`} />
                             </button>
                         </div>
 

@@ -73,6 +73,34 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           "url": `${siteUrl}/icon.png`
         },
         "sameAs": []
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${siteUrl}/#software`,
+        "name": "Chessperiment",
+        "url": siteUrl,
+        "applicationCategory": "GameApplication",
+        "applicationSubCategory": "Board Game Design Tool",
+        "operatingSystem": "Web Browser",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Free browser-based game design engine for creating custom chess variants and abstract strategy games. Not presets — actual customizability. Design pieces with a visual Scratch-style logic editor — define leapers, riders, and fairy pieces with conditional triggers. Create hexagonal boards, custom-shaped playing fields, and per-square rule overrides. Playtest instantly via multiplayer room codes. Powered by Stockfish engine analysis.",
+        "featureList": [
+          "Visual block-based piece logic editor — no coding required",
+          "Leaper and rider movement definition",
+          "Conditional trigger and state-based piece behaviour",
+          "Hexagonal board support",
+          "Custom board shapes via per-square active/inactive toggles",
+          "Square-level rule overrides",
+          "Stockfish integration for arbitrary rule sets",
+          "Browser-based multiplayer via room codes",
+          "Community Marketplace for sharing and downloading variants",
+          "Free to use — no paywall"
+        ],
+        "screenshot": `${siteUrl}/images/seo/og-home.png`
       }
     ]
   };

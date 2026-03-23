@@ -2,7 +2,7 @@
 import React from 'react';
 import { ChevronLeft, Edit2, Box, Calendar, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { CustomPiece, PieceSet } from '@/lib/firestore';
+import { CustomPiece, PieceSet } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { useRouter } from 'next/navigation';
 

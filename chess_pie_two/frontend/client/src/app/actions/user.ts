@@ -1,4 +1,6 @@
 "use server";
+import 'server-only';
+
 import { auth } from "@/auth";
 import { deleteUserAccount, updateUserName } from "@/lib/firestore";
 import { revalidatePath } from "next/cache";

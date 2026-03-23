@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getMarketplaceItems } from '@/lib/marketplace-data';
-import { MarketplaceItem, MarketplaceFilter, MARKETPLACE_FILTERS } from '@/lib/marketplace-types';
+import { MarketplaceItem, SortOption } from '@/lib/marketplace-types';
 import { MarketplaceItemCard } from './MarketplaceItemCard';
 import { MarketplaceFilters } from './MarketplaceFilters';
 import { useTranslations } from 'next-intl';
@@ -11,50 +11,51 @@ export function MarketplaceGrid() {
     const [items, setItems] = useState<MarketplaceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('all');
+    const [sortOption, setSortOption] = useState<SortOption>('newest');
     const [searchQuery, setSearchQuery] = useState('');
     const t = useTranslations('Marketplace');
 
-    useEffect(() => {
-        async function fetchItems() {
-            setLoading(true);
-            try {
-                const data = await getMarketplaceItems();
-                setItems(data);
-            } catch (error) {
-                console.error("Failed to load marketplace items", error);
-            } finally {
-                setLoading(false);
-            }
+    const fetchItems = useCallback(async () => {
+        setLoading(true);
+        try {
+            const type = ['game', 'board', 'pieces'].includes(activeFilter)
+                ? (activeFilter as 'game' | 'board' | 'pieces')
+                : undefined;
+            const priceFilter = activeFilter === 'free' ? 'free' as const : undefined;
+
+            const data = await getMarketplaceItems({ type, priceFilter, sort: sortOption });
+            setItems(data);
+        } catch (error) {
+            console.error("Failed to load marketplace items", error);
+        } finally {
+            setLoading(false);
         }
+    }, [activeFilter, sortOption]);
+
+    useEffect(() => {
         fetchItems();
-    }, []);
+    }, [fetchItems]);
 
-    const filteredItems = items.filter((item) => {
-        const matchesFilter =
-            activeFilter === 'all' ||
-            (activeFilter === 'free' ? (item.price === 0 || item.price === 'Free') : false) ||
-            (activeFilter === 'paid' ? (typeof item.price === 'number' && item.price > 0) : false) ||
-            item.type === activeFilter;
-
-        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.creator_handle.toLowerCase().includes(searchQuery.toLowerCase());
-
-        return matchesFilter && matchesSearch;
-    });
+    const filteredItems = searchQuery
+        ? items.filter((item) =>
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.creator_handle.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : items;
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <MarketplaceFilters
-                filters={MARKETPLACE_FILTERS}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
+                sortOption={sortOption}
+                onSortChange={setSortOption}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
 
             {loading ? (
                 <div className="flex justify-center items-center h-64">
-                    {/* Simple loading spinner or skeleton could go here */}
                     <div className="animate-pulse text-amber-400 font-bold">{t('loading')}</div>
                 </div>
             ) : filteredItems.length === 0 ? (

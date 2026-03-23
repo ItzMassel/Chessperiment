@@ -4,7 +4,7 @@ import { ArrowLeft, Play, Edit2, Share2, Calendar, LayoutGrid, Globe } from "luc
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BoardPreviewWrapper from "./BoardPreviewWrapper";
-import { SavedBoard } from '@/lib/firestore';
+import { SavedBoard } from '@/types/firestore';
 
 interface BoardDetailClientProps {
     board: SavedBoard;

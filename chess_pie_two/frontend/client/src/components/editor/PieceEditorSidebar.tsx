@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle, Code2 } from 'lucide-react';
+import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle, Code2, BookOpen, Play } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { PieceSet, CustomPiece } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from '@/i18n/navigation';
+import { STANDARD_PIECE_PRESETS, getPresetRules } from '@/lib/standardPiecePresets';
 
 interface PieceEditorSidebarProps {
     pieces: (CustomPiece & { id: string })[];
@@ -29,6 +30,9 @@ interface PieceEditorSidebarProps {
     onDeletePiece: (id: string) => void;
     onGenerateInvertedPiece: () => void;
     onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onLoadPreset?: (moves: any[]) => void;
+    showTestBoard?: boolean;
+    onToggleTestBoard?: () => void;
 }
 
 export default function PieceEditorSidebar({
@@ -51,12 +55,16 @@ export default function PieceEditorSidebar({
     onDeletePiece,
     onGenerateInvertedPiece,
     onImageUpload,
-    projectId
+    projectId,
+    onLoadPreset,
+    showTestBoard,
+    onToggleTestBoard
 }: PieceEditorSidebarProps) {
     const router = useRouter();
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; pieceId: string } | null>(null);
+    const [presetDropdownOpen, setPresetDropdownOpen] = useState(false);
 
     useEffect(() => {
         const handleClick = () => setContextMenu(null);
@@ -171,6 +179,18 @@ export default function PieceEditorSidebar({
                         </label>
                     </div>
                 )}
+
+                {selectedPieceId && onToggleTestBoard && (
+                    <button
+                        onClick={onToggleTestBoard}
+                        className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 border ${showTestBoard 
+                            ? 'bg-amber-500 text-white border-amber-500' 
+                            : 'bg-white dark:bg-white/5 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white hover:bg-stone-50 dark:hover:bg-white/10'}`}
+                    >
+                        <Play size={14} fill={showTestBoard ? "currentColor" : "none"} /> 
+                        {showTestBoard ? 'Close Test Board' : 'Test Movement'}
+                    </button>
+                )}
             </div>
 
             {/* Mode Toggle (Design vs Moves) */}
@@ -194,6 +214,49 @@ export default function PieceEditorSidebar({
                     <Move size={14} /> {t('moves')}
                 </button>
             </div>
+
+            {/* Load Preset Dropdown */}
+            {selectedPieceId && onLoadPreset && mode === 'moves' && (
+                <div className="relative mb-6 shrink-0">
+                    <button
+                        onClick={() => setPresetDropdownOpen(!presetDropdownOpen)}
+                        className="w-full py-4 bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-white/10 transition-all shadow-sm active:scale-95"
+                    >
+                        <BookOpen size={14} /> Load Standard Preset
+                        <ChevronDown size={12} className={`transition-transform ${presetDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                        {presetDropdownOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-white/10 shadow-2xl overflow-hidden z-50"
+                            >
+                                {STANDARD_PIECE_PRESETS.map((preset) => (
+                                    <button
+                                        key={preset.name}
+                                        onClick={() => {
+                                            if (confirm(`Load ${preset.name} preset? This will replace the current move rules.`)) {
+                                                const rules = getPresetRules(preset.name);
+                                                onLoadPreset(rules);
+                                            }
+                                            setPresetDropdownOpen(false);
+                                        }}
+                                        className="w-full px-4 py-3 text-left hover:bg-stone-50 dark:hover:bg-white/5 transition-colors flex items-center gap-3 border-b border-stone-100 dark:border-white/5 last:border-b-0"
+                                    >
+                                        <span className="text-xl w-8 text-center">{preset.icon}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-stone-900 dark:text-white">{preset.name}</p>
+                                            <p className="text-[10px] text-stone-400 dark:text-white/40 truncate">{preset.description}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            )}
 
             {/* History Toolbar */}
             <div className="flex gap-2 mb-10 shrink-0">

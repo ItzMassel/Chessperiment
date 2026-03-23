@@ -1,4 +1,5 @@
-import { db } from "@/lib/firebase";
+import 'server-only';
+import { db } from "@/lib/firebase-admin";
 import { GameResult, UserStats, SavedBoard, PieceSet, CustomPiece } from "@/types/firestore";
 import { Project } from "@/types/Project";
 

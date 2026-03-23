@@ -1,5 +1,5 @@
 import { getMarketplaceItem } from '@/lib/marketplace-data';
-import { getTranslations } from 'next-intl/server';
+import { getReviews } from '@/app/actions/marketplace';
 import ClientPage from './ClientPage';
 import { notFound } from 'next/navigation';
 
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props) {
-    const { id, locale } = await params;
+    const { id } = await params;
     const item = await getMarketplaceItem(id);
     if (!item) return { title: 'Item Not Found' };
     return {
@@ -21,15 +21,18 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function Page({ params }: Props) {
-    const { id, locale } = await params;
-    const item = await getMarketplaceItem(id);
+    const { id } = await params;
+    const [item, reviews] = await Promise.all([
+        getMarketplaceItem(id),
+        getReviews(id),
+    ]);
 
     if (!item) {
         notFound();
     }
 
-    // Serialize Dates for client component
     const serializedItem = JSON.parse(JSON.stringify(item));
+    const serializedReviews = JSON.parse(JSON.stringify(reviews));
 
-    return <ClientPage item={serializedItem} />;
+    return <ClientPage item={serializedItem} reviews={serializedReviews} />;
 }

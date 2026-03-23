@@ -1,6 +1,6 @@
 "use client"
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap, Code2 } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap, Code2, HelpCircle, X, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
@@ -86,6 +86,110 @@ function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MA
                 >
                     {t('gotIt')}
                 </button>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+function LogicTutorial({ onClose }: { onClose: () => void }) {
+    const t = useTranslations('Editor.Piece');
+    
+    const patterns = [
+        {
+            name: 'King',
+            desc: 'Moves 1 square in any direction',
+            rules: [
+                { cond: '|ΔX| ≤ 1', logic: 'AND' },
+                { cond: '|ΔY| ≤ 1', logic: 'Allow' }
+            ]
+        },
+        {
+            name: 'Rook',
+            desc: 'Horizontal or vertical sliding',
+            rules: [
+                { cond: '|ΔX| = 0', logic: 'OR' },
+                { cond: '|ΔY| = 0', logic: 'Allow (Sliding)' }
+            ]
+        },
+        {
+            name: 'Bishop',
+            desc: 'Diagonal sliding (|ΔX| = |ΔY|)',
+            rules: [
+                { cond: '|ΔX| = 1', logic: 'AND' },
+                { cond: '|ΔY| = 1', logic: 'Allow (Sliding)' },
+                { cond: '...', logic: '(Add more for distance)' }
+            ]
+        },
+        {
+            name: 'Knight',
+            desc: 'Classic L-shape jump',
+            rules: [
+                { cond: '|ΔX| = 1 AND |ΔY| = 2', logic: 'OR' },
+                { cond: '|ΔX| = 2 AND |ΔY| = 1', logic: 'Allow' }
+            ]
+        }
+    ];
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-3xl p-8 max-w-2xl w-full shadow-2xl max-h-[80vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500">
+                            <HelpCircle size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-stone-900 dark:text-white">Movement Guide</h3>
+                            <p className="text-xs text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">How to recreate standard pieces</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                        <X size={24} className="text-stone-400" />
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {patterns.map(p => (
+                        <div key={p.name} className="p-5 bg-stone-50 dark:bg-white/5 rounded-2xl border border-stone-100 dark:border-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-black text-stone-900 dark:text-white">{p.name}</h4>
+                                <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded-md">Template</span>
+                            </div>
+                            <p className="text-xs text-stone-500 dark:text-white/40 mb-4">{p.desc}</p>
+                            <div className="space-y-2">
+                                {p.rules.map((r, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-[10px] font-mono">
+                                        <div className="px-2 py-1 bg-white dark:bg-black/40 rounded border border-stone-200 dark:border-white/5 text-stone-700 dark:text-white/80">
+                                            {r.cond}
+                                        </div>
+                                        <ChevronRight size={10} className="text-stone-400" />
+                                        <span className="text-stone-400 dark:text-white/30 italic">{r.logic}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-8 p-4 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+                    <h5 className="text-indigo-400 text-xs font-black uppercase tracking-widest mb-1 flex items-center gap-2">
+                        <Zap size={14} /> Pro Tip
+                    </h5>
+                    <p className="text-xs text-indigo-200/60 leading-relaxed">
+                        Use <strong>"Sliding" (Run)</strong> for pieces that need a clear path, and <strong>"Leaping" (Jump)</strong> for pieces like the Knight that can jump over others.
+                    </p>
+                </div>
             </motion.div>
         </motion.div>
     );
@@ -384,14 +488,26 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }
         onUpdate(newMoves);
     };
 
+    const [showTutorial, setShowTutorial] = useState(false);
+
     return (
         <div className="w-full max-w-5xl mx-auto space-y-8 p-4">
+            <AnimatePresence>
+                {showTutorial && <LogicTutorial onClose={() => setShowTutorial(false)} />}
+            </AnimatePresence>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">{t('visualLogicTitle')}</h2>
                     <p className="text-stone-500 dark:text-white/40 text-sm">{t('visualLogicDescription')}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowTutorial(true)}
+                        className="flex items-center gap-2 px-6 py-3 bg-stone-100 dark:bg-white/5 text-stone-900 dark:text-white font-black rounded-2xl hover:bg-stone-200 dark:hover:bg-white/10 transition-all border border-stone-200 dark:border-white/10 active:scale-95"
+                    >
+                        <HelpCircle size={20} className="text-amber-500" /> Guide
+                    </button>
                     {pieceId && projectId && (
                         <button
                             type="button"

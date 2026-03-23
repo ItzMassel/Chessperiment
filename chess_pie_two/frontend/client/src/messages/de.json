@@ -10,6 +10,7 @@
         "boardEditor": "Board-Editor",
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
+        "creator": "Creator Dashboard",
         "library": "Bibliothek",
 
         "about": "Über uns",
@@ -58,9 +59,54 @@
         "playFriend": "Gegen Freund spielen",
         "price": "Preis",
         "filters": {
-            "type": "Typ",
-            "price": "Preis",
-            "sort": "Sortieren nach"
+            "all": "Alle",
+            "game": "Spiele",
+            "board": "Bretter",
+            "pieces": "Figuren",
+            "free": "Kostenlos"
+        },
+        "sort": {
+            "newest": "Neueste",
+            "rating": "Bestbewertet",
+            "mostReviewed": "Meiste Bewertungen",
+            "mostViewed": "Meistgesehen"
+        },
+        "publish": {
+            "title": "Im Marktplatz veröffentlichen",
+            "description": "Teile dein(e) {type} mit der Community.",
+            "submit": "Veröffentlichen",
+            "cancel": "Abbrechen",
+            "success": "Im Marktplatz veröffentlicht!",
+            "failed": "Veröffentlichung fehlgeschlagen.",
+            "titleRequired": "Ein Titel ist erforderlich.",
+            "creatorRequired": "Creator-Profil erforderlich",
+            "creatorRequiredDescription": "Du musst ein Creator-Profil einrichten, bevor du veröffentlichen kannst.",
+            "typeGame": "Spiel",
+            "typeBoard": "Brett",
+            "typePieces": "Figurensatz"
+        },
+        "review": {
+            "title": "Bewertungen",
+            "write": "Bewertung schreiben",
+            "submit": "Bewertung absenden",
+            "cancel": "Abbrechen",
+            "placeholder": "Teile deine Erfahrung mit dieser Kreation...",
+            "yourRating": "Deine Bewertung",
+            "noReviews": "Noch keine Bewertungen. Sei der Erste!",
+            "alreadyReviewed": "Du hast dieses Element bereits bewertet.",
+            "loginRequired": "Melde dich an, um eine Bewertung zu schreiben.",
+            "failed": "Bewertung konnte nicht abgesendet werden.",
+            "deleteConfirm": "Diese Bewertung löschen?"
+        },
+        "fork": {
+            "forkToEditor": "Zum Editor kopieren",
+            "importToLibrary": "In Bibliothek importieren",
+            "importBoard": "Importiere dieses Brett in deine Bibliothek.",
+            "importPieces": "Importiere diesen Figurensatz in deine Bibliothek.",
+            "success": "Kopiert von {creator}!",
+            "failed": "Kopieren fehlgeschlagen.",
+            "loginRequired": "Melde dich an, um Elemente zu kopieren.",
+            "basedOn": "Basierend auf einer Kreation von"
         }
     },
     "Homepage": {
@@ -593,7 +639,8 @@
         "pieces": "Figuren",
         "game": "Spiel",
         "pieceDesigns": "Figuren-Designs",
-        "boards": "Bretter"
+        "boards": "Bretter",
+        "noItems": "Noch keine Einträge"
     },
     "GameEnd": {
         "win": "Du hast gewonnen!",
@@ -671,8 +718,8 @@
     },
     "SEO": {
         "About": {
-            "title": "Über Chessperiment | Die Plattform für individuelles Schach",
-            "description": "Erfahre mehr über Chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
+            "title": "Über Chessperiment — Kostenlose Schachvarianten- & Abstrakte Strategiespiel-Engine",
+            "description": "Chessperiment ist keine Vorlagen-Sammlung — es bietet echte Anpassbarkeit. Eine kostenlose browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Vergleiche Chessperiment mit Chess Remix, ChessCraft, Tabletop Simulator und PyChess."
         },
         "Feedback": {
             "title": "Feedback",
@@ -684,17 +731,35 @@
             "h1": "Schachvarianten-Marktplatz",
             "seoContent": {
                 "heading": "Entdecke und teile individuelle Schach-Assets",
-                "text": "Der Chessperiment-Marktplatz ist die zentrale Anlaufstelle für unsere kreative Community. Erkunde eine umfangreiche Sammlung von individuellen Schachbreittern, pixelgenauen Figurensätzen und einzigartigen Brett-Designs, die von Nutzern weltweit geteilt werden."
+                "text": "Der Chessperiment-Marktplatz ist die zentrale Anlaufstelle für von der Community erstellte Schachvarianten und abstrakte Strategiespiele. Durchsuche und lade individuelle Figurensätze mit Märchenschachfiguren, Leapern und Ridern mit einzigartiger Bewegungslogik herunter. Entdecke hexagonale Schachbretter, individuell geformte Spielfelder und komplette Varianten-Regelsätze — jede Kreation mit echter Anpassbarkeit erstellt, nicht nur Vorlagen. Alle Community-Kreationen sind kostenlos zum Herunterladen und Spielen."
             }
         },
         "Footer": {
             "title": "Häufig gestellte Fragen",
             "whatIsChessperiment": "Was ist Chessperiment?",
-            "whatIsChessperimentAnswer": "Chessperiment ist eine Plattform zum Erstellen und Spielen von benutzerdefinierten Schachvarianten. Gestalten Sie einzigartige Bretter, erstellen Sie benutzerdefinierte Figuren mit besonderen Fähigkeiten und spielen Sie mit Ihren eigenen Regeln gegen Freunde oder KI.",
+            "whatIsChessperimentAnswer": "Chessperiment ist eine kostenlose, browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Keine Vorlagen — echte Anpassbarkeit. Mit visuellem Figuren-Logik-Editor, Brett-Editor mit Hexagonal- und Freiform-Unterstützung und browserbasiertem Multiplayer.",
             "isItFree": "Ist Chessperiment kostenlos?",
-            "isItFreeAnswer": "Ja! Chessperiment ist vollständig kostenlos nutzbar. Sie können unbegrenzt benutzerdefinierte Bretter und Figuren erstellen, Spiele spielen und Ihre Kreationen kostenlos mit der Community teilen.",
-            "canIPlayFriends": "Kann ich mit meinen Freunden spielen?",
-            "canIPlayFriendsAnswer": "Auf jeden Fall! Sie können private Spielräume erstellen und Ihre Freunde einladen, Ihre benutzerdefinierten Schachvarianten zusammen zu spielen. Teilen Sie einfach den Spiel-Link mit ihnen.",
+            "isItFreeAnswer": "Ja. Chessperiment ist komplett kostenlos — keine Paywalls, keine Premium-Stufen, keine Werbung. Alle Funktionen — einschließlich Figuren-Editor, Brett-Editor, Multiplayer und Marktplatz — sind kostenlos nutzbar.",
+            "canIPlayFriends": "Kann ich mit Freunden spielen?",
+            "canIPlayFriendsAnswer": "Ja. Erstelle einen Raum und teile den Code oder Link. Dein Freund tritt im Browser bei — kein Konto oder Installation nötig.",
+            "whatIsLeaper": "Was ist ein Springer-Typ (Leaper) im Schach?",
+            "whatIsLeaperAnswer": "Ein Leaper ist eine Schachfigur, die sich auf ein festes Offset von ihrem aktuellen Feld bewegt, unabhängig davon, welche Figuren dazwischen stehen. Der Standard-Springer ist ein Leaper. Chessperiments Figuren-Editor ermöglicht es dir, jedes Leaper-Muster mit einem visuellen Gitter zu definieren.",
+            "whatIsRider": "Was ist ein Gleiter (Rider) im Schach?",
+            "whatIsRiderAnswer": "Ein Rider ist eine Schachfigur, die entlang eines Vektors gleitet, bis sie blockiert wird oder den Brettrand erreicht. Turm, Läufer und Dame sind alle Rider. Chessperiment ermöglicht dir, eigene Rider-Richtungen zu definieren.",
+            "whatIsFairyPiece": "Was ist eine Märchenschachfigur?",
+            "whatIsFairyPieceAnswer": "Eine Märchenschachfigur (Fairy Piece) ist jede nicht-standardmäßige Figur, die in Schachvarianten verwendet wird. Häufige Beispiele sind die Amazone (Dame + Springer), das Kamel (3,1-Leaper) und der Nachtreiter (Rider entlang der Springer-Richtungen). Chessperiments Figuren-Editor unterstützt das gesamte Spektrum der Fairy-Piece-Definitionen.",
+            "canCreateHexBoards": "Kann ich hexagonale Schachbretter erstellen?",
+            "canCreateHexBoardsAnswer": "Ja. Chessperiments Brett-Editor unterstützt vollständige hexagonale Brettgenerierung, sodass du Hex-Schachvarianten und andere hexagonale abstrakte Strategiespiele entwerfen kannst.",
+            "diffFromChessRemix": "Wie unterscheidet sich Chessperiment von Chess Remix?",
+            "diffFromChessRemixAnswer": "Chess Remix sperrt viele Erstellungsfunktionen hinter einer Paywall und bietet vorgefertigte Anpassungsoptionen. Chessperiment bietet tiefere Funktionalität — einschließlich Leaper/Rider-Definitionen, konditionaler Auslöser, hexagonaler Bretter und feldspezifischer Regelüberschreibungen — komplett kostenlos. Keine Vorlagen — echte Anpassbarkeit.",
+            "diffFromChessCraft": "Wie unterscheidet sich Chessperiment von ChessCraft?",
+            "diffFromChessCraftAnswer": "ChessCraft ist eine Mobile-App mit vordefinierten Figuren-Vorlagen. Chessperiment läuft in jedem Browser ohne Installation und bietet ein tieferes Logiksystem: einen visuellen Block-Editor im Scratch-Stil mit zustandsbasierten konditionalen Auslösern und komplexen Mehrzug-Sequenzen. Volle Anpassbarkeit, keine Vorlagen.",
+            "hasStockfish": "Hat Chessperiment Stockfish?",
+            "hasStockfishAnswer": "Ja. Chessperiment integriert die Stockfish-Schach-Engine und wendet sie auf benutzerdefinierte Spielzustände an — einschließlich nicht-standardmäßiger Bretttopologien, benutzerdefinierter Figurendefinitionen und varianter Siegbedingungen.",
+            "canDesignNonChess": "Kann ich abstrakte Strategiespiele entwerfen, die kein Schach sind?",
+            "canDesignNonChessAnswer": "Ja. Obwohl Chessperiment Schach als Ausgangsbasis verwendet, unterstützen der Brett-Editor und das Figuren-Logiksystem den gesamten Raum kombinatorischer, perfekt-informierter abstrakter Strategiespiele — einschließlich Verbindungsspiele, Territorialspiele und völlig neuartige Regelsysteme.",
+            "whatIsMarketplace": "Was ist der Chessperiment Marktplatz?",
+            "whatIsMarketplaceAnswer": "Der Marktplatz ist eine Community-Bibliothek, in der Nutzer ihre benutzerdefinierten Schachvarianten, Figurensätze und Brettdesigns veröffentlichen und teilen. Alle Inhalte sind kostenlos zum Herunterladen und Spielen.",
             "legal": "Rechtliches",
             "about": "Über uns",
             "privacyPolicy": "Datenschutzerklärung",
@@ -703,10 +768,10 @@
             "builtBy": "Mit viel Liebe zum Detail für Schachbegeisterte entwickelt."
         },
         "Home": {
-            "title": "Chessperiment - Plattform für individuelle Schachvarianten | Designe dein eigenes Schach",
-            "description": "Erstelle individuelle Schachfiguren, designe einzigartige Bretter und spiele innovative Schachvarianten online. Kostenlose Plattform für Schach-Kreativität.",
-            "h1": "Chessperiment - Die individuelle Schach-Plattform",
-            "p": "Designe einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
+            "title": "Chessperiment — Kostenloser Schachvarianten-Creator & Abstrakte Strategiespiel-Engine",
+            "description": "Designe jedes schachähnliche Spiel von Grund auf — keine Vorlagen, echte Anpassbarkeit. Definiere Figuren mit visuellen Logikblöcken, baue hexagonale Bretter, erstelle Leaper, Rider und Märchenschachfiguren. Stockfish-Analyse integriert. Kostenlos, browserbasiert, kein Programmieren nötig.",
+            "h1": "Chessperiment — Visueller Schachvarianten-Creator und abstrakte Strategiespiel-Engine",
+            "p": "Chessperiment ist eine kostenlose, browserbasierte Sandbox zum Entwerfen individueller Schachvarianten und abstrakter Strategiespiele — keine Vorlagenbibliothek, sondern eine vollständige Game-Design-Engine. Erstelle Figuren mit einem visuellen Logik-Editor im Scratch-Stil — definiere Leaper- und Rider-Bewegungsmuster, füge konditionale Auslöser hinzu und programmiere komplexe Märchenschachfiguren-Verhalten ohne Programmierkenntnisse. Designe hexagonale oder individuell geformte Bretter, schalte einzelne Felder um, um nicht-rechteckige Spielfelder zu bauen, und teste sofort mit Freunden über Raumcodes. Stockfish-Analyse ist integriert und funktioniert mit deinen eigenen Regeln. Anders als andere Schachvarianten-Tools, die ein festes Menü an Optionen bieten, gibt dir Chessperiment echte Anpassbarkeit — jede Regel, jede Figur, jedes Feld liegt in deiner Hand."
         },
         "Game": {
             "title": "Schachvarianten online spielen - Multiplayer-Schachspiele | Chessperiment",
@@ -723,12 +788,12 @@
             "h1": "Dein Projekt-Arbeitsplatz"
         },
         "PieceEditor": {
-            "title": "Figuren-Editor | individuelles Chessperiment",
-            "description": "Erstelle und passe deine eigenen Schachfiguren mit einzigartigen Bewegungsmustern und Logik an."
+            "title": "Visueller Schachfiguren-Editor — Definiere Leaper, Rider & Märchenschachfiguren-Logik | Chessperiment",
+            "description": "Definiere benutzerdefinierte Schachfiguren-Bewegungen mit visuellen Logikblöcken — kein Programmieren nötig. Keine Vorlagen — echte Anpassbarkeit. Erstelle Leaper, Rider und komplexe Märchenschachfiguren mit konditionalen Auslösern, zustandsbasierten Schlagregeln und mehrstufigen Zugsequenzen."
         },
         "SquareEditor": {
-            "title": "Felder-Editor | individuelles Chessperiment",
-            "description": "Definiere benutzerdefinierte Logik und Verhaltensweisen für einzelne Felder auf deinem Brett."
+            "title": "Feld-Regel-Editor — Feldspezifische Logik für Schachvarianten | Chessperiment",
+            "description": "Weise einzelnen Brettfeldern einzigartige Regeln zu — erstelle Teleport-Felder, Territoriumszonen, Umwandlungsbereiche oder Bewegungseinschränkungen. Ermöglicht fortgeschrittene Schachvarianten einschließlich Fraktalschach."
         },
         "BoardEditor": {
             "title": "Schachbrett-Editor - Designe individuelle Bretter",
@@ -736,7 +801,7 @@
             "h1": "Individueller Schachbrett-Editor",
             "seoContent": {
                 "heading": "Erstelle und teile individuelle Schachbretter",
-                "text": "Mit dem Chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8-, 10x10- oder andere Brettgrößen entwerfen. Passe Farben an, erstelle komplexe Startpositionen und teile deine Kreationen mit der Welt. Ob du eine klassische Schachvariante baust, Fairy-Schach-Konzepte erkundest oder kreative Schachpuzzles entwirfst – unser gitterbasierter Editor bietet dir die Flexibilität, die du brauchst."
+                "text": "Mit dem Chessperiment Brett-Editor designst du Schachbretter jeder Dimension — von kompakten 4x4 bis zu ausgedehnten 14x14 Gittern oder jeder beliebigen Größe. Erstelle vollständige hexagonale Bretter für Hex-Schachvarianten. Schalte einzelne Felder um, um nicht-rechteckige Formen zu bauen: Ringe, Kreuze, Karten mit internen Hindernissen oder jede beliebige Topologie. Weise feldspezifische Regelüberschreibungen zu, um Territoriumszonen, Teleport-Felder oder eingeschränkte Bewegungsbereiche zu erstellen. Das sind keine Vorlagen — das ist echte Anpassbarkeit. Ob du eine klassische Märchenschachvariante baust, ein Verbindungsspiel im Stil von Hex oder Y prototypisierst oder ein völlig neues abstraktes Strategiespiel von Grund auf entwirfst — der Brett-Editor gibt dir volle geometrische Kontrolle ohne Programmierkenntnisse."
             }
         },
         "Announcements": {
@@ -939,5 +1004,20 @@
         "emailPlaceholder": "Ihre E-Mail (optional)",
         "messageLabel": "Nachricht",
         "backToHome": "Zurück zur Startseite"
+    },
+    "creator": {
+        "title": "Meine veröffentlichten Inhalte",
+        "subtitle": "Verwalte und passe deine Marktplatz-Inhalte an",
+        "noItems": "Noch keine veröffentlichten Inhalte",
+        "noItemsDescription": "Veröffentliche dein erstes Spiel, Brett oder Figurensatz aus dem Editor",
+        "goToEditor": "Zum Editor",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "deleteConfirm": "Bist du sicher, dass du diesen veröffentlichten Inhalt löschen möchtest?",
+        "updateSuccess": "Inhalt aktualisiert!",
+        "deleteSuccess": "Inhalt gelöscht",
+        "loadError": "Veröffentlichte Inhalte konnten nicht geladen werden"
     }
 }

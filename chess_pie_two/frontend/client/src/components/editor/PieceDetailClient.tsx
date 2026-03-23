@@ -3,7 +3,7 @@ import React from 'react';
 import { ArrowLeft, Edit2, Calendar, Shield, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CustomPiece } from '@/lib/firestore';
+import { CustomPiece } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 
 interface PieceDetailClientProps {

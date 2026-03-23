@@ -1,10 +1,11 @@
+// Force Turbopack Rebuild - Timestamp: 2026-03-15
 import NextAuth from "next-auth"
 import { FirestoreAdapter } from "@auth/firebase-adapter"
-import { db } from "./lib/firebase"
+import { db } from "@/lib/firebase-admin"
 import { authConfig } from "./auth.config"
 
 import Credentials from "next-auth/providers/credentials"
-import { adminAuth } from "./lib/firebase"
+import { adminAuth } from "@/lib/firebase-admin"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: db ? FirestoreAdapter(db) : undefined,

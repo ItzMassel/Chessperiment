@@ -2,7 +2,8 @@
 
 import { MarketplaceItem } from '@/lib/marketplace-types';
 import Image from 'next/image';
-import { Star, Gamepad2 } from 'lucide-react';
+import { Star, Gamepad2, GitFork } from 'lucide-react';
+import { useRouter } from '@/i18n/navigation';
 
 interface MarketplaceItemCardProps {
     item: MarketplaceItem;
@@ -13,9 +14,15 @@ import { useTranslations } from 'next-intl';
 
 export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
     const t = useTranslations('Marketplace');
+    const router = useRouter();
+
+    const handleCardClick = () => {
+        router.push(`/marketplace/${item.id}`);
+    };
+
     return (
-        <Link href={`/marketplace/${item.id}`} className="block group h-full">
-            <div className="flex flex-col gap-2 p-2 bg-islands dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl transition-all hover:bg-gray-50 dark:hover:bg-white/10 hover:shadow-md cursor-pointer h-full">
+        <div onClick={handleCardClick} className="block group h-full cursor-pointer">
+            <div className="flex flex-col gap-2 p-2 bg-islands dark:bg-white/5 border border-gray-200/50 dark:border-white/10 rounded-xl transition-all hover:bg-gray-50 dark:hover:bg-white/10 hover:shadow-md h-full">
                 {/* Thumbnail */}
                 <div className="aspect-square w-full bg-gray-100 dark:bg-gray-700/50 rounded-lg overflow-hidden relative">
                     <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold text-sm">
@@ -37,9 +44,13 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
                     <h3 className="font-bold text-gray-900 dark:text-gray-200 truncate" title={item.title}>
                         {item.title}
                     </h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    <Link
+                        href={`/u/${(item.creator_handle || '').replace('@', '')}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-gray-600 dark:text-gray-400 truncate hover:text-amber-500 transition-colors block"
+                    >
                         {item.creator_handle}
-                    </p>
+                    </Link>
 
                     <div className="flex justify-between items-end mt-auto pt-2">
                         <div className="flex items-center gap-0.5 text-yellow-600 dark:text-yellow-500">
@@ -48,6 +59,11 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
                             <span className="text-[10px] text-gray-400">({item.stars_count})</span>
                         </div>
                         <div className="flex items-center gap-2">
+                            {(item.forkCount || 0) > 0 && (
+                                <div className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                                    <GitFork size={10} /> {item.forkCount}
+                                </div>
+                            )}
                             <div className="text-[10px] text-gray-400 flex items-center gap-0.5">
                                 <span>👁️</span> {item.views}
                             </div>
@@ -58,6 +74,6 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     );
 }

@@ -1,11 +1,14 @@
 "use client";
 import React, { useState } from 'react';
-import { Star, Trash2, LayoutGrid, Calendar, MoreVertical, Play, Edit2, Shield, Layout, Box } from 'lucide-react';
+import { Star, Trash2, LayoutGrid, Calendar, MoreVertical, Play, Edit2, Shield, Layout, Box, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SavedBoard, PieceSet } from '@/lib/firestore';
+import { SavedBoard, PieceSet } from '@/types/firestore';
 import { toggleBoardStarAction, deleteBoardAction, togglePieceSetStarAction, deletePieceSetAction } from '@/app/actions/library';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import PublishModal from '@/components/marketplace/PublishModal';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 type LibraryItem = (SavedBoard & { _type: 'board' }) | (PieceSet & { _type: 'set' });
 
@@ -13,6 +16,22 @@ type LibraryItem = (SavedBoard & { _type: 'board' }) | (PieceSet & { _type: 'set
 export default function LibraryGrid({ initialBoards, initialSets }: { initialBoards: SavedBoard[], initialSets: any }) {
 
     const t = useTranslations('Library');
+    const { user } = useAuth();
+    const [publishTarget, setPublishTarget] = useState<{ type: 'board' | 'pieces'; id: string; name: string; description?: string } | null>(null);
+
+    const handlePublish = (item: LibraryItem) => {
+        if (!user) {
+            toast.error("You must be logged in to publish.");
+            return;
+        }
+        setPublishTarget({
+            type: item._type === 'board' ? 'board' : 'pieces',
+            id: item.id!,
+            name: item.name,
+            description: item.description,
+        });
+    };
+
     const [items, setItems] = useState<LibraryItem[]>(() => {
         const boards = (initialBoards || []).map(b => ({
             ...b,
@@ -117,6 +136,7 @@ export default function LibraryGrid({ initialBoards, initialSets }: { initialBoa
                                 item={item}
                                 onToggleStar={() => handleToggleStar(item.id!, item._type)}
                                 onDelete={() => handleDelete(item.id!, item._type)}
+                                onPublish={() => handlePublish(item)}
                                 t={t as any}
                             />
                         ))}
@@ -126,17 +146,28 @@ export default function LibraryGrid({ initialBoards, initialSets }: { initialBoa
                                 item={item}
                                 onToggleStar={() => handleToggleStar(item.id!, item._type)}
                                 onDelete={() => handleDelete(item.id!, item._type)}
+                                onPublish={() => handlePublish(item)}
                                 t={t as any}
                             />
                         ))}
                     </AnimatePresence>
                 </div>
             )}
+            {publishTarget && (
+                <PublishModal
+                    open={!!publishTarget}
+                    onClose={() => setPublishTarget(null)}
+                    itemType={publishTarget.type}
+                    itemId={publishTarget.id}
+                    defaultTitle={publishTarget.name}
+                    defaultDescription={publishTarget.description}
+                />
+            )}
         </div>
     );
 }
 
-function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, onToggleStar: () => void, onDelete: () => void, t: (key: string) => string }) {
+function LibraryCard({ item, onToggleStar, onDelete, onPublish, t }: { item: LibraryItem, onToggleStar: () => void, onDelete: () => void, onPublish: () => void, t: (key: string) => string }) {
     const router = useRouter();
     const isBoard = item._type === 'board';
 
@@ -230,6 +261,13 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
                             <Edit2 size={18} />
                         </button>
                     )}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onPublish(); }}
+                        className="p-2.5 bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white border border-blue-500/20 rounded-xl transition-all"
+                        title="Publish to Marketplace"
+                    >
+                        <Share2 size={18} />
+                    </button>
                     <button
                         onClick={handleDeleteClick}
                         className="p-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 rounded-xl transition-all"
