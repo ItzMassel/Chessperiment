@@ -159,11 +159,12 @@ export async function saveProjectAction(project: Project) {
  * Server action to save only the board-related data of a project.
  * This is optimized for the auto-save in the board editor.
  */
-export async function saveProjectBoardAction(projectId: string, boardData: { 
-    rows: number, 
-    cols: number, 
-    activeSquares: string[], 
-    placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }> 
+export async function saveProjectBoardAction(projectId: string, boardData: {
+    rows: number,
+    cols: number,
+    gridType?: 'square' | 'hex',
+    activeSquares: string[],
+    placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>
 }) {
     const session = await auth();
     const userId = session?.user?.id;

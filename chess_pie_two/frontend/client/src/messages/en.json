@@ -561,7 +561,9 @@
         "back": "Back to Projects",
         "save": "Änderungen speichern",
         "saved": "Gespeichert",
-        "saving": "Speichere..."
+        "saving": "Speichere...",
+        "playButton": "Play",
+        "aiAssistant": "AI Assistant"
     },
     "BottomPiecePanel": {
         "white": "White",

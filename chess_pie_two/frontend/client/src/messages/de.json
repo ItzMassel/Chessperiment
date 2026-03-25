@@ -563,7 +563,9 @@
         "back": "Zurück zu den Projekten",
         "save": "Änderungen speichern",
         "saved": "Gespeichert",
-        "saving": "Speichere..."
+        "saving": "Speichere...",
+        "playButton": "Spielen",
+        "aiAssistant": "KI-Assistent"
     },
     "BottomPiecePanel": {
         "white": "Weiß",

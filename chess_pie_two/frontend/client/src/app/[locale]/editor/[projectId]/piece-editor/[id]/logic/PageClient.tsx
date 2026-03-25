@@ -19,6 +19,7 @@ import { ChevronLeft, Save } from 'lucide-react';
 import { useProject } from '@/hooks/useProject';
 import { CustomPiece } from '@/types/firestore';
 import { Project } from '@/types/Project';
+import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 
 // Constants
 const BLOCK_HEIGHT = 60;
@@ -324,6 +325,92 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         return () => clearTimeout(timer);
     }, [canvasBlocks, variables, projectLoading, project, piece, handleManualSave]);
 
+
+    // ─── AI Tool Registration ───
+    const logicToolHandlers = useMemo(() => ({
+        add_logic_block: async (args: Record<string, any>) => {
+            const template = BLOCK_TEMPLATES.find(t => t.id === args.templateId);
+            if (!template) return JSON.stringify({ error: `Unknown template: ${args.templateId}` });
+            const instanceId = `instance-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const newBlock: BlockInstance = {
+                ...template,
+                instanceId,
+                position: args.position || { x: 100, y: 100 },
+                socketValues: args.socketValues || {},
+            };
+            setCanvasBlocks(prev => [...prev, newBlock]);
+            return JSON.stringify({ success: true, instanceId });
+        },
+        remove_logic_block: async (args: Record<string, any>) => {
+            setCanvasBlocks(prev => {
+                const block = prev.find(b => b.instanceId === args.instanceId);
+                if (!block) return prev;
+                let updated = prev.filter(b => b.instanceId !== args.instanceId);
+                // Clear parent's childId reference
+                if (block.parentId) {
+                    updated = updated.map(b => b.instanceId === block.parentId ? { ...b, childId: undefined } : b);
+                }
+                // Clear child's parentId reference
+                if (block.childId) {
+                    updated = updated.map(b => b.instanceId === block.childId ? { ...b, parentId: undefined } : b);
+                }
+                return updated;
+            });
+            return JSON.stringify({ success: true });
+        },
+        connect_blocks: async (args: Record<string, any>) => {
+            setCanvasBlocks(prev => prev.map(b => {
+                if (b.instanceId === args.parentInstanceId) return { ...b, childId: args.childInstanceId };
+                if (b.instanceId === args.childInstanceId) {
+                    const parent = prev.find(p => p.instanceId === args.parentInstanceId);
+                    return {
+                        ...b,
+                        parentId: args.parentInstanceId,
+                        position: parent ? { x: parent.position.x, y: parent.position.y + BLOCK_HEIGHT } : b.position
+                    };
+                }
+                return b;
+            }));
+            return JSON.stringify({ success: true });
+        },
+        disconnect_block: async (args: Record<string, any>) => {
+            setCanvasBlocks(prev => {
+                const block = prev.find(b => b.instanceId === args.instanceId);
+                if (!block) return prev;
+                return prev.map(b => {
+                    if (b.instanceId === args.instanceId) return { ...b, parentId: undefined };
+                    if (b.childId === args.instanceId) return { ...b, childId: undefined };
+                    return b;
+                });
+            });
+            return JSON.stringify({ success: true });
+        },
+        update_block_sockets: async (args: Record<string, any>) => {
+            setCanvasBlocks(prev => prev.map(b =>
+                b.instanceId === args.instanceId
+                    ? { ...b, socketValues: { ...b.socketValues, ...args.socketValues } }
+                    : b
+            ));
+            return JSON.stringify({ success: true });
+        },
+        move_block: async (args: Record<string, any>) => {
+            setCanvasBlocks(prev => prev.map(b =>
+                b.instanceId === args.instanceId ? { ...b, position: args.position } : b
+            ));
+            return JSON.stringify({ success: true });
+        },
+        create_piece_variable: async (args: Record<string, any>) => {
+            const varId = `var-${Date.now()}`;
+            setVariables(prev => [...prev, { id: varId, name: args.name }]);
+            return JSON.stringify({ success: true, variableId: varId });
+        },
+        delete_piece_variable: async (args: Record<string, any>) => {
+            setVariables(prev => prev.filter(v => v.id !== args.variableId));
+            return JSON.stringify({ success: true });
+        },
+    }), [canvasBlocks]);
+
+    useAIToolRegistration(logicToolHandlers);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {

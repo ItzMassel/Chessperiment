@@ -348,32 +348,39 @@ export async function toggleProjectStar(projectId: string, userId: string): Prom
 }
 
 export async function saveProjectBoard(
-    projectId: string, 
-    userId: string, 
-    boardData: { 
-        rows: number, 
-        cols: number, 
-        activeSquares: string[], 
-        placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }> 
+    projectId: string,
+    userId: string,
+    boardData: {
+        rows: number,
+        cols: number,
+        gridType?: 'square' | 'hex',
+        activeSquares: string[],
+        placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>
     }
 ) {
     if (!db) throw new Error("Firestore not initialized");
-    
+
     // Verify ownership
     const projectRef = db.collection("projects").doc(projectId);
     const doc = await projectRef.get();
-    
+
     if (!doc.exists || doc.data()?.userId !== userId) {
         throw new Error("Project not found or unauthorized");
     }
 
-    await projectRef.update({
+    const updateData: Record<string, any> = {
         rows: boardData.rows,
         cols: boardData.cols,
         activeSquares: boardData.activeSquares,
         placedPieces: boardData.placedPieces,
         updatedAt: new Date()
-    });
+    };
+
+    if (boardData.gridType) {
+        updateData.gridType = boardData.gridType;
+    }
+
+    await projectRef.update(updateData);
 }
 
 

@@ -41,15 +41,15 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
 
                 {/* Content */}
                 <div className="flex flex-col gap-0.5 px-1 flex-1">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-200 truncate" title={item.title}>
-                        {item.title}
+                    <h3 className="font-bold text-gray-900 dark:text-gray-200 truncate" title={item.title || 'Untitled'}>
+                        {item.title || 'Untitled'}
                     </h3>
                     <Link
-                        href={`/u/${(item.creator_handle || '').replace('@', '')}`}
+                        href={`/u/${(item.creator_handle || 'anonymous').replace('@', '')}`}
                         onClick={(e) => e.stopPropagation()}
                         className="text-xs text-gray-600 dark:text-gray-400 truncate hover:text-amber-500 transition-colors block"
                     >
-                        {item.creator_handle}
+                        {item.creator_handle || '@anonymous'}
                     </Link>
 
                     <div className="flex justify-between items-end mt-auto pt-2">
@@ -68,7 +68,7 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
                                 <span>👁️</span> {item.views}
                             </div>
                             <div className="font-bold text-sm text-gray-900 dark:text-white">
-                                {item.price === 0 || item.price === 'Free' ? t('free') : `$${item.price}`}
+                                {item.price == null || item.price === 0 || item.price === 'Free' ? t('free') : `$${item.price}`}
                             </div>
                         </div>
                     </div>

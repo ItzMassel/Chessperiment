@@ -10,7 +10,11 @@
       "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app -path */node_modules -prune -o -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -print)",
       "Bash(find /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client -path */node_modules -prune -o -type f -name *.json -path *messages* -print)",
       "Bash(grep -r announcement /c/Users/lasse_xwl0mn6/Documents/GitHub/Chessperiment/chess_pie_two/frontend/client/src/app/[locale]/ --include=*.tsx --include=*.ts)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx tsx:*)",
+      "Bash(ls -la .env*)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(node --env-file=.env.local -e \"console.log\\(''PROJECT_ID:'', process.env.FIREBASE_PROJECT_ID ? ''SET'' : ''MISSING''\\); console.log\\(''CLIENT_EMAIL:'', process.env.FIREBASE_CLIENT_EMAIL ? ''SET'' : ''MISSING''\\); console.log\\(''PRIVATE_KEY:'', process.env.FIREBASE_PRIVATE_KEY ? ''SET'' : ''MISSING''\\);\")"
     ]
   }
 }

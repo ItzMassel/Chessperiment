@@ -36,12 +36,14 @@ export function MarketplaceGrid() {
         fetchItems();
     }, [fetchItems]);
 
+    // Filter out corrupted items missing required fields, then apply search
+    const validItems = items.filter((item) => item.id && item.type);
     const filteredItems = searchQuery
-        ? items.filter((item) =>
-            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.creator_handle.toLowerCase().includes(searchQuery.toLowerCase())
+        ? validItems.filter((item) =>
+            (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.creator_handle || '').toLowerCase().includes(searchQuery.toLowerCase())
         )
-        : items;
+        : validItems;
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

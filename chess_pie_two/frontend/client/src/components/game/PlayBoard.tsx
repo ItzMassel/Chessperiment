@@ -10,6 +10,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2, Eye } from 'lucide-react';
 import KillEffect from '@/components/game/KillEffect';
+import HexPlayBoardRenderer from '@/components/game/HexPlayBoardRenderer';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -313,8 +314,13 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     }, [project]);
 
     // -- Helpers --
+    const isHex = activeProject?.gridType === 'hex';
+
     const toAlgebraic = (coord: string, bH: number): string => {
         if (!coord.includes(',')) return coord;
+        // For hex boards, keep the axial coordinate string as-is
+        // (hex coords can be negative, which breaks algebraic notation)
+        if (isHex) return coord;
         const [x, y] = coord.split(',').map(Number);
         const file = String.fromCharCode(97 + x);
         const rank = bH - y;
@@ -917,6 +923,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     if (!activeProject || !board || !game) return null;
 
+    const gridType = activeProject.gridType || 'square';
     const allFiles = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const allRanks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
@@ -929,6 +936,11 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const ranks = isFlipped
         ? allRanks.slice(Math.max(0, 8 - bH)).reverse()
         : allRanks.slice(Math.max(0, 8 - bH));
+
+    // For hex boards: build a set of active square keys (hex coord strings)
+    const hexActiveSquareKeys = gridType === 'hex'
+        ? new Set(activeProject.activeSquares || [])
+        : new Set<string>();
 
 
     return (
@@ -997,54 +1009,80 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     >
                         <div className="relative shadow-2xl rounded-xl border-8 border-stone-800 bg-stone-800 shadow-stone-950/50 overflow-visible transition-all duration-300"
                             style={{ transform: `scale(${zoom})` }}>
-                            <div
-                                className="grid"
-                                style={{
-                                    gridTemplateColumns: `repeat(${bW}, 1fr)`,
-                                    gridTemplateRows: `repeat(${bH}, 1fr)`,
-                                    zIndex: 20,
-                                    position: 'relative',
-                                    width: 'min(560px, 85vw)',
-                                    aspectRatio: `${bW} / ${bH}`,
-                                    backgroundColor: '#292524',
-                                }}
-                            >
-                                {ranks.map((rank, rIdx) => (
-                                    files.map((file, fIdx) => {
-                                        const pos = `${file}${rank}` as Square;
-                                        const isWhite = (rIdx + fIdx) % 2 === 0;
 
-                                        if (!board.isActive(pos)) {
-                                            return <div key={pos} className="aspect-square bg-transparent" />;
-                                        }
+                            {/* Hex Board Renderer */}
+                            {gridType === 'hex' ? (
+                                <HexPlayBoardRenderer
+                                    board={board}
+                                    squares={squares}
+                                    rows={bH}
+                                    cols={bW}
+                                    activeSquareKeys={hexActiveSquareKeys}
+                                    selectedSquare={selectedSquare}
+                                    highlightedSquares={highlightedSquares}
+                                    activeEffects={activeEffects}
+                                    currentTurn={currentTurn}
+                                    myColor={myColor}
+                                    isOnline={isOnline}
+                                    waitingForOpponent={waitingForOpponent}
+                                    validationEnabled={validationEnabled}
+                                    onSquareClick={handleSquareClick}
+                                    onRightClick={handleRightClick}
+                                    onHover={(p: Square) => setHoveredSquare(p)}
+                                    onHoverLeave={() => setHoveredSquare(null)}
+                                    onEffectComplete={handleEffectComplete}
+                                />
+                            ) : (
+                                /* Square Board Renderer */
+                                <div
+                                    className="grid"
+                                    style={{
+                                        gridTemplateColumns: `repeat(${bW}, 1fr)`,
+                                        gridTemplateRows: `repeat(${bH}, 1fr)`,
+                                        zIndex: 20,
+                                        position: 'relative',
+                                        width: 'min(560px, 85vw)',
+                                        aspectRatio: `${bW} / ${bH}`,
+                                        backgroundColor: '#292524',
+                                    }}
+                                >
+                                    {ranks.map((rank, rIdx) => (
+                                        files.map((file, fIdx) => {
+                                            const pos = `${file}${rank}` as Square;
+                                            const isWhite = (rIdx + fIdx) % 2 === 0;
 
-                                        // Determine if it's my turn to allow interaction
-                                        const piece = squares[pos];
-                                        const pieceOwner = piece?.color === currentTurn;
-                                        const canInteract = !waitingForOpponent && (!isOnline || (myColor && piece?.color === myColor && currentTurn === (myColor === 'white' ? 'white' : 'black')));
+                                            if (!board.isActive(pos)) {
+                                                return <div key={pos} className="aspect-square bg-transparent" />;
+                                            }
 
-                                        return (
-                                            <BoardSquare
-                                                key={pos}
-                                                pos={pos}
-                                                isWhite={isWhite}
-                                                piece={squares[pos]}
-                                                size={70}
-                                                onSelect={handleSquareClick}
-                                                onContextMenu={handleRightClick}
-                                                isSelected={selectedSquare === pos}
-                                                amIAtTurn={canInteract}
-                                                effects={activeEffects.filter(e => e.position === pos)}
-                                                onEffectComplete={handleEffectComplete}
-                                                isHighlighted={highlightedSquares.has(pos)}
-                                                isCapture={highlightedSquares.has(pos) && !!squares[pos]}
-                                                onHover={(p: Square) => setHoveredSquare(p)}
-                                                onHoverLeave={() => setHoveredSquare(null)}
-                                            />
-                                        );
-                                    })
-                                ))}
-                            </div>
+                                            // Determine if it's my turn to allow interaction
+                                            const piece = squares[pos];
+                                            const pieceOwner = piece?.color === currentTurn;
+                                            const canInteract = !waitingForOpponent && (!isOnline || (myColor && piece?.color === myColor && currentTurn === (myColor === 'white' ? 'white' : 'black')));
+
+                                            return (
+                                                <BoardSquare
+                                                    key={pos}
+                                                    pos={pos}
+                                                    isWhite={isWhite}
+                                                    piece={squares[pos]}
+                                                    size={70}
+                                                    onSelect={handleSquareClick}
+                                                    onContextMenu={handleRightClick}
+                                                    isSelected={selectedSquare === pos}
+                                                    amIAtTurn={canInteract}
+                                                    effects={activeEffects.filter(e => e.position === pos)}
+                                                    onEffectComplete={handleEffectComplete}
+                                                    isHighlighted={highlightedSquares.has(pos)}
+                                                    isCapture={highlightedSquares.has(pos) && !!squares[pos]}
+                                                    onHover={(p: Square) => setHoveredSquare(p)}
+                                                    onHoverLeave={() => setHoveredSquare(null)}
+                                                />
+                                            );
+                                        })
+                                    ))}
+                                </div>
+                            )}
 
                             {/* P1a: Piece Hover Tooltip */}
                             <AnimatePresence>

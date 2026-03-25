@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper Functions ──────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ─── Marketplace ───────────────────────────────────────────────────
+    match /marketplace/{itemId} {
+
+      // Anyone can read marketplace items
+      allow read: if true;
+
+      // Only authenticated users can create, with required field validation
+      allow create: if isSignedIn()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.type in ['game', 'board', 'pieces']
+        && request.resource.data.creator_handle is string
+        && request.resource.data.creator_handle.size() > 0
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 5000
+        // Numeric fields must be initialized to 0
+        && request.resource.data.rating == 0
+        && request.resource.data.reviewCount == 0
+        && request.resource.data.stars_total == 0
+        && request.resource.data.stars_count == 0
+        && request.resource.data.views == 0
+        && request.resource.data.forkCount == 0;
+
+      // Updates: allow view/fork counter increments by anyone authenticated,
+      // and allow full metadata edits only by the item creator.
+      // Server actions (admin SDK) bypass these rules, so the transaction-based
+      // review updates in marketplace.ts are unaffected.
+      allow update: if isSignedIn()
+        && (
+          // Case 1: Increment views (single field, +1 only)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+            && request.resource.data.views == resource.data.views + 1
+          )
+          ||
+          // Case 2: Increment forkCount (single field, +1 only)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['forkCount'])
+            && request.resource.data.forkCount == resource.data.forkCount + 1
+          )
+          ||
+          // Case 3: Creator edits their own item metadata
+          (
+            resource.data.creator_handle == get(/databases/$(database)/documents/creators/$(request.auth.uid)).data.handle
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['title', 'description', 'imageUrl'])
+            && request.resource.data.title is string
+            && request.resource.data.title.size() > 0
+          )
+        );
+
+      // Only the creator can delete their own item
+      allow delete: if isSignedIn()
+        && resource.data.creator_handle == get(/databases/$(database)/documents/creators/$(request.auth.uid)).data.handle;
+
+      // ─── Reviews (subcollection) ───────────────────────────────────
+      match /reviews/{reviewId} {
+
+        // Anyone can read reviews
+        allow read: if true;
+
+        // Authenticated users can create a review with validation
+        allow create: if isSignedIn()
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.rating is int
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.displayName is string;
+
+        // Only the review author can delete their own review
+        allow delete: if isSignedIn()
+          && resource.data.userId == request.auth.uid;
+
+        // Reviews cannot be edited after submission
+        allow update: if false;
+      }
+    }
+
+    // ─── Creator Profiles ──────────────────────────────────────────────
+    match /creators/{userId} {
+
+      // Anyone can read creator profiles (public)
+      allow read: if true;
+
+      // Users can only create their own profile
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == userId
+        && request.resource.data.handle is string
+        && request.resource.data.handle.size() >= 3
+        && request.resource.data.handle.size() <= 20
+        && request.resource.data.handle.matches('^@?[a-zA-Z0-9_]+$')
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0;
+
+      // Users can only update their own profile, and cannot change handle or userId
+      allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['handle', 'userId'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['displayName', 'bio', 'photoUrl']);
+
+      // Users can only delete their own profile
+      allow delete: if isOwner(userId);
+    }
+
+    // ─── User Stats ────────────────────────────────────────────────────
+    match /userStats/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    // ─── Game History ──────────────────────────────────────────────────
+    match /gameHistory/{gameId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ─── User Projects ─────────────────────────────────────────────────
+    match /users/{userId}/projects/{projectId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── User Boards ───────────────────────────────────────────────────
+    match /users/{userId}/boards/{boardId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── User Piece Sets ───────────────────────────────────────────────
+    match /users/{userId}/pieceSets/{setId} {
+      allow read, write: if isOwner(userId);
+
+      match /pieces/{pieceId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ─── Migration Tracking ────────────────────────────────────────────
+    match /migrations/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── Deny everything else by default ───────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

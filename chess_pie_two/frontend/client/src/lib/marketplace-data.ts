@@ -4,8 +4,6 @@ import 'server-only';
 import { db } from '@/lib/firebase-admin';
 import { MarketplaceItem, SortOption } from './marketplace-types';
 
-const SEED_ITEMS_ENABLED = process.env.NODE_ENV === 'development';
-
 export interface MarketplaceQuery {
     type?: 'board' | 'pieces' | 'game';
     priceFilter?: 'free';
@@ -61,32 +59,9 @@ function mapDoc(doc: any): MarketplaceItem {
     } as MarketplaceItem;
 }
 
-function applySeedFilters(items: MarketplaceItem[], query?: MarketplaceQuery): MarketplaceItem[] {
-    let filtered = items;
-    if (query?.type) {
-        filtered = filtered.filter(i => i.type === query.type);
-    }
-    if (query?.priceFilter === 'free') {
-        filtered = filtered.filter(i => i.price === 'Free' || i.price === 0);
-    }
-    if (query?.sort) {
-        filtered = sortItems(filtered, query.sort);
-    }
-    if (query?.limit) {
-        filtered = filtered.slice(0, query.limit);
-    }
-    return filtered;
-}
-
 export async function getMarketplaceItems(query?: MarketplaceQuery): Promise<MarketplaceItem[]> {
     try {
-        if (!db) {
-            if (SEED_ITEMS_ENABLED) {
-                const { SEED_MARKETPLACE_ITEMS } = await import('./marketplace-seed');
-                return applySeedFilters(SEED_MARKETPLACE_ITEMS, query);
-            }
-            return [];
-        }
+        if (!db) return [];
 
         let ref: FirebaseFirestore.Query = db.collection('marketplace');
 
@@ -100,14 +75,7 @@ export async function getMarketplaceItems(query?: MarketplaceQuery): Promise<Mar
         ref = ref.limit(query?.limit || 100);
 
         const snapshot = await ref.get();
-
-        if (snapshot.empty) {
-            if (SEED_ITEMS_ENABLED) {
-                const { SEED_MARKETPLACE_ITEMS } = await import('./marketplace-seed');
-                return applySeedFilters(SEED_MARKETPLACE_ITEMS, query);
-            }
-            return [];
-        }
+        if (snapshot.empty) return [];
 
         let items = snapshot.docs.map(mapDoc);
 
@@ -118,10 +86,6 @@ export async function getMarketplaceItems(query?: MarketplaceQuery): Promise<Mar
         return items;
     } catch (error) {
         console.error("Error fetching marketplace items:", error);
-        if (SEED_ITEMS_ENABLED) {
-            const { SEED_MARKETPLACE_ITEMS } = await import('./marketplace-seed');
-            return applySeedFilters(SEED_MARKETPLACE_ITEMS, query);
-        }
         return [];
     }
 }
@@ -130,13 +94,7 @@ export async function getMarketplaceItem(id: string): Promise<MarketplaceItem | 
     try {
         if (!db) return null;
         const doc = await db.collection('marketplace').doc(id).get();
-        if (!doc.exists) {
-            if (SEED_ITEMS_ENABLED) {
-                const { SEED_MARKETPLACE_ITEMS } = await import('./marketplace-seed');
-                return SEED_MARKETPLACE_ITEMS.find(i => i.id === id) || null;
-            }
-            return null;
-        }
+        if (!doc.exists) return null;
         return mapDoc(doc);
     } catch (error) {
         console.error(`Error fetching item ${id}:`, error);

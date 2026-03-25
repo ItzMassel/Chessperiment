@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
@@ -15,6 +15,9 @@ import PixelCanvas from '@/components/editor/PixelCanvas';
 import VisualMoveEditor from '@/components/editor/VisualMoveEditor';
 import PieceTestBoard from '@/components/editor/PieceTestBoard';
 import { invertLightness } from '@/lib/colors';
+import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
+import { getPresetRules } from '@/lib/standardPiecePresets';
+import { v4 as uuidv4 } from 'uuid';
 
 export type EditMode = 'design' | 'moves';
 
@@ -252,6 +255,210 @@ export default function PageClient({ projectId }: PageClientProps) {
         };
         reader.readAsDataURL(file);
     };
+
+    // ─── AI Tool Registration ───
+    const pieceToolHandlers = useMemo(() => {
+        // Helper: draw shapes on pixel grid
+        const getPixels = (pieceId: string, variant: 'white' | 'black'): string[][] | null => {
+            if (selectedPieceId === pieceId) {
+                return variant === 'white' ? [...currentPixelsWhite.map(r => [...r])] : [...currentPixelsBlack.map(r => [...r])];
+            }
+            const piece = project?.customPieces?.find(p => p.id === pieceId);
+            if (!piece) return null;
+            const src = variant === 'white' ? piece.pixelsWhite : piece.pixelsBlack;
+            return src.map(r => [...r]);
+        };
+
+        const applyPixels = (pieceId: string, variant: 'white' | 'black', pixels: string[][]) => {
+            if (selectedPieceId === pieceId) {
+                if (variant === 'white') { setCurrentPixelsWhite(pixels); }
+                else { setCurrentPixelsBlack(pixels); }
+                addToHistory(pixels);
+                handleSavePiece(variant === 'white' ? { pixelsWhite: pixels } : { pixelsBlack: pixels }, true);
+            }
+        };
+
+        return {
+            create_piece: async (args: Record<string, any>) => {
+                if (!project || !user) return JSON.stringify({ error: 'Not authenticated' });
+                const newPiece: any = {
+                    id: crypto.randomUUID(),
+                    projectId, userId: user.uid, name: args.name,
+                    pixelsWhite: Array(64).fill(null).map(() => Array(64).fill('transparent')),
+                    pixelsBlack: Array(64).fill(null).map(() => Array(64).fill('transparent')),
+                    moves: [], createdAt: new Date(), updatedAt: new Date(), setId: ''
+                };
+                await saveProject({ customPieces: [...(project.customPieces || []), newPiece] });
+                selectPiece(newPiece.id, [...(project.customPieces || []), newPiece]);
+                return JSON.stringify({ success: true, pieceId: newPiece.id });
+            },
+            delete_piece: async (args: Record<string, any>) => {
+                if (!project) return JSON.stringify({ error: 'No project' });
+                const updated = project.customPieces.filter(p => p.id !== args.pieceId);
+                await saveProject({ customPieces: updated });
+                if (selectedPieceId === args.pieceId && updated.length > 0) {
+                    selectPiece(updated[0].id || updated[0].name, updated);
+                }
+                return JSON.stringify({ success: true });
+            },
+            rename_piece: async (args: Record<string, any>) => {
+                if (!project) return JSON.stringify({ error: 'No project' });
+                if (selectedPieceId === args.pieceId) setCurrentName(args.name);
+                const updated = project.customPieces.map(p =>
+                    p.id === args.pieceId ? { ...p, name: args.name, updatedAt: new Date() } : p
+                );
+                await saveProject({ customPieces: updated });
+                return JSON.stringify({ success: true });
+            },
+            set_pixels: async (args: Record<string, any>) => {
+                const pixels = getPixels(args.pieceId, args.variant);
+                if (!pixels) return JSON.stringify({ error: 'Piece not found' });
+                for (const p of args.pixels) {
+                    if (p.x >= 0 && p.x < 64 && p.y >= 0 && p.y < 64) {
+                        pixels[p.y][p.x] = p.color;
+                    }
+                }
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true, pixelsSet: args.pixels.length });
+            },
+            draw_rectangle: async (args: Record<string, any>) => {
+                const pixels = getPixels(args.pieceId, args.variant);
+                if (!pixels) return JSON.stringify({ error: 'Piece not found' });
+                const { x1, y1, x2, y2, color, filled } = args;
+                for (let y = Math.max(0, y1); y <= Math.min(63, y2); y++) {
+                    for (let x = Math.max(0, x1); x <= Math.min(63, x2); x++) {
+                        if (filled || x === x1 || x === x2 || y === y1 || y === y2) {
+                            pixels[y][x] = color;
+                        }
+                    }
+                }
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true });
+            },
+            draw_circle: async (args: Record<string, any>) => {
+                const pixels = getPixels(args.pieceId, args.variant);
+                if (!pixels) return JSON.stringify({ error: 'Piece not found' });
+                const { centerX, centerY, radius, color, filled } = args;
+                for (let y = 0; y < 64; y++) {
+                    for (let x = 0; x < 64; x++) {
+                        const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                        if (filled ? dist <= radius : Math.abs(dist - radius) < 0.8) {
+                            pixels[y][x] = color;
+                        }
+                    }
+                }
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true });
+            },
+            draw_line: async (args: Record<string, any>) => {
+                const pixels = getPixels(args.pieceId, args.variant);
+                if (!pixels) return JSON.stringify({ error: 'Piece not found' });
+                const { x1, y1, x2, y2, color, thickness } = args;
+                const dx = x2 - x1, dy = y2 - y1;
+                const steps = Math.max(Math.abs(dx), Math.abs(dy));
+                for (let i = 0; i <= steps; i++) {
+                    const t = steps === 0 ? 0 : i / steps;
+                    const cx = Math.round(x1 + dx * t);
+                    const cy = Math.round(y1 + dy * t);
+                    const half = Math.floor((thickness || 1) / 2);
+                    for (let oy = -half; oy <= half; oy++) {
+                        for (let ox = -half; ox <= half; ox++) {
+                            const px = cx + ox, py = cy + oy;
+                            if (px >= 0 && px < 64 && py >= 0 && py < 64) pixels[py][px] = color;
+                        }
+                    }
+                }
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true });
+            },
+            fill_region: async (args: Record<string, any>) => {
+                const pixels = getPixels(args.pieceId, args.variant);
+                if (!pixels) return JSON.stringify({ error: 'Piece not found' });
+                const { x, y, color } = args;
+                if (x < 0 || x >= 64 || y < 0 || y >= 64) return JSON.stringify({ error: 'Out of bounds' });
+                const target = pixels[y][x];
+                if (target === color) return JSON.stringify({ success: true, note: 'Already that color' });
+                const stack: [number, number][] = [[x, y]];
+                const visited = new Set<string>();
+                while (stack.length > 0) {
+                    const [cx, cy] = stack.pop()!;
+                    const key = `${cx},${cy}`;
+                    if (visited.has(key)) continue;
+                    if (cx < 0 || cx >= 64 || cy < 0 || cy >= 64) continue;
+                    if (pixels[cy][cx] !== target) continue;
+                    visited.add(key);
+                    pixels[cy][cx] = color;
+                    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true, filled: visited.size });
+            },
+            clear_canvas: async (args: Record<string, any>) => {
+                const pixels = Array(64).fill(null).map(() => Array(64).fill('transparent'));
+                applyPixels(args.pieceId, args.variant, pixels);
+                return JSON.stringify({ success: true });
+            },
+            invert_piece_colors: async (args: Record<string, any>) => {
+                const src = args.source === 'white' ? currentPixelsWhite : currentPixelsBlack;
+                const inverted = src.map(row => row.map(pixel => invertLightness(pixel)));
+                if (args.source === 'white') {
+                    setCurrentPixelsBlack(inverted);
+                    handleSavePiece({ pixelsBlack: inverted }, true);
+                } else {
+                    setCurrentPixelsWhite(inverted);
+                    handleSavePiece({ pixelsWhite: inverted }, true);
+                }
+                return JSON.stringify({ success: true });
+            },
+            load_movement_preset: async (args: Record<string, any>) => {
+                const rules = getPresetRules(args.preset);
+                if (rules.length === 0) return JSON.stringify({ error: `Unknown preset: ${args.preset}` });
+                setCurrentMoves(rules);
+                handleSavePiece({ moves: rules }, true);
+                return JSON.stringify({ success: true, rulesCount: rules.length });
+            },
+            add_movement_rule: async (args: Record<string, any>) => {
+                const ruleId = uuidv4();
+                const newRule = {
+                    id: ruleId,
+                    conditions: (args.conditions || []).map((c: any) => ({ ...c, id: uuidv4() })),
+                    result: args.result || 'allow',
+                    type: args.type || 'jump'
+                };
+                const updated = [...currentMoves, newRule];
+                setCurrentMoves(updated);
+                handleSavePiece({ moves: updated }, true);
+                return JSON.stringify({ success: true, ruleId });
+            },
+            remove_movement_rule: async (args: Record<string, any>) => {
+                const updated = currentMoves.filter((r: any) => r.id !== args.ruleId);
+                setCurrentMoves(updated);
+                handleSavePiece({ moves: updated }, true);
+                return JSON.stringify({ success: true });
+            },
+            update_movement_rule: async (args: Record<string, any>) => {
+                const updated = currentMoves.map((r: any) => {
+                    if (r.id !== args.ruleId) return r;
+                    return {
+                        ...r,
+                        ...(args.conditions ? { conditions: args.conditions.map((c: any) => ({ ...c, id: c.id || uuidv4() })) } : {}),
+                        ...(args.result ? { result: args.result } : {}),
+                        ...(args.type ? { type: args.type } : {})
+                    };
+                });
+                setCurrentMoves(updated);
+                handleSavePiece({ moves: updated }, true);
+                return JSON.stringify({ success: true });
+            },
+            clear_movement_rules: async () => {
+                setCurrentMoves([]);
+                handleSavePiece({ moves: [] }, true);
+                return JSON.stringify({ success: true });
+            },
+        };
+    }, [project, user, selectedPieceId, currentPixelsWhite, currentPixelsBlack, currentMoves, editingColor, saveProject, selectPiece, addToHistory, handleSavePiece, projectId]);
+
+    useAIToolRegistration(pieceToolHandlers);
 
     if (authLoading || loading) {
         return (

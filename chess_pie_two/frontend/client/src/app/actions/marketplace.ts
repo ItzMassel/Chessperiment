@@ -413,10 +413,15 @@ export async function updateMarketplaceItem(
             return { success: false, error: "You can only edit your own items" };
         }
 
+        // Validate: title must not be empty if provided
+        if (updates.title !== undefined && !updates.title.trim()) {
+            return { success: false, error: "Title cannot be empty" };
+        }
+
         const updateData: Record<string, string> = {};
-        if (updates.title !== undefined) updateData.title = updates.title;
-        if (updates.description !== undefined) updateData.description = updates.description;
-        if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl;
+        if (updates.title !== undefined) updateData.title = updates.title.trim();
+        if (updates.description !== undefined) updateData.description = updates.description.trim();
+        if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl.trim();
 
         await itemRef.update(updateData);
         revalidatePath('/marketplace');
