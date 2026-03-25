@@ -157,11 +157,18 @@ export default async function RootLayout({
           </NextIntlClientProvider>
         </SessionWrapper>
 
-        {/* Cloudflare Web Analytics */}
+        {/* Privacy-friendly analytics by Plausible */}
         <Script
-          defer
-          src='https://static.cloudflareinsights.com/beacon.min.js'
-          data-cf-beacon='{"token": "574a56c75b824d799f176b92a9277f4d"}'
+          async
+          src="https://plausible.io/js/pa-G2t0JWub9y8EnL7X92yIv.js"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="plausible-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`,
+          }}
         />
       </body>
     </html>
