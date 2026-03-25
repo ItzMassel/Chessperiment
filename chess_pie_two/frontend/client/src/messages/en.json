@@ -717,214 +717,216 @@
     },
     "SEO": {
         "About": {
-            "title": "Über Chessperiment — Kostenlose Schachvarianten- & Abstrakte Strategiespiel-Engine",
-            "description": "Chessperiment ist keine Vorlagen-Sammlung — es bietet echte Anpassbarkeit. Eine kostenlose browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Vergleiche Chessperiment mit Chess Remix, ChessCraft, Tabletop Simulator und PyChess."
+            "title": "About Chessperiment — Free Chess Variant Creator & Abstract Strategy Game Engine",
+            "description": "Chessperiment is not a template library — it's real customization. A free, browser-based game design engine for creating custom chess variants and abstract strategy games. Compare Chessperiment with Chess Remix, ChessCraft, Tabletop Simulator, and PyChess."
         },
         "Feedback": {
             "title": "Feedback",
-            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für Chessperiment vor"
+            "description": "Share your feedback, report bugs, or suggest new features for Chessperiment"
         },
         "Marketplace": {
-            "title": "Chessperiment Marktplatz | Lade individuelle Schachsets herunter",
-            "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensätze herunter. Verbessere dein Spiel mit einzigartigen Designs.",
-            "h1": "Schachvarianten-Marktplatz",
+            "title": "Chessperiment Marketplace | Download Custom Chess Sets",
+            "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",
+            "h1": "Chess Variant Marketplace",
             "seoContent": {
-                "heading": "Entdecke und teile individuelle Schach-Assets",
-                "text": "Der Chessperiment-Marktplatz ist die zentrale Anlaufstelle für von der Community erstellte Schachvarianten und abstrakte Strategiespiele. Durchsuche und lade individuelle Figurensätze mit Märchenschachfiguren, Leapern und Ridern mit einzigartiger Bewegungslogik herunter. Entdecke hexagonale Schachbretter, individuell geformte Spielfelder und komplette Varianten-Regelsätze — jede Kreation mit echter Anpassbarkeit erstellt, nicht nur Vorlagen. Alle Community-Kreationen sind kostenlos zum Herunterladen und Spielen."
+                "heading": "Discover and share custom chess assets",
+                "text": "The Chessperiment Marketplace is your central hub for community-created chess variants and abstract strategy games. Browse and download custom piece sets featuring fairy chess pieces, leapers, and riders with unique movement logic. Discover hexagonal chess boards, custom-shaped playing fields, and complete variant rule sets — every creation built with real customization, not just templates. All community creations are free to download and play."
             }
         },
         "Footer": {
-            "title": "Häufig gestellte Fragen",
-            "whatIsChessperiment": "Was ist Chessperiment?",
-            "whatIsChessperimentAnswer": "Chessperiment ist eine kostenlose, browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Keine Vorlagen — echte Anpassbarkeit. Mit visuellem Figuren-Logik-Editor, Brett-Editor mit Hexagonal- und Freiform-Unterstützung und browserbasiertem Multiplayer.",
-            "isItFree": "Ist Chessperiment kostenlos?",
-            "isItFreeAnswer": "Ja. Chessperiment ist komplett kostenlos — keine Paywalls, keine Premium-Stufen, keine Werbung. Alle Funktionen — einschließlich Figuren-Editor, Brett-Editor, Multiplayer und Marktplatz — sind kostenlos nutzbar.",
-            "canIPlayFriends": "Kann ich mit Freunden spielen?",
-            "canIPlayFriendsAnswer": "Ja. Erstelle einen Raum und teile den Code oder Link. Dein Freund tritt im Browser bei — kein Konto oder Installation nötig.",
-            "whatIsLeaper": "Was ist ein Springer-Typ (Leaper) im Schach?",
-            "whatIsLeaperAnswer": "Ein Leaper ist eine Schachfigur, die sich auf ein festes Offset von ihrem aktuellen Feld bewegt, unabhängig davon, welche Figuren dazwischen stehen. Der Standard-Springer ist ein Leaper. Chessperiments Figuren-Editor ermöglicht es dir, jedes Leaper-Muster mit einem visuellen Gitter zu definieren.",
-            "whatIsRider": "Was ist ein Gleiter (Rider) im Schach?",
-            "whatIsRiderAnswer": "Ein Rider ist eine Schachfigur, die entlang eines Vektors gleitet, bis sie blockiert wird oder den Brettrand erreicht. Turm, Läufer und Dame sind alle Rider. Chessperiment ermöglicht dir, eigene Rider-Richtungen zu definieren.",
-            "whatIsFairyPiece": "Was ist eine Märchenschachfigur?",
-            "whatIsFairyPieceAnswer": "Eine Märchenschachfigur (Fairy Piece) ist jede nicht-standardmäßige Figur, die in Schachvarianten verwendet wird. Häufige Beispiele sind die Amazone (Dame + Springer), das Kamel (3,1-Leaper) und der Nachtreiter (Rider entlang der Springer-Richtungen). Chessperiments Figuren-Editor unterstützt das gesamte Spektrum der Fairy-Piece-Definitionen.",
-            "canCreateHexBoards": "Kann ich hexagonale Schachbretter erstellen?",
-            "canCreateHexBoardsAnswer": "Ja. Chessperiments Brett-Editor unterstützt vollständige hexagonale Brettgenerierung, sodass du Hex-Schachvarianten und andere hexagonale abstrakte Strategiespiele entwerfen kannst.",
-            "diffFromChessRemix": "Wie unterscheidet sich Chessperiment von Chess Remix?",
-            "diffFromChessRemixAnswer": "Chess Remix sperrt viele Erstellungsfunktionen hinter einer Paywall und bietet vorgefertigte Anpassungsoptionen. Chessperiment bietet tiefere Funktionalität — einschließlich Leaper/Rider-Definitionen, konditionaler Auslöser, hexagonaler Bretter und feldspezifischer Regelüberschreibungen — komplett kostenlos. Keine Vorlagen — echte Anpassbarkeit.",
-            "diffFromChessCraft": "Wie unterscheidet sich Chessperiment von ChessCraft?",
-            "diffFromChessCraftAnswer": "ChessCraft ist eine Mobile-App mit vordefinierten Figuren-Vorlagen. Chessperiment läuft in jedem Browser ohne Installation und bietet ein tieferes Logiksystem: einen visuellen Block-Editor im Scratch-Stil mit zustandsbasierten konditionalen Auslösern und komplexen Mehrzug-Sequenzen. Volle Anpassbarkeit, keine Vorlagen.",
-            "hasStockfish": "Hat Chessperiment Stockfish?",
-            "hasStockfishAnswer": "Ja. Chessperiment integriert die Stockfish-Schach-Engine und wendet sie auf benutzerdefinierte Spielzustände an — einschließlich nicht-standardmäßiger Bretttopologien, benutzerdefinierter Figurendefinitionen und varianter Siegbedingungen.",
-            "canDesignNonChess": "Kann ich abstrakte Strategiespiele entwerfen, die kein Schach sind?",
-            "canDesignNonChessAnswer": "Ja. Obwohl Chessperiment Schach als Ausgangsbasis verwendet, unterstützen der Brett-Editor und das Figuren-Logiksystem den gesamten Raum kombinatorischer, perfekt-informierter abstrakter Strategiespiele — einschließlich Verbindungsspiele, Territorialspiele und völlig neuartige Regelsysteme.",
-            "whatIsMarketplace": "Was ist der Chessperiment Marktplatz?",
-            "whatIsMarketplaceAnswer": "Der Marktplatz ist eine Community-Bibliothek, in der Nutzer ihre benutzerdefinierten Schachvarianten, Figurensätze und Brettdesigns veröffentlichen und teilen. Alle Inhalte sind kostenlos zum Herunterladen und Spielen.",
-            "legal": "Rechtliches",
+            "title": "Frequently Asked Questions",
+            "whatIsChessperiment": "What is Chessperiment?",
+            "whatIsChessperimentAnswer": "Chessperiment is a free, browser-based game design engine for creating custom chess variants and abstract strategy games — now with an AI variant generator. Describe your game idea in plain language, and the AI creates the full variant instantly for you. You bring the creativity; the AI handles the implementation.",
+            "canAIBuildVariant": "Can AI build a chess variant for me?",
+            "canAIBuildVariantAnswer": "Yes. Chessperiment has a built-in AI assistant that generates complete chess variants from simple descriptions. Just describe your idea — for example, 'chess where pawns explode when captured' — and the AI instantly configures the boards, pieces, and rules for you. You can then adjust the result in the visual editor however you like.",
+            "isItFree": "Is Chessperiment free?",
+            "isItFreeAnswer": "Yes. Chessperiment is completely free — no paywalls, no premium tiers, no ads. All features — including the piece editor, board editor, multiplayer, and marketplace — are free to use.",
+            "canIPlayFriends": "Can I play with friends?",
+            "canIPlayFriendsAnswer": "Yes. Create a room and share the code or link. Your friend joins in the browser — no account or installation needed.",
+            "whatIsLeaper": "What is a leaper in chess?",
+            "whatIsLeaperAnswer": "A leaper is a chess piece that moves to a fixed offset from its current square, regardless of what pieces are in between. The standard knight is a leaper. Chessperiment's piece editor lets you define any leaper pattern using a visual grid.",
+            "whatIsRider": "What is a rider in chess?",
+            "whatIsRiderAnswer": "A rider is a chess piece that slides along a vector until blocked or reaching the board edge. Rooks, bishops, and queens are all riders. Chessperiment lets you define custom rider directions.",
+            "whatIsFairyPiece": "What is a fairy chess piece?",
+            "whatIsFairyPieceAnswer": "A fairy chess piece is any non-standard piece used in chess variants. Common examples include the amazon (queen + knight), the camel (3,1-leaper), and the nightrider (rider along knight directions). Chessperiment's piece editor supports the full spectrum of fairy piece definitions.",
+            "canCreateHexBoards": "Can I create hexagonal chess boards?",
+            "canCreateHexBoardsAnswer": "Yes. Chessperiment's board editor supports full hexagonal board generation, letting you design hex chess variants and other hexagonal abstract strategy games.",
+            "diffFromChessRemix": "How is Chessperiment different from Chess Remix?",
+            "diffFromChessRemixAnswer": "Chess Remix locks many creation features behind a paywall and offers preset customization options. Chessperiment provides deeper functionality — including leaper/rider definitions, conditional triggers, hexagonal boards, and square-specific rule overrides — completely free. No templates — real customization.",
+            "diffFromChessCraft": "How is Chessperiment different from ChessCraft?",
+            "diffFromChessCraftAnswer": "ChessCraft is a mobile app with predefined piece templates. Chessperiment runs in any browser without installation and offers a deeper logic system: a Scratch-style visual block editor with state-based conditional triggers and complex multi-move sequences. Full customization, no templates.",
+            "hasStockfish": "Does Chessperiment have Stockfish?",
+            "hasStockfishAnswer": "Yes. Chessperiment integrates the Stockfish chess engine and applies it to custom game states — including non-standard board topologies, custom piece definitions, and variant win conditions.",
+            "canDesignNonChess": "Can I design abstract strategy games that aren't chess?",
+            "canDesignNonChessAnswer": "Yes. Although Chessperiment uses chess as a baseline, the board editor and piece logic system support the full space of combinatorial, perfect-information abstract strategy games — including connection games, territorial games, and entirely novel rule systems.",
+            "whatIsMarketplace": "What is the Chessperiment Marketplace?",
+            "whatIsMarketplaceAnswer": "The Marketplace is a community library where users publish and share their custom chess variants, piece sets, and board designs. All content is free to download and play.",
+            "legal": "Legal",
             "about": "About Us",
-            "privacyPolicy": "Datenschutzerklärung",
-            "legalNotice": "Impressum",
+            "privacyPolicy": "Privacy Policy",
+            "legalNotice": "Legal Notice",
             "feedback": "Feedback",
-            "builtBy": "Mit viel Liebe zum Detail für Schachbegeisterte entwickelt."
+            "builtBy": "Built with great attention to detail for chess enthusiasts."
         },
         "Home": {
-            "title": "Chessperiment — Kostenloser Schachvarianten-Creator & Abstrakte Strategiespiel-Engine",
-            "description": "Designe jedes schachähnliche Spiel von Grund auf — keine Vorlagen, echte Anpassbarkeit. Definiere Figuren mit visuellen Logikblöcken, baue hexagonale Bretter, erstelle Leaper, Rider und Märchenschachfiguren. Stockfish-Analyse integriert. Kostenlos, browserbasiert, kein Programmieren nötig.",
-            "h1": "Chessperiment — Visueller Schachvarianten-Creator und abstrakte Strategiespiel-Engine",
-            "p": "Chessperiment ist eine kostenlose, browserbasierte Sandbox zum Entwerfen individueller Schachvarianten und abstrakter Strategiespiele — keine Vorlagenbibliothek, sondern eine vollständige Game-Design-Engine. Erstelle Figuren mit einem visuellen Logik-Editor im Scratch-Stil — definiere Leaper- und Rider-Bewegungsmuster, füge konditionale Auslöser hinzu und programmiere komplexe Märchenschachfiguren-Verhalten ohne Programmierkenntnisse. Designe hexagonale oder individuell geformte Bretter, schalte einzelne Felder um, um nicht-rechteckige Spielfelder zu bauen, und teste sofort mit Freunden über Raumcodes. Stockfish-Analyse ist integriert und funktioniert mit deinen eigenen Regeln. Anders als andere Schachvarianten-Tools, die ein festes Menü an Optionen bieten, gibt dir Chessperiment echte Anpassbarkeit — jede Regel, jede Figur, jedes Feld liegt in deiner Hand."
+            "title": "Chessperiment — AI-Powered Chess Variant Creator & Abstract Strategy Game Engine",
+            "description": "Describe your game idea — the AI creates the variant instantly for you. You bring the creativity, AI handles the implementation. No templates, real customization. Define pieces with visual logic blocks, build hexagonal boards, create leapers, riders, and fairy chess pieces. Free, browser-based, no coding required.",
+            "h1": "Chessperiment — AI-Powered Chess Variant Creator and Abstract Strategy Game Engine",
+            "p": "Chessperiment is a free, browser-based sandbox for designing custom chess variants and abstract strategy games. Simply describe your game idea — our AI creates the full variant instantly for you. You have the creative vision, the AI skips the boring setup step. The result is a complete Chessperiment project you can adjust however you like in the editor. Create pieces with a Scratch-style visual logic editor — define leaper and rider movement patterns, add conditional triggers, and program complex fairy chess piece behaviors without any coding knowledge. Design hexagonal or custom-shaped boards and test instantly with friends via room codes. Stockfish analysis is built in and works with your own rules."
         },
         "Game": {
-            "title": "Schachvarianten online spielen - Multiplayer-Schachspiele | Chessperiment",
-            "description": "Spiele innovative Schachvarianten online mit Freunden. Multiplayer-Schach mit individuellen Brettern und Figuren. Kostenlos spielbar, kein Download erforderlich.",
-            "h1": "Spiele individuelle Schachvarianten online",
+            "title": "Play Chess Variants Online - Multiplayer Chess Games",
+            "description": "Play innovative chess variants online with friends. Multiplayer chess with custom boards and pieces. Free to play, no download required.",
+            "h1": "Play Custom Chess Variants Online",
             "seoContent": {
-                "heading": "Erlebe die nächste Generation der Schachvarianten",
-                "text": "Tritt der Chessperiment-Community bei und spiele einzigartige Schachvarianten online mit Freunden oder gegen unsere integrierte Stockfish-KI. Unsere Plattform ermöglicht dir die Verwendung von benutzerdefinierten Brettern und Figurensätzen, die von Kreativen aus der ganzen Welt entworfen wurden. Egal, ob du eine neue Figurenlogik testen möchtest, die du gerade erstellt hast, oder ein Match mit Standardregeln auf einem unregelmäßigen Brett spielen willst – unser reibungsloses Multiplayer-Erlebnis bietet dir alles, was du brauchst. Starte ein privates Match, indem du einen Raumcode teilst, oder tritt der Lobby bei, um andere Spieler zu finden. Mit Echtzeit-Zugvalidierung und fortschrittlicher Engine-Analyse bietet Chessperiment eine robuste Umgebung für sowohl Gelegenheitsspiele als auch für das kompetitive Testen neuer Spielmechaniken."
+                "heading": "Experience the Next Generation of Chess Variants",
+                "text": "Join the Chessperiment community and play unique chess variants online with friends or against our built-in Stockfish AI. Our platform lets you use custom boards and piece sets designed by creators from around the world. Whether you want to test new piece logic you just created, or play a match with standard rules on an irregular board — our smooth multiplayer experience has you covered. Start a private match by sharing a room code, or join the lobby to find other players. With real-time move validation and advanced engine analysis, Chessperiment provides a robust environment for both casual play and competitive testing of new game mechanics."
             }
         },
         "Editor": {
-            "title": "Projekt-Editor | individuelles Chessperiment",
-            "description": "Verwalte deine individuellen Schachprojekte. Erstelle einzigartige Schlachtfelder, designe Figurensätze und organisiere deine Kreationen.",
-            "h1": "Dein Projekt-Arbeitsplatz"
+            "title": "Project Editor | Custom Chessperiment",
+            "description": "Manage your custom chess projects. Create unique battlefields, design piece sets, and organize your creations.",
+            "h1": "Your Project Workspace"
         },
         "PieceEditor": {
-            "title": "Visueller Schachfiguren-Editor — Definiere Leaper, Rider & Märchenschachfiguren-Logik | Chessperiment",
-            "description": "Definiere benutzerdefinierte Schachfiguren-Bewegungen mit visuellen Logikblöcken — kein Programmieren nötig. Keine Vorlagen — echte Anpassbarkeit. Erstelle Leaper, Rider und komplexe Märchenschachfiguren mit konditionalen Auslösern, zustandsbasierten Schlagregeln und mehrstufigen Zugsequenzen."
+            "title": "Visual Chess Piece Editor — Define Leaper, Rider & Fairy Chess Piece Logic",
+            "description": "Define custom chess piece movements with visual logic blocks — no coding required. No templates — real customization. Create leapers, riders, and complex fairy chess pieces with conditional triggers, state-based capture rules, and multi-step move sequences."
         },
         "SquareEditor": {
-            "title": "Feld-Regel-Editor — Feldspezifische Logik für Schachvarianten | Chessperiment",
-            "description": "Weise einzelnen Brettfeldern einzigartige Regeln zu — erstelle Teleport-Felder, Territoriumszonen, Umwandlungsbereiche oder Bewegungseinschränkungen. Ermöglicht fortgeschrittene Schachvarianten einschließlich Fraktalschach."
+            "title": "Square Rule Editor — Square-Specific Logic for Chess Variants",
+            "description": "Assign unique rules to individual board squares — create teleport squares, territory zones, promotion areas, or movement restrictions. Enables advanced chess variants including Fractal Chess."
         },
         "BoardEditor": {
-            "title": "Schachbrett-Editor - Designe individuelle Bretter",
-            "description": "Erstelle deine eigenen Schachbrett-Layouts. Passe Abmessungen, Farben und Startpositionen an. Exportiere oder spiele direkt.",
-            "h1": "Individueller Schachbrett-Editor",
+            "title": "Chess Board Editor - Design Custom Boards",
+            "description": "Create your own chess board layouts. Customize dimensions, colors, and starting positions. Export or play directly.",
+            "h1": "Custom Chess Board Editor",
             "seoContent": {
-                "heading": "Erstelle und teile individuelle Schachbretter",
-                "text": "Mit dem Chessperiment Brett-Editor designst du Schachbretter jeder Dimension — von kompakten 4x4 bis zu ausgedehnten 14x14 Gittern oder jeder beliebigen Größe. Erstelle vollständige hexagonale Bretter für Hex-Schachvarianten. Schalte einzelne Felder um, um nicht-rechteckige Formen zu bauen: Ringe, Kreuze, Karten mit internen Hindernissen oder jede beliebige Topologie. Weise feldspezifische Regelüberschreibungen zu, um Territoriumszonen, Teleport-Felder oder eingeschränkte Bewegungsbereiche zu erstellen. Das sind keine Vorlagen — das ist echte Anpassbarkeit. Ob du eine klassische Märchenschachvariante baust, ein Verbindungsspiel im Stil von Hex oder Y prototypisierst oder ein völlig neues abstraktes Strategiespiel von Grund auf entwirfst — der Brett-Editor gibt dir volle geometrische Kontrolle ohne Programmierkenntnisse."
+                "heading": "Create and share custom chess boards",
+                "text": "With the Chessperiment board editor, design chess boards of any dimension — from compact 4x4 to expansive 14x14 grids or any custom size. Create full hexagonal boards for hex chess variants. Toggle individual squares to build non-rectangular shapes: rings, crosses, maps with internal obstacles, or any topology. Assign square-specific rule overrides to create territory zones, teleport squares, or restricted movement areas. These are not templates — this is real customization. Whether you're building a classic fairy chess variant, prototyping a Hex- or Y-style connection game, or designing an entirely new abstract strategy game from scratch — the board editor gives you full geometric control with no coding required."
             }
         },
         "Announcements": {
-            "title": "Chessperiment Neuigkeiten & Ankündigungen",
-            "description": "Bleibe auf dem Laufenden über die neuesten Funktionen, Updates und Community-Neuigkeiten von Chessperiment.",
-            "h1": "Neueste Nachrichten"
+            "title": "Chessperiment News & Announcements",
+            "description": "Stay up to date on the latest features, updates, and community news from Chessperiment.",
+            "h1": "Latest News"
         },
         "Analyze": {
-            "title": "Schachpartien analysieren mit Stockfish",
-            "description": "Analysiere deine Schachpartien mit der leistungsstarken Stockfish-Engine. Verbessere deine Strategie und lerne aus deinen Fehlern.",
-            "h1": "Schach-Analyse-Tool"
+            "title": "Analyze Chess Games with Stockfish",
+            "description": "Analyze your chess games with the powerful Stockfish engine. Improve your strategy and learn from your mistakes.",
+            "h1": "Chess Analysis Tool"
         },
         "LegalNotice": {
-            "title": "Impressum - Kontakt & Info",
-            "description": "Kontaktinformationen, Anbieterdetails und rechtliche Hinweise für Chessperiment. Finden Sie E-Mail, Telefon und Urheberrechtsinformationen.",
-            "providerHeading": "Anbieter",
+            "title": "Legal Notice - Contact & Info",
+            "description": "Contact information, provider details, and legal notices for Chessperiment. Find email, phone, and copyright information.",
+            "providerHeading": "Provider",
             "providerName": "Lasse Thoroe - Chessperiment",
-            "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
-            "contactHeading": "Kontakt",
-            "emailLabel": "E-Mail:",
+            "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
+            "contactHeading": "Contact",
+            "emailLabel": "Email:",
             "emailValue": "contact.chessperiment@gmail.com",
-            "phoneLabel": "Telefon:",
+            "phoneLabel": "Phone:",
             "phoneValue": "+49 1517 4288065",
-            "copyrightHeading": "Urheberrechtshinweis",
-            "copyrightText": "Die auf unserer Internetseite vorhandenen Texte, Bilder, Fotos, Videos oder Grafiken unterliegen in der Regel dem Schutz des Urheberrechts. Jede unberechtigte Verwendung (insbesondere die Vervielfältigung, Bearbeitung oder Verbreitung) dieser urheberrechtsgeschützten Inhalte ist daher untersagt. Wenn Sie beabsichtigen, diese Inhalte oder Teile davon zu verwenden, kontaktieren Sie uns bitte im Voraus unter den oben stehenden Angaben. Soweit wir nicht selbst Inhaber der benötigten urheberrechtlichen Nutzungsrechte sein sollten, bemühen wir uns, einen Kontakt zum Berechtigten zu vermitteln.",
-            "socialMediaHeading": "Social-Media-Profile",
-            "socialMediaText": "Dieses Impressum gilt auch für folgende Social-Media-Profile:",
+            "copyrightHeading": "Copyright Notice",
+            "copyrightText": "The texts, images, photos, videos, or graphics available on our website are generally protected by copyright. Any unauthorized use (in particular reproduction, editing, or distribution) of these copyright-protected contents is therefore prohibited. If you intend to use these contents or parts thereof, please contact us in advance using the details above. If we are not ourselves the holders of the necessary copyright usage rights, we will endeavor to put you in contact with the rights holder.",
+            "socialMediaHeading": "Social Media Profiles",
+            "socialMediaText": "This legal notice also applies to the following social media profiles:",
             "youtubeLabel": "YouTube:",
-            "otherProfilesLabel": "Andere Profile:",
-            "madeWith": "Erstellt mit freundlicher Unterstützung von",
+            "otherProfilesLabel": "Other profiles:",
+            "madeWith": "Created with the kind support of",
             "dieterLinkText": "Dieter macht den Datenschutz",
-            "disputeResolutionHeading": "Streitbeilegung",
-            "odrText": "Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit, die Sie unter folgendem Link finden:",
-            "vsbgText": "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."
+            "disputeResolutionHeading": "Dispute Resolution",
+            "odrText": "The European Commission provides a platform for online dispute resolution (ODR), which you can find at the following link:",
+            "vsbgText": "We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board."
         },
         "Login": {
-            "title": "Bei Chessperiment anmelden | Speichere deine Kreationen",
-            "description": "Melde dich bei Chessperiment an, um deine individuellen Schachbretter und Figuren zu speichern und auf dein Spielerprofil zuzugreifen.",
-            "h1": "Bei Chessperiment anmelden"
+            "title": "Sign in to Chessperiment | Save Your Creations",
+            "description": "Sign in to Chessperiment to save your custom chess boards and pieces and access your player profile.",
+            "h1": "Sign in to Chessperiment"
         },
         "PrivacyPolicy": {
-            "title": "Datenschutzerklärung (DSGVO)",
-            "description": "Erfahre, wie Chessperiment deine Daten verarbeitet. Unsere DSGVO-konforme Datenschutzerklärung behandelt Nutzerdaten, Cookies, Firebase-Hosting und deine Rechte.",
-            "lastUpdated": "(Stand: Juli 2024)",
-            "controllerHeading": "1. Verantwortlicher",
-            "controllerText": "Verantwortlich für die Daten verarbeitung auf dieser Website ist:\n\nLasse Thoroe - Chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
-            "generalHeading": "2. Allgemeine Hinweise",
-            "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
-            "collectionHeading": "3. Von uns erhobene Daten",
-            "accountsSubheading": "a) Nutzerkonten",
-            "accountsText": "Wenn Sie ein Konto erstellen, speichern wir Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild. Diese Daten sind nicht öffentlich und dienen der Plattformfunktionalität. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-            "contentSubheading": "b) Nutzergenerierte Inhalte",
-            "contentText": "Wir speichern von Ihnen erstellte Inhalte wie Schachbretter und Figuren. Je nach Ihren Einstellungen können diese öffentlich sichtbar sein. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-            "chatSubheading": "c) Chat-Funktion",
-            "chatText": "Chat-Nachrichten werden gespeichert und auf verbotene Wörter gefiltert, um die Sicherheit zu gewährleisten. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
-            "analyticsHeading": "4. Analysedienste",
-            "analyticsText": "Wir nutzen Vercel Analytics und Speed Insights, um die Leistung unserer Website zu messen. Diese Dienste sind datenschutzfreundlich, verwenden keine Cookies und erheben keine personenbezogenen Daten. Es werden anonyme Nutzungsstatistiken wie besuchte Seiten und Ladezeiten erfasst. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
-            "hostingHeading": "5. Datenbank und Hosting",
-            "hostingText": "Wir verwenden Google Firebase (Firestore) als Datenbank. Ihre Daten (Nutzerkonten, Spielverläufe, erstellte Inhalte) werden dort gespeichert. Daten können in den USA verarbeitet werden. Google ist nach dem EU-US Data Privacy Framework zertifiziert. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+            "title": "Privacy Policy (GDPR)",
+            "description": "Learn how Chessperiment processes your data. Our GDPR-compliant privacy policy covers user data, cookies, Firebase hosting, and your rights.",
+            "lastUpdated": "(Last updated: July 2024)",
+            "controllerHeading": "1. Controller",
+            "controllerText": "Responsible for data processing on this website:\n\nLasse Thoroe - Chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.app",
+            "generalHeading": "2. General Information",
+            "generalText": "The protection of your data is important to us. We only process personal data when it is necessary for providing our services and comply with the General Data Protection Regulation (GDPR).",
+            "collectionHeading": "3. Data We Collect",
+            "accountsSubheading": "a) User accounts",
+            "accountsText": "When you create an account, we store your name, email address, and profile picture. This data is not public and serves platform functionality. Legal basis: Art. 6(1)(b) GDPR.",
+            "contentSubheading": "b) User-generated content",
+            "contentText": "We store content you create such as chess boards and pieces. Depending on your settings, these may be publicly visible. Legal basis: Art. 6(1)(b) GDPR.",
+            "chatSubheading": "c) Chat function",
+            "chatText": "Chat messages are stored and filtered for prohibited words to ensure safety. Legal basis: Art. 6(1)(f) GDPR.",
+            "analyticsHeading": "4. Analytics Services",
+            "analyticsText": "We use Vercel Analytics and Speed Insights to measure website performance. These services are privacy-friendly, use no cookies, and collect no personal data. Anonymous usage statistics such as visited pages and load times are recorded. Legal basis: Art. 6(1)(f) GDPR.",
+            "hostingHeading": "5. Database and Hosting",
+            "hostingText": "We use Google Firebase (Firestore) as our database. Your data (user accounts, game histories, created content) is stored there. Data may be processed in the USA. Google is certified under the EU-US Data Privacy Framework. Legal basis: Art. 6(1)(b) GDPR.",
             "cookiesHeading": "6. Cookies",
-            "cookiesText": "Wir verwenden keine Cookies für Tracking oder Werbung. Einzig ein technisch notwendiger Sitzungs-Cookie (JWT) wird beim Login gesetzt, um Ihre Sitzung aufrechtzuerhalten. Dieser Cookie ist für die Funktion der Website unerlässlich. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-            "retentionHeading": "7. Speicherdauer",
-            "retentionText": "Wir speichern Ihre Daten, solange Sie ein Konto bei uns haben. Spielverläufe und erstellte Inhalte werden länger gespeichert, um die Plattformintegrität zu wahren. Sie können die Löschung Ihres Kontos und der damit verbundenen personenbezogenen Daten jederzeit beantragen.",
-            "minorsHeading": "8. Minderjährige",
-            "minorsText": "Personen unter 16 Jahren sollten unsere Dienste nur mit Zustimmung der Eltern nutzen.",
-            "rightsHeading": "9. Ihre Rechte",
-            "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Bitte kontaktieren Sie uns unter der oben angegebenen E-Mail-Adresse.",
-            "complaintHeading": "10. Beschwerderecht",
-            "complaintText": "Sie haben das Recht, eine Beschwerde bei einer Datenschutzaufsichtsbehörde einzureichen.",
-            "changesHeading": "11. Änderungen",
-            "changesText": "Wir können diese Datenschutzerklärung anpassen. Es gilt die jeweils aktuelle Fassung.",
-            "madeWith": "Erstellt mit freundlicher Unterstützung von",
+            "cookiesText": "We use no cookies for tracking or advertising. Only a technically necessary session cookie (JWT) is set on login to maintain your session. This cookie is essential for the website's functionality. Legal basis: Art. 6(1)(b) GDPR.",
+            "retentionHeading": "7. Retention Period",
+            "retentionText": "We store your data for as long as you have an account with us. Game histories and created content are retained longer to preserve platform integrity. You may request deletion of your account and associated personal data at any time.",
+            "minorsHeading": "8. Minors",
+            "minorsText": "Persons under 16 years of age should use our services only with parental consent.",
+            "rightsHeading": "9. Your Rights",
+            "rightsText": "You have the right to access, rectification, erasure, restriction, and data portability. Please contact us at the email address provided above.",
+            "complaintHeading": "10. Right to Lodge a Complaint",
+            "complaintText": "You have the right to lodge a complaint with a data protection supervisory authority.",
+            "changesHeading": "11. Changes",
+            "changesText": "We may update this privacy policy. The current version applies at any time.",
+            "madeWith": "Created with the kind support of",
             "dieterLinkText": "Dieter macht den Datenschutz"
         },
         "ProjectView": {
-            "title": "Projektübersicht | individuelles Chessperiment",
-            "description": "Betrachte und verwalte dein Schachprojekt. Bearbeite dein Brett und deine Figuren an einem Ort."
+            "title": "Project Overview | Custom Chessperiment",
+            "description": "View and manage your chess project. Edit your board and pieces in one place."
         },
         "GameEnd": {
             "win": "You won!",
             "loss": "You lost!",
             "draw": "Draw!",
-            "rematch": "Revanche",
-            "newGame": "Neues Spiel",
-            "rematchRequested": "Angefragt"
+            "rematch": "Rematch",
+            "newGame": "New Game",
+            "rematchRequested": "Requested"
         },
         "PieceEditorFAQ": {
-            "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | Chessperiment",
-            "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
-            "h1": "Figuren-Editor Technische FAQ",
+            "title": "Piece Editor FAQ | Visual Scripting Help",
+            "description": "Learn how to use the piece editor, visual logic blocks, and movement rules. Detailed technical guide to creating custom chess pieces.",
+            "h1": "Piece Editor Technical FAQ",
             "sections": {
                 "general": {
-                    "title": "Allgemein",
-                    "q1": "Was ist der Figuren-Editor?",
-                    "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
-                    "q2": "Wie speichere ich meine Figur?",
-                    "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
+                    "title": "General",
+                    "q1": "What is the piece editor?",
+                    "a1": "The piece editor lets you create custom chess pieces with unique movement patterns and logic.",
+                    "q2": "How do I save my piece?",
+                    "a2": "Click the 'Save piece' button in the sidebar. Your piece will be saved in the current project."
                 },
                 "moveEditor": {
-                    "title": "Bewegungs-Editor",
-                    "q1": "Wie definiere ich Bewegungen?",
-                    "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
-                    "q2": "Was sind „springende“ Züge?",
-                    "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
+                    "title": "Movement Editor",
+                    "q1": "How do I define movements?",
+                    "a1": "Use the visual grid to click squares that the piece can move to relative to its position.",
+                    "q2": "What are 'jumping' moves?",
+                    "a2": "Jumping moves allow the piece to leap over other pieces, like a knight."
                 },
                 "logicEditor": {
                     "title": "Logic Editor",
-                    "q1": "Was ist der Logik-Editor?",
-                    "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
-                    "q2": "Wie funktionieren Auslöser?",
-                    "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
-                    "q3": "Kann ich Variablen verwenden?",
-                    "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
-                    "q4": "Welche Effekte gibt es?",
-                    "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern.",
-                    "q5": "Was ist der „explode“ Effekt?",
-                    "a5": "Der „explode“ Effekt ermöglicht es einer Figur, alle Figuren in einem bestimmten Radius zu zerstören. Du kannst den Radius individuell einstellen."
+                    "q1": "What is the logic editor?",
+                    "a1": "It's a visual scripting environment where you can define complex behaviors using blocks.",
+                    "q2": "How do triggers work?",
+                    "a2": "Triggers start a logic chain when a specific event occurs, such as 'onMove' or 'onCapture'.",
+                    "q3": "Can I use variables?",
+                    "a3": "Yes, you can define and modify variables to create stateful pieces.",
+                    "q4": "What effects are available?",
+                    "a4": "You can move pieces, capture, create new ones, or modify game state variables.",
+                    "q5": "What is the 'explode' effect?",
+                    "a5": "The 'explode' effect allows a piece to destroy all pieces within a certain radius. You can set the radius individually."
                 },
                 "troubleshooting": {
-                    "title": "Fehlerbehebung",
-                    "q1": "Warum bewegt sich meine Figur nicht?",
-                    "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
-                    "q2": "Meine Logik funktioniert nicht.",
-                    "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslösebedingung erfüllt ist."
+                    "title": "Troubleshooting",
+                    "q1": "Why isn't my piece moving?",
+                    "a1": "Check that you have defined valid moves in the movement or logic editor.",
+                    "q2": "My logic isn't working.",
+                    "a2": "Make sure your blocks are connected correctly and the trigger condition is met."
                 }
             }
         }

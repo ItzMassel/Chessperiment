@@ -3,7 +3,7 @@ export default function JsonLd() {
         name: "chessperiment",
         url: "https://chessperiment.app",
         logo: "https://chessperiment.app/logo.png",
-        description: "The ultimate platform for custom chess. Create, share, and play unique chess variants.",
+        description: "The ultimate platform for custom chess. Describe your idea — AI builds the variant for you. Create, share, and play unique chess variants.",
         contactEmail: "contact.chessperiment@gmail.com",
         socialLinks: [
             "https://twitter.com/chessperiment",
@@ -65,12 +65,13 @@ export default function JsonLd() {
                 "creator": {
                     "@id": `${siteInfo.url}/#organization`
                 },
-                "description": "chessperiment is a creation-first game platform that lets players design custom boards, pieces, and rules, play their own games, and share creations with others.",
+                "description": "chessperiment is a creation-first game platform. Describe any game idea and the AI builds the variant for you — boards, pieces, and rules — instantly. Then fine-tune it yourself, play it, and share it with others.",
                 "audience": {
                     "@type": "Audience",
                     "audienceType": "All ages"
                 },
                 "featureList": [
+                    "AI variant generation — describe a game idea, AI builds it instantly",
                     "Custom board creation",
                     "Custom piece design",
                     "Rule and game mode creation",

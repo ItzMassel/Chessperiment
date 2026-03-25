@@ -1,9 +1,17 @@
+import type { Metadata } from 'next';
 import { auth } from "@/auth";
 import { getUserBoardsAction, getUserPieceSetsAction } from "@/app/actions/library";
 import LibraryGrid from "@/components/editor/LibraryGrid";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { Library as LibraryIcon } from "lucide-react";
+
+export const metadata: Metadata = {
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
 
 export default async function LibraryPage() {
     const session = await auth();

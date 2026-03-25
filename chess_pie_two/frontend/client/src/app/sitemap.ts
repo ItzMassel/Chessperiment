@@ -4,18 +4,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://chessperiment.app';
   const locales = ['en', 'de'];
   
-  // List of known static routes
+  // List of known static routes (public, indexable pages only)
   const routes = [
     '',
     '/marketplace',
     '/game',
     '/announcements',
     '/editor',
-    '/features/analyze',
     '/legal-notice',
     '/privacy-policy',
     '/about',
-    '/profile'
+    '/feedback',
   ];
 
   return routes.flatMap((route) => 

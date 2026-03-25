@@ -1,26 +1,43 @@
 # Chessperiment
 
-> **Chessperiment** is a generative framework for highly custom chess variants.
-> High-signal documentation for AI coding agents: [llms-full.txt](/llms-full.txt)
+> Chessperiment is a free, browser-based game design engine for creating custom chess variants and abstract strategy games. No templates — real customization. Users describe their game idea in plain language and the built-in AI generates the full variant instantly.
 
-## Tool Calling & Navigation
+Chessperiment lets anyone — with no coding knowledge — design completely novel board games using a Scratch-style visual logic editor. It is not a chess-playing site; it is a game creation sandbox.
 
-*   **Full Technical Docs**: [/llms-full.txt](/llms-full.txt) (Token Count: ~2k)
-    *   *Contains*: Logic Manifesto, API Schemas, Block Editor Reference, Move Rule Cookbook.
-*   **Live Editor**: [chessperiment.app/editor](https://chessperiment.app/editor)
+## Core Features
 
-## Capabilities Summary
+- **AI Variant Generator**: Describe a game idea in plain language (e.g. "chess where pawns explode when captured") and the AI instantly creates boards, pieces, and rules as a complete project.
+- **Piece Editor**: Define custom chess piece movement using visual logic blocks. Supports leapers (pieces that jump to fixed offsets, like knights), riders (pieces that slide along vectors, like rooks/bishops), conditional triggers (`onCapture`, `onMove`, `onIsThreatened`), and effects (`transform`, `kill`, `explode`, `modVar`).
+- **Board Editor**: Create boards of any dimension. Supports hexagonal boards, non-rectangular shapes (toggle individual squares on/off), and square-specific rule overrides (teleport zones, territory zones, promotion areas).
+- **Square Editor**: Assign unique rules to individual squares — enables advanced variants including Fractal Chess (miniature boards inside a single square).
+- **Multiplayer**: Share a room code or link to play custom variants with friends in real time. No account or download required to join.
+- **Stockfish Integration**: Built-in Stockfish engine applies to custom game states including non-standard board topologies and custom piece definitions.
+- **Marketplace**: Community library for sharing and downloading custom variants, piece sets, and board designs. All content is free.
 
-*   **Logic Engine**: Vector-based move constraints (`diffX`, `diffY`) instead of static patterns to support arbitrarily sized boards.
-*   **Event System**: Scratch-like block editor for reactive logic (`onCapture`, `Transformation`).
-*   **Rendering**: Frontend-agnostic piece rendering (PNG/SVG) with visual feedback.
-*   **Infrastructure**: Next.js 14, TypeScript, Firebase (Store), Socket.io (Realtime), Redis (Cache).
+## Positioning
 
-## Features
- 
-* Hexagon Squares
-* Custom board shapes: Holes, disabled squares etc.
-* Pixel Art for Piece Design (within the browser)
-* Engine to play against
-* Piece Editor with trigger (onMove, onIsThreatend etc.) --> effects (transform, ModVar, kill etc.)
-* Variables for pieces (e.g. lives)
+- **Not a chess-playing site** (not competing with Chess.com or Lichess)
+- **Competes with**: ChessCraft (mobile-only, template-based), Chess Remix (paywalled features), Omnichess (complex UI), PyChess/pychess.org (preset variants only, no creation sandbox), Protochess (no marketplace/community)
+- **Key differentiator**: Deepest logic system (conditional triggers, state variables, multi-step sequences) + fully free + web-native + social marketplace
+
+## Target Users
+
+Board game designers, abstract strategy game prototypers, fairy chess enthusiasts, and anyone who has hit the limits of existing chess customization tools.
+
+## Technical Stack
+
+Next.js 14, TypeScript, Firebase (Firestore), Socket.io (real-time multiplayer), Redis (cache), Stockfish (engine analysis).
+
+## Links
+
+- **Live app**: https://chessperiment.app
+- **Editor**: https://chessperiment.app/en/editor
+- **Marketplace**: https://chessperiment.app/en/marketplace
+- **Play**: https://chessperiment.app/en/game
+- **About**: https://chessperiment.app/en/about
+- **Full technical docs**: https://chessperiment.app/llms-full.txt
+
+## Optional
+
+- **Contact**: contact.chessperiment@gmail.com
+- **Feedback**: https://chessperiment.app/en/feedback

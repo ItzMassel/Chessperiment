@@ -87,8 +87,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           "price": "0",
           "priceCurrency": "EUR"
         },
-        "description": "Free browser-based game design engine for creating custom chess variants and abstract strategy games. Not presets — actual customizability. Design pieces with a visual Scratch-style logic editor — define leapers, riders, and fairy pieces with conditional triggers. Create hexagonal boards, custom-shaped playing fields, and per-square rule overrides. Playtest instantly via multiplayer room codes. Powered by Stockfish engine analysis.",
+        "description": "Free browser-based game design engine for creating custom chess variants and abstract strategy games. Describe your idea — AI generates the full variant for you instantly. You bring the creativity; AI skips the boring setup. Not presets — actual customizability. Design pieces with a visual Scratch-style logic editor — define leapers, riders, and fairy pieces with conditional triggers. Create hexagonal boards, custom-shaped playing fields, and per-square rule overrides. Playtest instantly via multiplayer room codes. Powered by Stockfish engine analysis.",
         "featureList": [
+          "AI variant generation — describe any game idea, AI builds it for you instantly",
           "Visual block-based piece logic editor — no coding required",
           "Leaper and rider movement definition",
           "Conditional trigger and state-based piece behaviour",

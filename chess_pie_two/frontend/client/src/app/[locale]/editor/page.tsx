@@ -11,7 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             canonical: `https://chessperiment.app/${locale}/editor`,
             languages: {
                 'en': 'https://chessperiment.app/en/editor',
-                'de': 'https://chessperiment.app/de/editor'
+                'de': 'https://chessperiment.app/de/editor',
+                'x-default': 'https://chessperiment.app/en/editor',
             }
         },
         openGraph: {
@@ -37,13 +38,13 @@ export default async function EditorPage({ params }: { params: Promise<{ locale:
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "chessperiment Project Editor",
+        "name": "Chessperiment Project Editor",
         "url": `https://chessperiment.app/${locale}/editor`,
         "description": t('description'),
-        "applicationCategory": "DesignApplication",
+        "applicationCategory": "GameApplication",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "provider": { "@type": "Organization", "name": "chessperiment", "url": `https://chessperiment.app/${locale}` },
+        "author": { "@type": "Organization", "name": "Chessperiment", "url": "https://chessperiment.app" },
         "featureList": ["Project management", "Board editor", "Piece editor", "Custom game rules"]
     };
 
@@ -52,6 +53,7 @@ export default async function EditorPage({ params }: { params: Promise<{ locale:
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
+        <h1 className="sr-only">{t('h1')}</h1>
         <PageClient />
     </>;
 }

@@ -12,18 +12,17 @@
         "marketplace": "Marktplatz",
         "creator": "Creator Dashboard",
         "library": "Bibliothek",
-
         "about": "Über uns",
         "feedback": "Feedback",
         "editor": "Editor"
     },
     "filters": {
-      "all": "Alle Elemente",
-      "board": "Bretter",
-      "piece": "Figuren",
-      "design": "Designs",
-      "free": "Kostenlos",
-      "paid": "Premium"
+        "all": "Alle Elemente",
+        "board": "Bretter",
+        "piece": "Figuren",
+        "design": "Designs",
+        "free": "Kostenlos",
+        "paid": "Premium"
     },
     "Marketplace": {
         "title": "Marktplatz",
@@ -465,7 +464,6 @@
             "eraser": "Radiergummi",
             "clearCanvas": "Leinwand leeren",
             "comingSoon": "Demnächst",
-
             "imageUploadLabel": "Visuelle Basis",
             "uploadPicture": "Bild hochladen",
             "comingEndOfJanuary": "Verfügbar Ende Januar 2026",
@@ -652,7 +650,6 @@
         "newGame": "Neues Spiel",
         "rematchRequested": "Angefragt"
     },
-
     "Announcements": {
         "title": "Neueste Nachrichten & Updates",
         "by": "Von",
@@ -740,6 +737,8 @@
             "title": "Häufig gestellte Fragen",
             "whatIsChessperiment": "Was ist Chessperiment?",
             "whatIsChessperimentAnswer": "Chessperiment ist eine kostenlose, browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Keine Vorlagen — echte Anpassbarkeit. Mit visuellem Figuren-Logik-Editor, Brett-Editor mit Hexagonal- und Freiform-Unterstützung und browserbasiertem Multiplayer.",
+            "canAIBuildVariant": "Kann die KI eine Schachvariante für mich erstellen?",
+            "canAIBuildVariantAnswer": "Ja. Chessperiment hat einen integrierten KI-Assistenten, der vollständige Schachvarianten aus einfachen Beschreibungen generiert. Beschreibe einfach deine Idee — z.B. 'Schach, bei dem Bauern explodieren, wenn sie geschlagen werden' — und die KI konfiguriert sofort Bretter, Figuren und Regeln für dich. Du kannst das Ergebnis anschließend im visuellen Editor beliebig anpassen.",
             "isItFree": "Ist Chessperiment kostenlos?",
             "isItFreeAnswer": "Ja. Chessperiment ist komplett kostenlos — keine Paywalls, keine Premium-Stufen, keine Werbung. Alle Funktionen — einschließlich Figuren-Editor, Brett-Editor, Multiplayer und Marktplatz — sind kostenlos nutzbar.",
             "canIPlayFriends": "Kann ich mit Freunden spielen?",
@@ -776,7 +775,7 @@
             "p": "Chessperiment ist eine kostenlose, browserbasierte Sandbox zum Entwerfen individueller Schachvarianten und abstrakter Strategiespiele — keine Vorlagenbibliothek, sondern eine vollständige Game-Design-Engine. Erstelle Figuren mit einem visuellen Logik-Editor im Scratch-Stil — definiere Leaper- und Rider-Bewegungsmuster, füge konditionale Auslöser hinzu und programmiere komplexe Märchenschachfiguren-Verhalten ohne Programmierkenntnisse. Designe hexagonale oder individuell geformte Bretter, schalte einzelne Felder um, um nicht-rechteckige Spielfelder zu bauen, und teste sofort mit Freunden über Raumcodes. Stockfish-Analyse ist integriert und funktioniert mit deinen eigenen Regeln. Anders als andere Schachvarianten-Tools, die ein festes Menü an Optionen bieten, gibt dir Chessperiment echte Anpassbarkeit — jede Regel, jede Figur, jedes Feld liegt in deiner Hand."
         },
         "Game": {
-            "title": "Schachvarianten online spielen - Multiplayer-Schachspiele | Chessperiment",
+            "title": "Schachvarianten online spielen - Multiplayer-Schachspiele",
             "description": "Spiele innovative Schachvarianten online mit Freunden. Multiplayer-Schach mit individuellen Brettern und Figuren. Kostenlos spielbar, kein Download erforderlich.",
             "h1": "Spiele individuelle Schachvarianten online",
             "seoContent": {
@@ -790,11 +789,11 @@
             "h1": "Dein Projekt-Arbeitsplatz"
         },
         "PieceEditor": {
-            "title": "Visueller Schachfiguren-Editor — Definiere Leaper, Rider & Märchenschachfiguren-Logik | Chessperiment",
+            "title": "Visueller Schachfiguren-Editor — Definiere Leaper, Rider & Märchenschachfiguren-Logik",
             "description": "Definiere benutzerdefinierte Schachfiguren-Bewegungen mit visuellen Logikblöcken — kein Programmieren nötig. Keine Vorlagen — echte Anpassbarkeit. Erstelle Leaper, Rider und komplexe Märchenschachfiguren mit konditionalen Auslösern, zustandsbasierten Schlagregeln und mehrstufigen Zugsequenzen."
         },
         "SquareEditor": {
-            "title": "Feld-Regel-Editor — Feldspezifische Logik für Schachvarianten | Chessperiment",
+            "title": "Feld-Regel-Editor — Feldspezifische Logik für Schachvarianten",
             "description": "Weise einzelnen Brettfeldern einzigartige Regeln zu — erstelle Teleport-Felder, Territoriumszonen, Umwandlungsbereiche oder Bewegungseinschränkungen. Ermöglicht fortgeschrittene Schachvarianten einschließlich Fraktalschach."
         },
         "BoardEditor": {
@@ -891,7 +890,7 @@
             "rematchRequested": "Angefragt"
         },
         "PieceEditorFAQ": {
-            "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | Chessperiment",
+            "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe",
             "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
             "h1": "Figuren-Editor Technische FAQ",
             "sections": {
