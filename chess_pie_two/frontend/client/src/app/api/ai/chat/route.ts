@@ -3,16 +3,15 @@ import { getToolsForPage } from '@/lib/ai/tools';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { OllamaRequest, OllamaResponse } from '@/lib/ai/types';
 
-const OLLAMA_API_URL = 'https://ollama.com/api/chat';
-const OLLAMA_MODEL = 'qwen3:32b';
+// Ollama Cloud base URL. Override with OLLAMA_BASE_URL for self-hosted.
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'https://ollama.com';
+const OLLAMA_API_URL = `${OLLAMA_BASE_URL}/api/chat`;
+// Cloud models use the "-cloud" suffix, e.g. "qwen3:32b-cloud".
+// Override with OLLAMA_MODEL env var to use a different model.
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:32b-cloud';
 
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.OLLAMA_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'OLLAMA_API_KEY not configured' }, { status: 500 });
-    }
-
     const body = await request.json();
     const { messages, projectState, currentPage } = body;
 
@@ -39,12 +38,13 @@ export async function POST(request: NextRequest) {
       stream: false
     };
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const apiKey = process.env.OLLAMA_API_KEY;
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
     const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: JSON.stringify(ollamaRequest)
     });
 
