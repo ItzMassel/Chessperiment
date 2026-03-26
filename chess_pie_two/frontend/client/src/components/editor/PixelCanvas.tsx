@@ -23,6 +23,8 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
     const internalPixels = useRef<string[][]>(pixels);
     // Cache the loaded background image to avoid recreating it on every drawCanvas call
     const loadedImageRef = useRef<HTMLImageElement | null>(null);
+    // Always-current ref to drawCanvas — updated each render so effects don't need it as a dep
+    const drawCanvasRef = useRef<() => void>(() => {});
 
     const colors = [
         '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff',
@@ -65,20 +67,37 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
         }
     }, [gridSize]);
 
+    // Keep ref current so effects below can call it without listing it as a dep
+    drawCanvasRef.current = drawCanvas;
+
     // Load image when the image prop changes, then redraw
     useEffect(() => {
         if (!image) {
             loadedImageRef.current = null;
-            drawCanvas();
+            drawCanvasRef.current();
             return;
         }
+
+        let cancelled = false;
+        // Clear stale image immediately so we don't keep showing the old background
+        loadedImageRef.current = null;
+        drawCanvasRef.current();
+
         const img = new (globalThis.Image || Image)();
         img.onload = () => {
+            if (cancelled) return;
             loadedImageRef.current = img;
-            drawCanvas();
+            drawCanvasRef.current();
+        };
+        img.onerror = () => {
+            if (cancelled) return;
+            loadedImageRef.current = null;
+            drawCanvasRef.current();
         };
         img.src = image;
-    }, [image, drawCanvas]);
+
+        return () => { cancelled = true; };
+    }, [image]); // drawCanvas intentionally excluded — accessed via ref
 
     // Sync internal pixels and redraw when pixels prop changes
     useEffect(() => {
