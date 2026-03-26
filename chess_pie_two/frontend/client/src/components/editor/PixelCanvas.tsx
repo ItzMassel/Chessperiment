@@ -21,18 +21,14 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
 
     // Internal pixel data for performance
     const internalPixels = useRef<string[][]>(pixels);
+    // Cache the loaded background image to avoid recreating it on every drawCanvas call
+    const loadedImageRef = useRef<HTMLImageElement | null>(null);
 
     const colors = [
         '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff',
         '#808080', '#c0c0c0', '#800000', '#808000', '#008000', '#800080', '#008080', '#000080',
         'transparent'
     ];
-
-    // Initialize/Sync internal pixels
-    useEffect(() => {
-        internalPixels.current = pixels;
-        drawCanvas();
-    }, [pixels]);
 
     const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -52,26 +48,9 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
             }
         }
 
-        // Draw background image if provided
-        if (image) {
-            const img = new (globalThis.Image || Image)();
-            img.src = image;
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                // Redraw pixels on top of image
-                for (let y = 0; y < gridSize; y++) {
-                    for (let x = 0; x < gridSize; x++) {
-                        const color = internalPixels.current[y][x];
-                        if (color !== 'transparent') {
-                            ctx.fillStyle = color;
-                            ctx.fillRect(x * cellSize, y * cellSize, cellSize + 0.5, cellSize + 0.5);
-                        }
-                    }
-                }
-            };
-            if (img.complete) {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            }
+        // Draw background image if loaded (read from ref so this stays stable)
+        if (loadedImageRef.current) {
+            ctx.drawImage(loadedImageRef.current, 0, 0, canvas.width, canvas.height);
         }
 
         // Draw pixels
@@ -84,7 +63,28 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
                 }
             }
         }
-    }, [gridSize, image]);
+    }, [gridSize]);
+
+    // Load image when the image prop changes, then redraw
+    useEffect(() => {
+        if (!image) {
+            loadedImageRef.current = null;
+            drawCanvas();
+            return;
+        }
+        const img = new (globalThis.Image || Image)();
+        img.onload = () => {
+            loadedImageRef.current = img;
+            drawCanvas();
+        };
+        img.src = image;
+    }, [image, drawCanvas]);
+
+    // Sync internal pixels and redraw when pixels prop changes
+    useEffect(() => {
+        internalPixels.current = pixels;
+        drawCanvas();
+    }, [pixels, drawCanvas]);
 
     const handleAction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const canvas = canvasRef.current;
