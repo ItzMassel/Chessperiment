@@ -1,11 +1,10 @@
 'use client';
 
 import { Project } from '@/types/Project';
-import { Star, MoreVertical, Trash2, Share2, Box, Grid3X3, GitFork } from 'lucide-react';
+import { Star, Trash2, Share2, Box, Grid3X3, GitFork } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 
 interface ProjectCardProps {
     project: Project;
@@ -17,7 +16,6 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onToggleStar, onDelete, onPublish }: ProjectCardProps) {
     const t = useTranslations('Editor');
     const locale = useLocale();
-    const [showMenu, setShowMenu] = useState(false);
 
     // Generate a deterministed gradient based on project ID or name
     const gradients = [
@@ -110,46 +108,27 @@ export default function ProjectCard({ project, onToggleStar, onDelete, onPublish
                         {t('editBoard')}
                     </Link>
 
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowMenu(!showMenu)}
-                            className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700/50 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onPublish(project.id!);
+                        }}
+                        className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition-all shadow-lg shadow-blue-500/30"
+                    >
+                        <Share2 className="w-4 h-4" />
+                        Publish
+                    </button>
 
-                        {showMenu && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setShowMenu(false)}
-                                />
-                                <div className="absolute bottom-full right-0 mb-2 z-20 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    <button
-                                        onClick={() => {
-                                            setShowMenu(false);
-                                            onPublish(project.id!);
-                                        }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                                    >
-                                        <Share2 className="w-4 h-4 text-blue-500" />
-                                        Publish
-                                    </button>
-                                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
-                                    <button
-                                        onClick={() => {
-                                            setShowMenu(false);
-                                            onDelete(project.id!);
-                                        }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        {t('deleteProject')}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onDelete(project.id!);
+                        }}
+                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700/50 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-colors"
+                        title={t('deleteProject')}
+                    >
+                        <Trash2 className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
         </motion.div>
