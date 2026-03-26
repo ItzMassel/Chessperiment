@@ -40,7 +40,12 @@ export const PixelPiece = React.memo(({ pixels, image, size, className }: { pixe
                 await new Promise((resolve) => {
                     img.onload = resolve;
                 });
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+                const drawWidth = img.naturalWidth * scale;
+                const drawHeight = img.naturalHeight * scale;
+                const offsetX = (canvas.width - drawWidth) / 2;
+                const offsetY = (canvas.height - drawHeight) / 2;
+                ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
             }
 
             if (pixels) {
