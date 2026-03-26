@@ -510,6 +510,7 @@
                 },
                 "blocks": {
                     "onIsCaptured": "wennGeschlagen",
+                    "onCaptured": "beiSchlagen",
                     "onThreat": "beiBedrohung",
                     "onMove": "beiZug",
                     "onEnvironment": "beiUmgebung",
@@ -525,6 +526,7 @@
                 },
                 "descriptions": {
                     "onIsCaptured": "Wird ausgelöst, wenn eine Figur geschlagen wird.",
+                    "onCaptured": "Wird ausgelöst, wenn diese Figur eine andere Figur schlägt.",
                     "onThreat": "Wird ausgelöst, wenn die Figur bedroht wird.",
                     "onMove": "Wird ausgelöst, wenn die Figur zieht.",
                     "onEnvironment": "Wird basierend auf der Brettumgebung ausgelöst.",

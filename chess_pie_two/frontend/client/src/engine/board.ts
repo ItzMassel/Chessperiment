@@ -252,7 +252,15 @@ export class BoardClass {
                     winner: null as string | null
                 };
 
-                // Fire consolidated on-is-captured logic on both sides
+                // Fire on-captured on the attacker (when this piece captures another)
+                if ((pieceToMove as any).isCustom) {
+                    (pieceToMove as any).executeLogic('on-captured', commonContext, this);
+                    if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
+                        movePrevented = true;
+                    }
+                }
+
+                // Fire on-is-captured on the victim (legacy: also fire on attacker for on-capture alias)
                 if ((pieceToMove as any).isCustom) {
                     (pieceToMove as any).executeLogic('on-is-captured', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {

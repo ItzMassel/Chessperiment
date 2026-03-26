@@ -80,6 +80,18 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 220
     },
     {
+        id: 'on-captured',
+        type: 'trigger',
+        label: 'onCaptured',
+        category: 'trigger',
+        color: '#FFD700',
+        description: 'onCaptured',
+        sockets: [
+            { id: 'by', type: 'select', label: 'piece', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
+        ],
+        width: 220
+    },
+    {
         id: 'on-threat',
         type: 'trigger',
         label: 'onThreat',

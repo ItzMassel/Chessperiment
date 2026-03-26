@@ -74,9 +74,24 @@ export class LogicRunner {
         // Fallback for renamed triggers
         let targetType = triggerType;
         if (triggerType === 'on-is-captured') {
-            // Check both new and old IDs
-            const triggers = piece.logic.filter((b: any) => 
-                b.type === 'trigger' && (b.id === 'on-is-captured' || b.id === 'on-capture' || b.id === 'on-captured')
+            // Fires on the victim only
+            const triggers = piece.logic.filter((b: any) =>
+                b.type === 'trigger' && (b.id === 'on-is-captured' || b.id === 'on-capture')
+            );
+            for (const trigger of triggers) {
+                if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
+                    if (trigger.childId) {
+                        this.runBlock(piece, trigger.childId, context, board);
+                    }
+                }
+            }
+            return;
+        }
+
+        if (triggerType === 'on-captured') {
+            // Fires on the attacker only (when this piece captures another)
+            const triggers = piece.logic.filter((b: any) =>
+                b.type === 'trigger' && b.id === 'on-captured'
             );
             for (const trigger of triggers) {
                 if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
@@ -115,13 +130,14 @@ export class LogicRunner {
         switch (trigger.id) {
             case 'on-is-captured':
             case 'on-capture':
-            case 'on-captured':
-                // Smart trigger: handles both "I captured something" and "I was captured"
-                // If we are the victim (context.attacker exists and it's not us)
+                // Fires on the victim: match against the attacker type
                 if (context.attacker && context.attacker.id !== piece.id) {
                     return matchesType(context.attacker, vals.by);
                 }
-                // If we are the attacker (context.capturedPiece exists and it's not us)
+                return false;
+
+            case 'on-captured':
+                // Fires on the attacker: match against the captured piece type
                 if (context.capturedPiece && context.capturedPiece.id !== piece.id) {
                     return matchesType(context.capturedPiece, vals.by);
                 }

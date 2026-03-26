@@ -36,9 +36,10 @@ export type EffectPhase = 'pre-move' | 'on-move' | 'post-move' | 'end-of-turn';
 /**
  * Trigger types for piece and square logic
  */
-export type TriggerType = 
+export type TriggerType =
     | 'on-move'
     | 'on-is-captured'
+    | 'on-captured'
     | 'on-threat'
     | 'on-environment'
     | 'on-turn-start'
