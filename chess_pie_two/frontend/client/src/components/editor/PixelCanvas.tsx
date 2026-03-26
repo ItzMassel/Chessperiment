@@ -50,9 +50,26 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
             }
         }
 
-        // Draw background image if loaded (read from ref so this stays stable)
+        // Draw background image if loaded (contain scaling — no stretching)
         if (loadedImageRef.current) {
-            ctx.drawImage(loadedImageRef.current, 0, 0, canvas.width, canvas.height);
+            const img = loadedImageRef.current;
+            const scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+            const drawWidth = img.naturalWidth * scale;
+            const drawHeight = img.naturalHeight * scale;
+            const offsetX = (canvas.width - drawWidth) / 2;
+            const offsetY = (canvas.height - drawHeight) / 2;
+
+            // Show dashed "perfect size" outline when image doesn't fill the canvas
+            if (drawWidth < canvas.width - 1 || drawHeight < canvas.height - 1) {
+                ctx.save();
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 5]);
+                ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+                ctx.restore();
+            }
+
+            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
         }
 
         // Draw pixels
