@@ -281,6 +281,41 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     // squareSizeRef updated via currentSquareSize effect below
     useEffect(() => { placedPiecesRef.current = placedPieces; }, [placedPieces]);
 
+    // Direct grid size editing state
+    const [colsInput, setColsInput] = useState(String(cols));
+    const [rowsInput, setRowsInput] = useState(String(rows));
+    const [hexRadiusInput, setHexRadiusInput] = useState(String(Math.floor(rows / 2)));
+    useEffect(() => { setColsInput(String(cols)); }, [cols]);
+    useEffect(() => { setRowsInput(String(rows)); }, [rows]);
+    useEffect(() => { setHexRadiusInput(String(Math.floor(rows / 2))); }, [rows]);
+
+    const applySquareResize = (newCols: number, newRows: number) => {
+        newCols = Math.max(1, Math.min(20, newCols));
+        newRows = Math.max(1, Math.min(20, newRows));
+        const newActive = new Set<string>();
+        activeSquaresRef.current.forEach(key => {
+            const coord = grid.stringToCoord(key);
+            if ((coord.x ?? 0) < newCols && (coord.y ?? 0) < newRows) newActive.add(key);
+        });
+        for (let x = 0; x < newCols; x++) {
+            for (let y = 0; y < newRows; y++) {
+                if (x >= colsRef.current || y >= rowsRef.current) {
+                    newActive.add(grid.coordToString({ x, y }));
+                }
+            }
+        }
+        const newPieces: Record<string, any> = {};
+        Object.entries(placedPiecesRef.current).forEach(([key, val]) => {
+            const coord = grid.stringToCoord(key);
+            if ((coord.x ?? 0) < newCols && (coord.y ?? 0) < newRows) newPieces[key] = val;
+        });
+        setActiveSquares(newActive);
+        setPlacedPieces(newPieces);
+        setCols(newCols);
+        setRows(newRows);
+        saveToHistory(newPieces, newActive, newRows, newCols, gridType);
+    };
+
     useEffect(() => {
         if (activeSquares.size === 0) {
             const initialTiles = grid.generateInitialGrid(rows, cols);
@@ -812,119 +847,169 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
             {/* Controls Overlay */}
-            <div className="relative z-50 flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 px-4 md:px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
-                {/* Grid Type Selector */}
-                <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">{t('gridType')}</span>
-                    <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
-                        {[
-                            { id: 'square', label: t('gridSquare') },
-                            { id: 'hex', label: t('gridHex') }
-                        ].map(g => (
-                            <button
-                                key={g.id}
-                                onClick={() => {
-                                    if (confirm(t('confirmGridSwitch'))) {
-                                        setGridType(g.id as any);
-                                        const newGrid = gridMap[g.id];
-                                        const initialTiles = newGrid.generateInitialGrid(rows, cols);
-                                        const newActive = new Set(initialTiles.map(t => newGrid.coordToString(t)));
+            <div className="relative z-50 flex flex-wrap items-center justify-center gap-2 mb-8 px-4 py-2.5 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
+                {/* Grid Type */}
+                <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
+                    {[
+                        { id: 'square', label: t('gridSquare') },
+                        { id: 'hex', label: t('gridHex') }
+                    ].map(g => (
+                        <button
+                            key={g.id}
+                            onClick={() => {
+                                if (confirm(t('confirmGridSwitch'))) {
+                                    setGridType(g.id as any);
+                                    const newGrid = gridMap[g.id];
+                                    const initialTiles = newGrid.generateInitialGrid(rows, cols);
+                                    const newActive = new Set(initialTiles.map(t => newGrid.coordToString(t)));
+                                    setActiveSquares(newActive);
+                                    setPlacedPieces({});
+                                    saveToHistory({}, newActive, rows, cols, g.id as any);
+                                }
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${gridType === g.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
+                        >
+                            {g.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="w-px h-6 bg-stone-900/10 dark:bg-white/10" />
+
+                {/* Grid Size — directly editable */}
+                <div className="flex items-center gap-1">
+                    {gridType === 'square' ? (
+                        <>
+                            <input
+                                type="number"
+                                value={colsInput}
+                                onChange={e => setColsInput(e.target.value)}
+                                onBlur={() => {
+                                    const v = Math.max(1, Math.min(20, parseInt(colsInput) || cols));
+                                    setColsInput(String(v));
+                                    if (v !== cols) applySquareResize(v, rows);
+                                }}
+                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                className="w-9 text-center text-sm font-bold bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-lg py-1 text-stone-900 dark:text-white outline-none focus:border-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                min={1} max={20}
+                                title={t('gridSize')}
+                            />
+                            <span className="text-stone-400 dark:text-white/30 text-sm font-bold select-none">×</span>
+                            <input
+                                type="number"
+                                value={rowsInput}
+                                onChange={e => setRowsInput(e.target.value)}
+                                onBlur={() => {
+                                    const v = Math.max(1, Math.min(20, parseInt(rowsInput) || rows));
+                                    setRowsInput(String(v));
+                                    if (v !== rows) applySquareResize(cols, v);
+                                }}
+                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                className="w-9 text-center text-sm font-bold bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-lg py-1 text-stone-900 dark:text-white outline-none focus:border-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                min={1} max={20}
+                                title={t('gridSize')}
+                            />
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase font-bold">{t('radius')}</span>
+                            <input
+                                type="number"
+                                value={hexRadiusInput}
+                                onChange={e => setHexRadiusInput(e.target.value)}
+                                onBlur={() => {
+                                    const v = Math.max(1, Math.min(10, parseInt(hexRadiusInput) || Math.floor(rows / 2)));
+                                    setHexRadiusInput(String(v));
+                                    const newDim = v * 2 + 1;
+                                    if (newDim !== rows || newDim !== cols) {
+                                        const hexGrid = gridMap['hex'];
+                                        const newTiles = hexGrid.generateInitialGrid(newDim, newDim);
+                                        const newActive = new Set(newTiles.map(t => hexGrid.coordToString(t)));
+                                        setPlacedPieces(prev => {
+                                            const next: Record<string, any> = {};
+                                            Object.entries(prev).forEach(([key, val]) => {
+                                                if (newActive.has(key)) next[key] = val;
+                                            });
+                                            return next;
+                                        });
                                         setActiveSquares(newActive);
-                                        setPlacedPieces({});
-                                        saveToHistory({}, newActive, rows, cols, g.id as any);
+                                        setCols(newDim);
+                                        setRows(newDim);
+                                        saveToHistory({}, newActive, newDim, newDim, 'hex');
                                     }
                                 }}
-                                className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${gridType === g.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
-                            >
-                                {g.label}
-                            </button>
-                        ))}
-                    </div>
+                                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                className="w-9 text-center text-sm font-bold bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-lg py-1 text-stone-900 dark:text-white outline-none focus:border-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                min={1} max={10}
+                                title={t('radius')}
+                            />
+                        </div>
+                    )}
                 </div>
 
-                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="w-px h-6 bg-stone-900/10 dark:bg-white/10" />
 
-                {/* Board Stats */}
-                <div className="flex items-center gap-3">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">{gridType === 'hex' ? t('radius') : t('gridSize')}</span>
-                        <span className="text-xl font-black text-stone-900 dark:text-white tabular-nums tracking-tighter">
-                            {gridType === 'hex'
-                                ? (cols === rows ? Math.floor(rows / 2) : `${Math.floor(cols / 2)} × ${Math.floor(rows / 2)}`)
-                                : `${cols} × ${rows}`}
-                        </span>
-                    </div>
+                {/* Symmetry */}
+                <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
+                    {[
+                        { id: 'none', label: t('symNone') },
+                        { id: 'horizontal', label: t('symH') },
+                        { id: 'vertical', label: t('symV') },
+                        { id: 'rotational', label: t('symR') }
+                    ].map(s => (
+                        <button
+                            key={s.id}
+                            onClick={() => setSymmetry(s.id as any)}
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${symmetry === s.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
+                            title={`${s.label} Symmetry`}
+                        >
+                            {s.label}
+                        </button>
+                    ))}
                 </div>
 
-                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="w-px h-6 bg-stone-900/10 dark:bg-white/10" />
 
-                {/* Symmetry Controls */}
+                {/* Clear + Hex Guide */}
                 <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">{t('symmetry')}</span>
-                    <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
-                        {[
-                            { id: 'none', label: t('symNone') },
-                            { id: 'horizontal', label: t('symH') },
-                            { id: 'vertical', label: t('symV') },
-                            { id: 'rotational', label: t('symR') }
-                        ].map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => setSymmetry(s.id as any)}
-                                className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${symmetry === s.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
-                                title={`${s.label} Symmetry`}
-                            >
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
-
-                {/* Utility Controls */}
-                <div className="flex items-center gap-2 sm:gap-3">
                     <button
                         onClick={clearBoard}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] sm:text-xs font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                        className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
                     >
                         {t('clear')}
                     </button>
                     {gridType === 'hex' && (
                         <button
                             onClick={() => setShowHexGuide(!showHexGuide)}
-                            className={`hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all font-bold text-xs ${showHexGuide
+                            className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all font-bold text-[10px] ${showHexGuide
                                 ? 'bg-amber-500 text-bg border-amber-500 shadow-lg shadow-amber-500/20'
                                 : 'bg-white/50 dark:bg-white/5 border-stone-200 dark:border-white/10 text-stone-600 dark:text-white/60 hover:text-amber-500'
                                 }`}
                         >
-                            <Info size={16} />
+                            <Info size={14} />
                             {t('guide')}
                         </button>
                     )}
                 </div>
 
-                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="w-px h-6 bg-stone-900/10 dark:bg-white/10" />
 
-                {/* Zoom Controls */}
-                <div className="flex items-center gap-2">
+                {/* Zoom */}
+                <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
-                        className="p-1.5 sm:p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
+                        className="p-1.5 rounded-lg bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom Out"
                     >
-                        <Minus size={16} />
+                        <Minus size={14} />
                     </button>
-                    <div className="flex flex-col items-center min-w-10 sm:min-w-12">
-                        <span className="text-[8px] sm:text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold">{t('zoom')}</span>
-                        <span className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
-                    </div>
+                    <span className="text-xs font-bold text-stone-900 dark:text-white tabular-nums min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
                     <button
                         onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
-                        className="p-1.5 sm:p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
+                        className="p-1.5 rounded-lg bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom In"
                     >
-                        <Plus size={16} />
+                        <Plus size={14} />
                     </button>
                 </div>
             </div>
