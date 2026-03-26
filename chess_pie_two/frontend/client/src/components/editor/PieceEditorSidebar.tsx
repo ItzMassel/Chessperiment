@@ -177,6 +177,9 @@ export default function PieceEditorSidebar({
                         >
                             <Palette size={14} /> {t('uploadPicture')}
                         </label>
+                        <p className="text-[9px] text-stone-400 dark:text-white/20 text-center tracking-widest uppercase">
+                            Ideal: 512 × 512 px
+                        </p>
                     </div>
                 )}
 
