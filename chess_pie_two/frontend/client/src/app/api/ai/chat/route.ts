@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AI_TOOLS } from '@/lib/ai/tools';
+import { getToolsForPage } from '@/lib/ai/tools';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { OllamaRequest, OllamaResponse } from '@/lib/ai/types';
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const ollamaRequest: OllamaRequest = {
       model: OLLAMA_MODEL,
       messages: ollamaMessages,
-      tools: AI_TOOLS,
+      tools: getToolsForPage(currentPage || 'default'),
       stream: false
     };
 
