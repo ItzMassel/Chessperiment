@@ -924,18 +924,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     if (!activeProject || !board || !game) return null;
 
     const gridType = activeProject.gridType || 'square';
-    const allFiles = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    const allRanks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-
     const bW = board.width || 8;
     const bH = board.height || 8;
+    const allFiles = Array.from({ length: bW }, (_, i) => String.fromCharCode(97 + i));
+    const allRanks = Array.from({ length: bH }, (_, i) => String(bH - i));
+
     const isFlipped = myColor === 'black';
-    const files = isFlipped
-        ? allFiles.slice(0, bW).reverse()
-        : allFiles.slice(0, bW);
-    const ranks = isFlipped
-        ? allRanks.slice(Math.max(0, 8 - bH)).reverse()
-        : allRanks.slice(Math.max(0, 8 - bH));
+    const files = isFlipped ? [...allFiles].reverse() : allFiles;
+    const ranks = isFlipped ? [...allRanks].reverse() : allRanks;
 
     // For hex boards: build a set of active square keys (hex coord strings)
     const hexActiveSquareKeys = gridType === 'hex'
