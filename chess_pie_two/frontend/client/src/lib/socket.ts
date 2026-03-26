@@ -36,7 +36,8 @@ export function getSocket() {
     });
 
     socket.on("connect_error", (error) => {
-      console.error('❌ Socket connection error:', error.message);
+      // Silently ignore socket errors — backend may not be running
+      // console.error('❌ Socket connection error:', error.message);
     });
 
     socket.on("disconnect", (reason) => {

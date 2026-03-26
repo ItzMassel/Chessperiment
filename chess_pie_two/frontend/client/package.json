@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "marketplace:cleanup": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/cleanup-marketplace.ts', {stdio:'inherit',env:{...process.env}})\"",
+    "marketplace:cleanup:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/cleanup-marketplace.ts --apply', {stdio:'inherit',env:{...process.env}})\"",
+    "variants:publish": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts', {stdio:'inherit',env:{...process.env}})\"",
+    "variants:publish:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts --apply', {stdio:'inherit',env:{...process.env}})\""
   },
   "dependencies": {
     "@auth/firebase-adapter": "^2.11.1",

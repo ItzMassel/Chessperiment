@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { Send } from 'lucide-react';
 
 export function SEOFooter() {
     const t = useTranslations('SEO.Footer');
@@ -10,6 +11,15 @@ export function SEOFooter() {
         { q: 'whatIsChessperiment', a: 'whatIsChessperimentAnswer' },
         { q: 'isItFree', a: 'isItFreeAnswer' },
         { q: 'canIPlayFriends', a: 'canIPlayFriendsAnswer' },
+        { q: 'whatIsLeaper', a: 'whatIsLeaperAnswer' },
+        { q: 'whatIsRider', a: 'whatIsRiderAnswer' },
+        { q: 'whatIsFairyPiece', a: 'whatIsFairyPieceAnswer' },
+        { q: 'canCreateHexBoards', a: 'canCreateHexBoardsAnswer' },
+        { q: 'diffFromChessRemix', a: 'diffFromChessRemixAnswer' },
+        { q: 'diffFromChessCraft', a: 'diffFromChessCraftAnswer' },
+        { q: 'hasStockfish', a: 'hasStockfishAnswer' },
+        { q: 'canDesignNonChess', a: 'canDesignNonChessAnswer' },
+        { q: 'whatIsMarketplace', a: 'whatIsMarketplaceAnswer' },
     ];
 
     return (
@@ -60,6 +70,19 @@ export function SEOFooter() {
                                     </Link>
                                 </li>
                             </ul>
+                        </div>
+                        <div>
+                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm mb-4'>Stay Updated</h3>
+                            <div className="relative max-w-xs">
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    className="w-full bg-white dark:bg-black/20 border border-stone-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 transition-all pr-12"
+                                />
+                                <button className="absolute right-2 top-2 p-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-400 transition-all">
+                                    <Send size={14} />
+                                </button>
+                            </div>
                         </div>
                         <div className='flex flex-col gap-2'>
                             <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>Chessperiment</h3>

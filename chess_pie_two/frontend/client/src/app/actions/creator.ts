@@ -1,7 +1,7 @@
-'use server';
-
+"use server";
+import 'server-only';
 import { auth } from "@/auth";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
 
 export interface CreatorProfile {
@@ -16,26 +16,41 @@ export interface CreatorProfile {
     following: string[]; // User IDs
 }
 
+// Serialize Firestore Timestamp / Date / string to ISO string
+function serializeDateJoined(dateJoined: any): string | null {
+    if (!dateJoined) return null;
+    if (typeof dateJoined.toDate === 'function') {
+        return dateJoined.toDate().toISOString();
+    }
+    if (dateJoined instanceof Date) {
+        return dateJoined.toISOString();
+    }
+    if (typeof dateJoined === 'string') {
+        return dateJoined;
+    }
+    return null;
+}
+
 // Check if user has a profile
 export async function getMyCreatorProfile() {
     const session = await auth();
-    if (!session?.user?.id) return null;
+    const userId = session?.user?.id;
+    if (!userId) return null;
 
     try {
         if (!db) return null;
-        const profileRef = db.collection('creators').doc(session.user.id);
+        const profileRef = db.collection('creators').doc(userId);
         const doc = await profileRef.get();
         if (doc.exists) {
             const data = doc.data() as CreatorProfile;
-            // Serializing Date object
             return {
                 ...data,
-                date_joined: data.date_joined ? data.date_joined.toISOString() : null
+                date_joined: serializeDateJoined(data.date_joined),
             };
         }
         return null;
     } catch (error) {
-        console.error("Error fetching my creator profile:", error);
+        console.error("Error fetching creator profile:", error);
         return null;
     }
 }
@@ -46,11 +61,11 @@ export async function getCreatorProfileByHandle(handle: string) {
         if (!db) return null;
         const snapshot = await db.collection('creators').where('handle', '==', handle).limit(1).get();
         if (snapshot.empty) return null;
-        
+
         const data = snapshot.docs[0].data() as CreatorProfile;
         return {
             ...data,
-            date_joined: data.date_joined ? data.date_joined.toISOString() : null
+            date_joined: serializeDateJoined(data.date_joined),
         };
     } catch (error) {
         console.error("Error fetching creator profile by handle:", error);
@@ -63,10 +78,10 @@ export async function getCreatorProfile(userId: string) {
         if (!db) return null;
         const doc = await db.collection('creators').doc(userId).get();
         if (doc.exists) {
-             const data = doc.data() as CreatorProfile;
-             return {
+            const data = doc.data() as CreatorProfile;
+            return {
                 ...data,
-                date_joined: data.date_joined ? data.date_joined.toISOString() : null
+                date_joined: serializeDateJoined(data.date_joined),
             };
         }
         return null;
@@ -81,15 +96,13 @@ export async function registerCreatorHandle(handle: string) {
     const session = await auth();
     const userId = session?.user?.id;
     const userName = session?.user?.name;
-    const userImage = session?.user?.image; // Basic auth image
+    const userImage = session?.user?.image;
 
     if (!userId) {
         return { success: false, error: "Unauthorized" };
     }
 
-    // Validate handle format (alphanumeric, 3-20 chars)
     // Validate handle format (alphanumeric, 3-20 chars, optionally starting with @)
-    // We expect the handle to start with @ as per client logic, but let's be flexible
     const handleRegex = /^@?[a-zA-Z0-9_]{3,20}$/;
     if (!handleRegex.test(handle)) {
         return { success: false, error: "Handle must be 3-20 characters, alphanumeric or underscore." };
@@ -118,8 +131,8 @@ export async function registerCreatorHandle(handle: string) {
         };
 
         await db.collection('creators').doc(userId).set(newProfile);
-        
-        revalidatePath('/dashboard');
+
+        revalidatePath('/editor');
         return { success: true };
 
     } catch (error) {
@@ -137,14 +150,14 @@ export async function updateCreatorProfile(data: Partial<CreatorProfile>) {
 
     try {
          // Sanitize update data - only allow specific fields
-         const updateData: any = {};
+         const updateData: Record<string, string> = {};
          if (data.displayName) updateData.displayName = data.displayName;
          if (data.bio !== undefined) updateData.bio = data.bio;
          if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
 
          await db.collection('creators').doc(userId).update(updateData);
          revalidatePath('/dashboard');
-         revalidatePath(`/u/${data.handle}`); // If we had handle
+         revalidatePath(`/u/${data.handle}`);
          return { success: true };
     } catch (error) {
         console.error("Error updating profile:", error);

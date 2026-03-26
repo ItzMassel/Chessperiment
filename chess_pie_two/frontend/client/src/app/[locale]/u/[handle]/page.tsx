@@ -42,16 +42,26 @@ export default async function CreatorPage({ params }: PageProps) {
                     </div>
 
                     <div className="text-center md:text-left">
-                        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
-                            {profile.handle}
+                        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-1">
+                            {profile.displayName || profile.handle}
                         </h1>
-                        <div className="flex items-center justify-center md:justify-start gap-4 text-gray-500 dark:text-gray-400">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">{profile.handle}</p>
+                        {profile.bio && (
+                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 max-w-lg">{profile.bio}</p>
+                        )}
+                        <div className="flex items-center justify-center md:justify-start gap-4 text-gray-500 dark:text-gray-400 text-sm">
                             <span className="flex items-center gap-1">
                                 <Calendar size={16} />
                                 Joined {profile.date_joined ? new Date(profile.date_joined).toLocaleDateString() : 'N/A'}
                             </span>
                             <span>•</span>
                             <span>{items.length} Creations</span>
+                            {(profile.followers?.length || 0) > 0 && (
+                                <>
+                                    <span>•</span>
+                                    <span>{profile.followers.length} Followers</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

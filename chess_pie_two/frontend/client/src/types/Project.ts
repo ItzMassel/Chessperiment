@@ -6,6 +6,7 @@ export interface Project {
   name: string;
   description?: string;
   isStarred: boolean;
+  forkedFrom?: { marketplaceId: string; creatorHandle: string };
   createdAt: Date;
   updatedAt: Date;
   

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Box, Library, ChevronRight, Loader2 } from 'lucide-react';
-import { PieceSet } from '@/lib/firestore';
+import { PieceSet } from '@/types/firestore';
 import { savePieceSetAction, getUserPieceSetsAction } from '@/app/actions/library';
 import { useTranslations } from 'next-intl';
 

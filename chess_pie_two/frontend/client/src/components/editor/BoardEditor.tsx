@@ -33,7 +33,7 @@ interface BoardEditorProps {
     editMode: EditMode;
     selectedPiece: { type: string, color: string, movement?: 'run' | 'jump' };
     boardStyle: string;
-    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>) => void;
+    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>, gridType: 'square' | 'hex') => void;
     customCollection: Record<string, any>;
     initialData?: {
         rows: number;
@@ -269,12 +269,14 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     // Refs for stable state access in event listeners
     const rowsRef = useRef(rows);
     const colsRef = useRef(cols);
+    const gridTypeRef = useRef(gridType);
     const activeSquaresRef = useRef(activeSquares);
     const squareSizeRef = useRef(70);
     const placedPiecesRef = useRef(placedPieces);
 
     useEffect(() => { rowsRef.current = rows; }, [rows]);
     useEffect(() => { colsRef.current = cols; }, [cols]);
+    useEffect(() => { gridTypeRef.current = gridType; }, [gridType]);
     useEffect(() => { activeSquaresRef.current = activeSquares; }, [activeSquares]);
     // squareSizeRef updated via currentSquareSize effect below
     useEffect(() => { placedPiecesRef.current = placedPieces; }, [placedPieces]);
@@ -300,7 +302,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             localStorage.setItem('placedPieces', JSON.stringify(placedPieces));
             localStorage.setItem('activeSquares', JSON.stringify(Array.from(activeSquares)));
 
-            generateBoardData(rows, cols, activeSquares, placedPieces);
+            generateBoardData(rows, cols, activeSquares, placedPieces, gridType);
         }, 500); // 500ms debounce
 
         return () => clearTimeout(timer);
@@ -385,33 +387,52 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         const dx = pos.x - startPosRef.current.x;
         const dy = pos.y - startPosRef.current.y;
 
-        // Helper to update active squares when growing
-        const activateNewSquares = (newCols: number, newRows: number) => {
-            setActiveSquares(prev => {
-                const next = new Set(prev);
-                // Add newly visible area
-                for (let x = 0; x < newCols; x++) {
-                    for (let y = 0; y < newRows; y++) {
-                        // If it's outside the old bounds, add it
-                        if (x >= startDimRef.current!.cols || y >= startDimRef.current!.rows || resizingRef.current === 'left' || resizingRef.current === 'top') {
-                            // Ideally, we just ensure everything in range is active if we are expanding?
-                            // But logic specific to direction:
-                        }
-                        // Actually, simplified logic: just ensure the NEW squares are active?
-                        // The original logic was directional. Let's stick to simple "add active" logic based on new bounds? 
-                        // But we want to preserve "inactive" squares.
-                        // Let's use the original logic pattern per direction.
-                    }
-                }
-                return next;
-            });
-        };
+        // Hex resize: side handles change width (cols), top/bottom change height (rows)
+        if (gridTypeRef.current === 'hex') {
+            const isHorizontal = resizingRef.current === 'right' || resizingRef.current === 'left';
+            const dragDelta = isHorizontal
+                ? (resizingRef.current === 'right' ? dx : -dx)
+                : (resizingRef.current === 'bottom' ? dy : -dy);
 
+            const startDim = isHorizontal ? startDimRef.current.cols : startDimRef.current.rows;
+            const currentDim = isHorizontal ? colsRef.current : rowsRef.current;
+            const dimDelta = Math.floor(dragDelta / squareSizeRef.current) * 2; // *2 because radius -> diameter
+            const newDim = Math.max(2, Math.min(20, startDim + dimDelta));
+
+            if (newDim !== currentDim) {
+                const newRows = isHorizontal ? rowsRef.current : newDim;
+                const newCols = isHorizontal ? newDim : colsRef.current;
+
+                // Regenerate hex grid with new dimensions
+                const hexGrid = gridMap['hex'];
+                const newTiles = hexGrid.generateInitialGrid(newRows, newCols);
+                const newActive = new Set(newTiles.map(t => hexGrid.coordToString(t)));
+
+                // Preserve pieces that still fit in the new grid
+                setPlacedPieces(prev => {
+                    const next: any = {};
+                    Object.entries(prev).forEach(([key, val]) => {
+                        if (newActive.has(key)) next[key] = val;
+                    });
+                    return next;
+                });
+
+                setActiveSquares(newActive);
+                if (isHorizontal) {
+                    setCols(newCols);
+                } else {
+                    setRows(newRows);
+                }
+            }
+            return;
+        }
+
+        // Square grid resize logic
         if (resizingRef.current === 'right') {
             const addedCols = Math.floor(dx / squareSizeRef.current);
             const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
             if (newCols !== colsRef.current) {
-                if (newCols > colsRef.current && gridType === 'square') {
+                if (newCols > colsRef.current) {
                     setActiveSquares(prev => {
                         const next = new Set(prev);
                         for (let x = colsRef.current; x < newCols; x++) {
@@ -426,7 +447,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             const addedRows = Math.floor(dy / squareSizeRef.current);
             const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
             if (newRows !== rowsRef.current) {
-                if (newRows > rowsRef.current && gridType === 'square') {
+                if (newRows > rowsRef.current) {
                     setActiveSquares(prev => {
                         const next = new Set(prev);
                         for (let y = rowsRef.current; y < newRows; y++) {
@@ -437,7 +458,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 }
                 setRows(newRows);
             }
-        } else if (resizingRef.current === 'left' && gridType === 'square') {
+        } else if (resizingRef.current === 'left') {
             // Updated: 2x multiplier for centered layout
             const addedCols = Math.floor(-dx * 2 / squareSizeRef.current);
             const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
@@ -475,7 +496,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 });
                 setCols(newCols);
             }
-        } else if (resizingRef.current === 'top' && gridType === 'square') {
+        } else if (resizingRef.current === 'top') {
             // Updated: 2x multiplier for centered layout
             const addedRows = Math.floor(-dy * 2 / squareSizeRef.current);
             const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
@@ -828,7 +849,9 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     <div className="flex flex-col">
                         <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">{gridType === 'hex' ? t('radius') : t('gridSize')}</span>
                         <span className="text-xl font-black text-stone-900 dark:text-white tabular-nums tracking-tighter">
-                            {gridType === 'hex' ? Math.floor(Math.max(rows, cols) / 2) : `${cols} × ${rows}`}
+                            {gridType === 'hex'
+                                ? (cols === rows ? Math.floor(rows / 2) : `${Math.floor(cols / 2)} × ${Math.floor(rows / 2)}`)
+                                : `${cols} × ${rows}`}
                         </span>
                     </div>
                 </div>

@@ -25,6 +25,7 @@ export default function CreatorProfileSection() {
     });
 
     const router = useRouter();
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
         if (user) {
@@ -32,12 +33,15 @@ export default function CreatorProfileSection() {
         } else {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, refreshTrigger]);
 
     async function loadProfile() {
         try {
+            console.log('🔄 Loading creator profile...');
             const data = await getMyCreatorProfile();
+            console.log('📊 Profile data returned:', data);
             if (data) {
+                console.log('✅ Profile found, updating state:', data);
                 setProfile(data as any);
                 // Initialize form data
                 setEditForm({
@@ -45,9 +49,11 @@ export default function CreatorProfileSection() {
                     bio: data.bio || '',
                     photoUrl: data.photoUrl || ''
                 });
+            } else {
+                console.log('⚠️ No profile data returned from getMyCreatorProfile()');
             }
         } catch (error) {
-            console.error("Failed to load profile", error);
+            console.error("❌ Failed to load profile", error);
         } finally {
             setLoading(false);
         }
@@ -68,15 +74,24 @@ export default function CreatorProfileSection() {
 
         setIsRegistering(true);
         try {
+            console.log('Registering handle:', handle);
             const result = await registerCreatorHandle(handle);
+            console.log('Registration result:', result);
             if (result.success) {
+                console.log('✅ Creator profile registered!');
                 toast.success("Creator profile registered!");
-                loadProfile();
-                router.refresh();
+                setHandleInput('');
+                // Add a small delay to allow Firestore replication before fetching
+                setTimeout(() => {
+                    console.log('📥 Reloading profile after registration...');
+                    setRefreshTrigger(prev => prev + 1);
+                }, 500);
             } else {
-                toast.error(result.error);
+                console.log('❌ Registration failed:', result.error);
+                toast.error(result.error || "Registration failed");
             }
         } catch (error) {
+            console.error('Registration error:', error);
             toast.error("Failed to register.");
         } finally {
             setIsRegistering(false);

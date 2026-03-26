@@ -59,13 +59,15 @@ export class HexGrid implements GridType {
   }
 
   generateInitialGrid(rows: number, cols: number): Coordinate[] {
-    // For hex, we'll generate a "radius" based grid centered at 0,0
-    // roughly matching the requested size
-    const radius = Math.floor(Math.max(rows, cols) / 2);
+    // Independent radii: cols controls horizontal (q), rows controls vertical (r)
+    const qRadius = Math.floor(cols / 2);
+    const rRadius = Math.floor(rows / 2);
+    // s constraint uses the larger radius so the shape stays connected
+    const sRadius = Math.max(qRadius, rRadius);
     const grid: Coordinate[] = [];
-    for (let q = -radius; q <= radius; q++) {
-      const r1 = Math.max(-radius, -q - radius);
-      const r2 = Math.min(radius, -q + radius);
+    for (let q = -qRadius; q <= qRadius; q++) {
+      const r1 = Math.max(-rRadius, -q - sRadius);
+      const r2 = Math.min(rRadius, -q + sRadius);
       for (let r = r1; r <= r2; r++) {
         grid.push({ q, r });
       }

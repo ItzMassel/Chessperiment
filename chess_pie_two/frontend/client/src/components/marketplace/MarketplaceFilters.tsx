@@ -1,26 +1,26 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import { MarketplaceFilter } from '@/lib/marketplace-types';
+import { MARKETPLACE_FILTER_PILLS, SORT_OPTIONS, SortOption } from '@/lib/marketplace-types';
 import { useTranslations } from 'next-intl';
 
 interface MarketplaceFiltersProps {
-    filters: MarketplaceFilter[];
     activeFilter: string;
     onFilterChange: (id: string) => void;
+    sortOption: SortOption;
+    onSortChange: (sort: SortOption) => void;
     searchQuery: string;
     onSearchChange: (query: string) => void;
 }
 
 export function MarketplaceFilters({
-    filters,
     activeFilter,
     onFilterChange,
+    sortOption,
+    onSortChange,
     searchQuery,
     onSearchChange,
 }: MarketplaceFiltersProps) {
-    // Try to use translations if available, fallback to label
-    // In a real app, we might pass t function or keys
     const t = useTranslations('Marketplace');
 
     return (
@@ -39,21 +39,35 @@ export function MarketplaceFilters({
                 />
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex flex-wrap justify-center gap-2">
-                {filters.map((filter) => (
+            {/* Filter Pills + Sort */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+                {MARKETPLACE_FILTER_PILLS.map((pill) => (
                     <button
-                        key={filter.id}
-                        onClick={() => onFilterChange(filter.id)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${activeFilter === filter.id
-                            ? 'bg-amber-400 text-black border-amber-500 shadow-md scale-105'
-                            : 'bg-islands dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
+                        key={pill.id}
+                        onClick={() => onFilterChange(pill.id)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${
+                            activeFilter === pill.id
+                                ? 'bg-amber-400 text-black border-amber-500 shadow-md scale-105'
+                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
                     >
-                        {/* Try to translate the label if possible, else use raw label */}
-                        {t(`filters.${filter.id}`) !== `Marketplace.filters.${filter.id}` ? t(`filters.${filter.id}`) : filter.label}
+                        {t(pill.labelKey as Parameters<typeof t>[0])}
                     </button>
                 ))}
+
+                <div className="h-5 border-l border-gray-300 dark:border-gray-600 mx-1" />
+
+                <select
+                    value={sortOption}
+                    onChange={(e) => onSortChange(e.target.value as SortOption)}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
+                >
+                    {SORT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {t(opt.labelKey as Parameters<typeof t>[0])}
+                        </option>
+                    ))}
+                </select>
             </div>
         </div>
     );

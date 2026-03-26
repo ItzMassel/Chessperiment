@@ -2,64 +2,58 @@ export interface MarketplaceItem {
     id: string;
     title: string;
     creator_handle: string; // @handle
-    type: 'board' | 'pieces' | 'design' | 'game';
-    price: number | 'Free'; // Updated to allow 'Free' string or number
-    
+    type: 'board' | 'pieces' | 'game';
+    price: number | 'Free';
+
     // Rating system
-    rating: number; // Average
+    rating: number; // Average (denormalized: stars_total / stars_count)
     reviewCount: number;
     stars_total: number;
     stars_count: number;
-    reviews: string[]; // IDs or objects, keep simple for now
 
     // Metadata
     views: number;
+    forkCount: number;
     date_published: Date;
     config_data?: any; // The logic blob (loaded lazily)
-    
+
+    // Source tracking (what was published)
+    sourceType?: 'project' | 'board' | 'pieceSet';
+    sourceId?: string;
+
+    // Fork attribution
+    forkedFrom?: { marketplaceId: string; creatorHandle: string };
+
     // UI flags
     isNew: boolean;
     imageUrl: string;
     description: string;
 }
 
-export interface MarketplaceFilter {
-    id: string;
-    label: string;
-    options: {
-        value: string;
-        label: string;
-    }[];
+export interface Review {
+    id?: string;
+    userId: string;
+    creatorHandle?: string;
+    displayName: string;
+    rating: number; // 1-5
+    text: string;
+    createdAt: Date;
+    updatedAt?: Date;
 }
 
-export const MARKETPLACE_FILTERS: MarketplaceFilter[] = [
-    {
-        id: 'type',
-        label: 'Type',
-        options: [
-            { value: 'all', label: 'All' },
-            { value: 'board', label: 'Board' },
-            { value: 'pieces', label: 'Pieces' },
-            { value: 'design', label: 'Design' },
-            { value: 'game', label: 'Game' },
-        ],
-    },
-    {
-        id: 'price',
-        label: 'Price',
-        options: [
-            { value: 'all', label: 'All' },
-            { value: 'free', label: 'Free' },
-            { value: 'paid', label: 'Paid' },
-        ],
-    },
-    {
-        id: 'sort',
-        label: 'Sort by',
-        options: [
-            { value: 'newest', label: 'Newest' },
-            { value: 'rating', label: 'Rating' },
-            { value: 'reviews', label: 'Reviews' },
-        ],
-    },
+export type SortOption = 'newest' | 'rating' | 'most_reviewed' | 'most_viewed';
+
+export const MARKETPLACE_FILTER_PILLS: { id: string; labelKey: string }[] = [
+    { id: 'all', labelKey: 'filters.all' },
+    { id: 'game', labelKey: 'filters.game' },
+    { id: 'board', labelKey: 'filters.board' },
+    { id: 'pieces', labelKey: 'filters.pieces' },
+    { id: 'free', labelKey: 'filters.free' },
+];
+
+export const SORT_OPTIONS: { value: SortOption; labelKey: string }[] = [
+    { value: 'newest', labelKey: 'sort.newest' },
+    { value: 'rating', labelKey: 'sort.rating' },
+    { value: 'most_reviewed', labelKey: 'sort.mostReviewed' },
+    { value: 'most_viewed', labelKey: 'sort.mostViewed' },
 ];

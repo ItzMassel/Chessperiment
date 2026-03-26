@@ -1,7 +1,7 @@
 'use client';
 
 import { Project } from '@/types/Project';
-import { Star, MoreVertical, Trash2, Share2, Box, Grid3X3 } from 'lucide-react';
+import { Star, MoreVertical, Trash2, Share2, Box, Grid3X3, GitFork } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
@@ -68,6 +68,20 @@ export default function ProjectCard({ project, onToggleStar, onDelete, onPublish
                         <Star className={`w-5 h-5 ${project.isStarred ? 'fill-yellow-500' : ''}`} />
                     </button>
                 </div>
+
+                {project.forkedFrom && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                        <GitFork size={12} />
+                        <span>Forked from</span>
+                        <Link
+                            href={`/${locale}/u/${project.forkedFrom.creatorHandle.replace('@', '')}`}
+                            className="text-amber-500 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {project.forkedFrom.creatorHandle}
+                        </Link>
+                    </div>
+                )}
 
                 {project.description ? (
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 line-clamp-2 leading-relaxed flex-1">

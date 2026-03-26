@@ -16,6 +16,7 @@ import { LocalProjectStore } from '@/lib/local-persistence';
 import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import ProjectList from '@/components/editor/ProjectList';
 import CreatorProfileSection from '@/components/dashboard/CreatorProfileSection';
+import PublishModal from '@/components/marketplace/PublishModal';
 import { toast } from 'sonner';
 
 export default function PageClient() {
@@ -26,6 +27,8 @@ export default function PageClient() {
     const [loading, setLoading] = useState(true);
     const [migrating, setMigrating] = useState(false);
     const isLoadingRef = useRef(false);
+    const [publishModalOpen, setPublishModalOpen] = useState(false);
+    const [publishingProjectId, setPublishingProjectId] = useState<string | null>(null);
 
     useEffect(() => {
         loadProjects();
@@ -189,49 +192,15 @@ export default function PageClient() {
         }
     };
 
-    const handlePublish = async (projectId: string) => {
+    const handlePublish = (projectId: string) => {
         if (!user) {
             toast.error("You must be logged in to publish.");
             return;
         }
-
-        const { publishProjectCmd } = await import('@/app/actions/marketplace');
-
-        const toastId = toast.loading("Publishing project...");
-
-        try {
-            const result = await publishProjectCmd(projectId);
-
-            if (result.success) {
-                toast.dismiss(toastId);
-                toast.success("Project published successfully!");
-                // Maybe redirect to the marketplace item page?
-                // router.push(`/marketplace/${result.marketplaceId}`);
-            } else {
-                toast.dismiss(toastId);
-                if (result.error === "CREATOR_PROFILE_MISSING") {
-                    toast.error("Creator Profile Required", {
-                        description: "You need to set up a creator profile before publishing.",
-                        action: {
-                            label: "Set up Profile",
-                            onClick: () => {
-                                // Scroll to top where the profile section is
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }
-                        },
-                        duration: 5000
-                    });
-                    // Also scroll up automatically just in case they miss the button
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    toast.error(`Publish failed: ${result.error}`);
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            toast.dismiss(toastId);
-            toast.error("Publish failed due to an unexpected error.");
-        }
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        setPublishingProjectId(projectId);
+        setPublishModalOpen(true);
     };
 
     if (authLoading || loading) {
@@ -265,6 +234,22 @@ export default function PageClient() {
             <div className="absolute top-0 inset-x-0 h-96 bg-linear-to-b from-amber-500/5 to-transparent pointer-events-none -z-10 blur-3xl" />
 
             {user && <CreatorProfileSection />}
+
+            {/* Publish Modal */}
+            {publishingProjectId && (
+                <PublishModal
+                    open={publishModalOpen}
+                    onClose={() => {
+                        setPublishModalOpen(false);
+                        setPublishingProjectId(null);
+                    }}
+                    itemType="game"
+                    itemId={publishingProjectId}
+                    defaultTitle={projects.find(p => p.id === publishingProjectId)?.name || 'Untitled'}
+                    defaultDescription={projects.find(p => p.id === publishingProjectId)?.description}
+                />
+            )}
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
@@ -301,6 +286,15 @@ export default function PageClient() {
                 onDelete={handleDeleteProject}
                 onCreateNew={handleCreateNew}
                 onPublish={handlePublish}
+            />
+
+            <PublishModal
+                open={publishModalOpen}
+                onClose={() => setPublishModalOpen(false)}
+                itemType="game"
+                itemId={publishingProjectId || ''}
+                defaultTitle={projects.find(p => p.id === publishingProjectId)?.name || 'Untitled'}
+                defaultDescription={projects.find(p => p.id === publishingProjectId)?.description}
             />
         </div>
     );

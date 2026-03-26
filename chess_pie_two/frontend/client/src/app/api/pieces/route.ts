@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     }
 
     try {
-        const { db } = await import("@/lib/firebase");
+        const { db } = await import("@/lib/firebase-admin");
         const pieceRef = db?.collection("pieces").doc(`${userId}_${piece}`);
         const doc = await pieceRef?.get();
 
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-    const { db } = await import("@/lib/firebase");
+    const { db } = await import("@/lib/firebase-admin");
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,20 +1,26 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Star, ArrowLeft, User, Gamepad2, Globe, Eye } from 'lucide-react';
+import { Star, ArrowLeft, User, Gamepad2, Globe, Eye, GitFork, Loader2 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
-import { MarketplaceItem } from '@/lib/marketplace-types';
-import { incrementView, rateItem } from '@/app/actions/marketplace';
+import { MarketplaceItem, Review } from '@/lib/marketplace-types';
+import { incrementView, forkMarketplaceItem } from '@/app/actions/marketplace';
+import { useAuth } from '@/context/AuthContext';
+import ReviewSection from '@/components/marketplace/ReviewSection';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 interface ClientPageProps {
     item: MarketplaceItem;
+    reviews: Review[];
 }
 
-export default function ClientPage({ item }: ClientPageProps) {
+export default function ClientPage({ item, reviews }: ClientPageProps) {
     const router = useRouter();
+    const { user } = useAuth();
     const t = useTranslations('Marketplace');
+    const [forking, setForking] = useState(false);
 
     useEffect(() => {
         incrementView(item.id);
@@ -29,14 +35,32 @@ export default function ClientPage({ item }: ClientPageProps) {
         router.push(`/play?marketplaceId=${item.id}&mode=online&roomId=${roomId}`);
     };
 
-    const handleRate = async (rating: number) => {
+    const handleFork = async () => {
+        if (!user) {
+            toast.error(t('fork.loginRequired'));
+            return;
+        }
+        setForking(true);
         try {
-            await rateItem(item.id, rating);
-            router.refresh();
-        } catch (error) {
-            console.error("Failed to rate", error);
+            const result = await forkMarketplaceItem(item.id);
+            if (result.success) {
+                toast.success(t('fork.success', { creator: item.creator_handle }));
+                if (result.itemType === 'game') {
+                    router.push(`/editor/${result.newItemId}`);
+                } else {
+                    router.push('/library');
+                }
+            } else {
+                toast.error(result.error || t('fork.failed'));
+            }
+        } catch {
+            toast.error(t('fork.failed'));
+        } finally {
+            setForking(false);
         }
     };
+
+    const creatorHandleClean = item.creator_handle?.replace('@', '') || '';
 
     return (
         <main className="min-h-screen bg-bg pt-8 pb-20 px-4">
@@ -84,37 +108,45 @@ export default function ClientPage({ item }: ClientPageProps) {
                             {item.title}
                         </h1>
 
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full">
+                        {/* Fork attribution */}
+                        {item.forkedFrom && (
+                            <p className="text-sm text-gray-400 mb-2">
+                                {t('fork.basedOn')}{' '}
+                                <Link href={`/u/${item.forkedFrom.creatorHandle.replace('@', '')}`} className="text-amber-500 hover:underline">
+                                    {item.forkedFrom.creatorHandle}
+                                </Link>
+                            </p>
+                        )}
+
+                        <div className="flex items-center gap-4 mb-6 flex-wrap">
+                            {/* Creator link */}
+                            <Link href={`/u/${creatorHandleClean}`} className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                                 <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
                                     <User size={14} className="text-gray-600" />
                                 </div>
                                 <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">
                                     {item.creator_handle}
                                 </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-yellow-500 font-bold group relative">
-                                <Star fill="currentColor" size={18} />
-                                <span>{item.rating}</span>
-                                <span className="text-gray-400 font-normal text-sm">({item.stars_count})</span>
+                            </Link>
 
-                                {/* Hover Rating Input */}
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:flex bg-white dark:bg-stone-800 p-2 rounded-lg shadow-xl gap-1 z-10">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            onClick={() => handleRate(star)}
-                                            className="hover:scale-110 transition-transform text-gray-300 hover:text-yellow-500"
-                                        >
-                                            <Star size={16} fill="currentColor" />
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Rating (links to reviews) */}
+                            <a href="#reviews" className="flex items-center gap-1 text-yellow-500 font-bold hover:opacity-80 transition-opacity">
+                                <Star fill="currentColor" size={18} />
+                                <span>{item.rating || 0}</span>
+                                <span className="text-gray-400 font-normal text-sm">({item.reviewCount || 0})</span>
+                            </a>
+
                             <div className="flex items-center gap-1 text-gray-400 text-sm">
                                 <Eye size={16} />
                                 <span>{item.views}</span>
                             </div>
+
+                            {(item.forkCount || 0) > 0 && (
+                                <div className="flex items-center gap-1 text-gray-400 text-sm">
+                                    <GitFork size={16} />
+                                    <span>{item.forkCount}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="prose dark:prose-invert text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
@@ -130,26 +162,46 @@ export default function ClientPage({ item }: ClientPageProps) {
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={handlePlayLocal}
-                                        className="bg-amber-400 hover:bg-amber-300 text-bg text-lg font-bold py-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
-                                    >
-                                        <Gamepad2 size={24} />
-                                        {t('playLocal')}
-                                    </button>
-                                    <button
-                                        onClick={handlePlayOnline}
-                                        className="bg-stone-800 hover:bg-stone-700 text-white text-lg font-bold py-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 border border-stone-700"
-                                    >
-                                        <Globe size={24} />
-                                        {t('playFriend')}
-                                    </button>
-                                </div>
+                                {/* Action buttons based on type */}
+                                {item.type === 'game' ? (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={handlePlayLocal}
+                                            className="bg-amber-400 hover:bg-amber-300 text-black text-lg font-bold py-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
+                                        >
+                                            <Gamepad2 size={24} />
+                                            {t('playLocal')}
+                                        </button>
+                                        <button
+                                            onClick={handlePlayOnline}
+                                            className="bg-stone-800 hover:bg-stone-700 text-white text-lg font-bold py-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 border border-stone-700"
+                                        >
+                                            <Globe size={24} />
+                                            {t('playFriend')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-sm text-gray-400 py-2">
+                                        {item.type === 'board' ? t('fork.importBoard') : t('fork.importPieces')}
+                                    </div>
+                                )}
+
+                                {/* Fork / Remix button */}
+                                <button
+                                    onClick={handleFork}
+                                    disabled={forking}
+                                    className="w-full mt-3 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {forking ? <Loader2 size={16} className="animate-spin" /> : <GitFork size={16} />}
+                                    {item.type === 'game' ? t('fork.forkToEditor') : t('fork.importToLibrary')}
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Reviews Section */}
+                <ReviewSection marketplaceId={item.id} initialReviews={reviews} />
             </div>
         </main>
     );

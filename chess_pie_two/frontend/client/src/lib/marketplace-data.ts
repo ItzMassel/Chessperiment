@@ -1,69 +1,109 @@
 'use server';
-import { db } from '@/lib/firebase';
-import { MarketplaceItem } from './marketplace-types';
 
-export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
-  try {
-    if (!db) {
-        console.error("Firestore not initialized");
+import 'server-only';
+import { db } from '@/lib/firebase-admin';
+import { MarketplaceItem, SortOption } from './marketplace-types';
+
+export interface MarketplaceQuery {
+    type?: 'board' | 'pieces' | 'game';
+    priceFilter?: 'free';
+    sort?: SortOption;
+    limit?: number;
+}
+
+function sortItems(items: MarketplaceItem[], sort: SortOption): MarketplaceItem[] {
+    return [...items].sort((a, b) => {
+        switch (sort) {
+            case 'rating': return b.rating - a.rating;
+            case 'most_reviewed': return b.reviewCount - a.reviewCount;
+            case 'most_viewed': return b.views - a.views;
+            case 'newest':
+            default: {
+                const aDate = a.date_published instanceof Date ? a.date_published : new Date(a.date_published);
+                const bDate = b.date_published instanceof Date ? b.date_published : new Date(b.date_published);
+                return bDate.getTime() - aDate.getTime();
+            }
+        }
+    });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDoc(doc: any): MarketplaceItem {
+    const data = doc.data()!;
+    const stars_total = data.stars_total || 0;
+    const stars_count = data.stars_count || 0;
+
+    // Convert Firestore Timestamp to ISO string
+    let datePublished: any = data.date_published;
+    if (data.date_published) {
+        if (typeof data.date_published.toDate === 'function') {
+            // Firestore Timestamp
+            datePublished = data.date_published.toDate().toISOString();
+        } else if (data.date_published instanceof Date) {
+            datePublished = data.date_published.toISOString();
+        } else if (typeof data.date_published === 'string') {
+            datePublished = data.date_published;
+        }
+    }
+
+    return {
+        id: doc.id,
+        ...data,
+        date_published: datePublished,
+        price: data.price === 0 ? 'Free' : data.price,
+        creator_handle: data.creator_handle || data.author || '@unknown',
+        rating: stars_count > 0 ? parseFloat((stars_total / stars_count).toFixed(1)) : 0,
+        reviewCount: data.reviewCount || data.reviews?.length || 0,
+        views: data.views || 0,
+        forkCount: data.forkCount || 0,
+    } as MarketplaceItem;
+}
+
+export async function getMarketplaceItems(query?: MarketplaceQuery): Promise<MarketplaceItem[]> {
+    try {
+        if (!db) return [];
+
+        let ref: FirebaseFirestore.Query = db.collection('marketplace');
+
+        if (query?.type) {
+            ref = ref.where('type', '==', query.type);
+        }
+        if (query?.priceFilter === 'free') {
+            ref = ref.where('price', 'in', ['Free', 0]);
+        }
+
+        ref = ref.limit(query?.limit || 100);
+
+        const snapshot = await ref.get();
+        if (snapshot.empty) return [];
+
+        let items = snapshot.docs.map(mapDoc);
+
+        if (query?.sort) {
+            items = sortItems(items, query.sort);
+        }
+
+        return items;
+    } catch (error) {
+        console.error("Error fetching marketplace items:", error);
         return [];
     }
-    const snapshot = await db.collection('marketplace')
-        .select('title', 'description', 'price', 'type', 'imageUrl', 'creator_handle', 'author', 'stars_total', 'stars_count', 'views', 'reviews', 'isNew', 'date_published')
-        .get();
-    if (snapshot.empty) {
-        return [];
-    }
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Handle the case where price is stored as number but we want 'Free'
-      price: doc.data().price === 0 ? 'Free' : doc.data().price,
-      // Map author to creator_handle if needed, or ensure creator_handle is stored
-      creator_handle: doc.data().creator_handle || doc.data().author || '@unknown',
-      rating: doc.data().stars_count > 0 ? (doc.data().stars_total / doc.data().stars_count).toFixed(1) : 0,
-      reviewCount: doc.data().reviews?.length || 0,
-      views: doc.data().views || 0,
-    })) as MarketplaceItem[];
-  } catch (error) {
-    console.error("Error fetching marketplace items:", error);
-    return [];
-  }
 }
 
 export async function getMarketplaceItem(id: string): Promise<MarketplaceItem | null> {
     try {
-      if (!db) return null;
-      const doc = await db.collection('marketplace').doc(id).get();
-      // We don't need config_data for details view
-      // But currently get() on doc ref doesn't support select() easily in admin SDK without mask?
-      // Actually doc().get() returns everything. Maybe we leave it for now as details view is usually one item.
-      // But to be consistent with 'metadata only', we should strip it if possible.
-      // However, for a single item read, fetching 1MB is fine compared to listing 50 items x 1MB.
-      // Let's leave getMarketplaceItem fetching full doc for now, as it simplifies things if we ever need to show some config details.
-      // User requested "load only metadata in gallery".
-      // Gallery uses getMarketplaceItems. Checked.
-      
-      // Wait, if I change getMarketplaceItems to use select(), I am satisfying the requirement.
-      if (!doc.exists) {
-        return null;
-      }
-      return {
-          id: doc.id,
-          ...doc.data(),
-          price: doc.data()!.price === 0 ? 'Free' : doc.data()!.price,
-          creator_handle: doc.data()!.creator_handle || doc.data()!.author || '@unknown',
-          rating: (doc.data()!.stars_count || 0) > 0 ? (doc.data()!.stars_total / doc.data()!.stars_count).toFixed(1) : 0,
-          reviewCount: doc.data()!.reviews?.length || 0,
-          views: doc.data()!.views || 0,
-      } as MarketplaceItem;
+        if (!db) return null;
+        const doc = await db.collection('marketplace').doc(id).get();
+        if (!doc.exists) return null;
+        return mapDoc(doc);
     } catch (error) {
-      console.error(`Error fetching item ${id}:`, error);
-      return null;
+        console.error(`Error fetching item ${id}:`, error);
+        return null;
     }
 }
 
-export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | 'rating' | 'reviewCount' | 'isNew' | 'stars_total' | 'stars_count' | 'reviews' | 'views' | 'date_published'>): Promise<string> {
+export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | 'rating' | 'reviewCount' | 'isNew' | 'stars_total' | 'stars_count' | 'views' | 'forkCount' | 'date_published'>): Promise<string> {
+    if (!db) throw new Error("Firestore not initialized");
     try {
         const newItem = {
             ...item,
@@ -71,12 +111,11 @@ export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | '
             reviewCount: 0,
             stars_total: 0,
             stars_count: 0,
-            reviews: [],
             views: 0,
+            forkCount: 0,
             isNew: true,
             date_published: new Date(),
         };
-        if (!db) throw new Error("Firestore not initialized");
         const res = await db.collection('marketplace').add(newItem);
         return res.id;
     } catch (error) {
@@ -88,25 +127,13 @@ export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | '
 export async function getCreatorMarketplaceItems(handle: string): Promise<MarketplaceItem[]> {
     try {
         if (!db) return [];
-        // Ensure handle has @ prefix if stored that way
         const queryHandle = handle.startsWith('@') ? handle : `@${handle}`;
-        
         const snapshot = await db.collection('marketplace')
             .where('creator_handle', '==', queryHandle)
-            .select('title', 'description', 'price', 'type', 'imageUrl', 'creator_handle', 'author', 'stars_total', 'stars_count', 'views', 'reviews', 'isNew', 'date_published')
+            .limit(50)
             .get();
-            
         if (snapshot.empty) return [];
-        
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            // Ensure derived fields are correct just in case
-            price: doc.data().price === 0 ? 'Free' : doc.data().price,
-            rating: (doc.data().stars_count || 0) > 0 ? (doc.data().stars_total / doc.data().stars_count).toFixed(1) : 0,
-            reviewCount: doc.data().reviews?.length || 0,
-            views: doc.data().views || 0,
-        })) as MarketplaceItem[];
+        return snapshot.docs.map(mapDoc);
     } catch (error) {
         console.error("Error fetching creator items:", error);
         return [];

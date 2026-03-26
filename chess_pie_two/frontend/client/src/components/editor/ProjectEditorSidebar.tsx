@@ -2,8 +2,9 @@
 
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Grid3x3, Crown, Square, Play } from 'lucide-react';
+import { Grid3x3, Crown, Square, Play, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { useAIAssistantOptional } from '@/context/AIAssistantContext';
 
 export interface ProjectEditorSidebarProps {
     projectId: string;
@@ -15,6 +16,8 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
     const pathname = usePathname();
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
     const [tooltipTimer, setTooltipTimer] = useState<NodeJS.Timeout | null>(null);
+
+    const aiAssistant = useAIAssistantOptional();
 
     const items = [
         {
@@ -101,6 +104,34 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
                         </div>
                     )}
                 </div>
+
+                {/* AI Assistant */}
+                {aiAssistant && (
+                    <>
+                        <div className="mx-3 border-t border-gray-200 dark:border-gray-700" />
+                        <div className="relative">
+                            <button
+                                onClick={() => aiAssistant!.togglePanel()}
+                                onMouseEnter={() => handleMouseEnter('ai')}
+                                onMouseLeave={handleMouseLeave}
+                                className={`w-full flex flex-col items-center gap-1 px-3 py-3 transition-colors ${
+                                    aiAssistant.isOpen
+                                        ? 'text-purple-500'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400'
+                                }`}
+                            >
+                                <Sparkles className="w-6 h-6" />
+                            </button>
+
+                            {hoveredItem === 'ai' && (
+                                <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-900 dark:bg-gray-700 text-white px-3 py-2 rounded-md text-sm whitespace-nowrap shadow-lg">
+                                    {t('aiAssistant')}
+                                    <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-900 dark:border-l-gray-700"></div>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Save, ChevronLeft, X, Loader2 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useProject } from '@/hooks/useProject';
 import { BlocklyWorkspace } from 'react-blockly';
 import * as Blockly from 'blockly';
 import './blocklyDefinitions'; // Registration happens here
+import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 
 const SAVE_DEBOUNCE_MS = 2000;
 
@@ -232,6 +233,91 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         setVariables(updated);
         handleSave(initialXml, updated);
     };
+
+    // ─── AI Tool Registration ───
+    const squareToolHandlers = useMemo(() => ({
+        get_square_logic: async (args: Record<string, any>) => {
+            if (!project) return JSON.stringify({ error: 'No project' });
+            const logic = project.squareLogic?.[args.squareId];
+            if (!logic) return JSON.stringify({ blocks: [], variables: [], note: 'No logic defined for this square' });
+            return JSON.stringify({
+                squareId: args.squareId,
+                logic: (logic as any).logic || [],
+                variables: (logic as any).variables || [],
+                hasBlocklyXml: !!(logic as any).blocklyXml
+            });
+        },
+        add_square_block: async (args: Record<string, any>) => {
+            // Select the square first if not selected
+            if (selectedSquare !== args.squareId) {
+                setSelectedSquare(args.squareId);
+                // Wait for workspace to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            spawnBlock(args.blockType);
+            // Apply socket values if provided
+            if (args.socketValues && workspaceRef.current) {
+                const ws = workspaceRef.current;
+                const allBlocks = ws.getAllBlocks(false);
+                const lastBlock = allBlocks[allBlocks.length - 1];
+                if (lastBlock) {
+                    for (const [key, value] of Object.entries(args.socketValues)) {
+                        const field = lastBlock.getField(key);
+                        if (field) field.setValue(value as string);
+                    }
+                    return JSON.stringify({ success: true, blockId: lastBlock.id });
+                }
+            }
+            return JSON.stringify({ success: true });
+        },
+        remove_square_block: async (args: Record<string, any>) => {
+            if (!workspaceRef.current) return JSON.stringify({ error: 'Workspace not ready' });
+            const block = workspaceRef.current.getBlockById(args.blockId);
+            if (block) {
+                block.dispose(true);
+                return JSON.stringify({ success: true });
+            }
+            return JSON.stringify({ error: 'Block not found' });
+        },
+        update_square_block_sockets: async (args: Record<string, any>) => {
+            if (!workspaceRef.current) return JSON.stringify({ error: 'Workspace not ready' });
+            const block = workspaceRef.current.getBlockById(args.blockId);
+            if (!block) return JSON.stringify({ error: 'Block not found' });
+            for (const [key, value] of Object.entries(args.socketValues)) {
+                const field = block.getField(key);
+                if (field) field.setValue(value as string);
+            }
+            return JSON.stringify({ success: true });
+        },
+        connect_square_blocks: async (args: Record<string, any>) => {
+            if (!workspaceRef.current) return JSON.stringify({ error: 'Workspace not ready' });
+            const parent = workspaceRef.current.getBlockById(args.parentBlockId);
+            const child = workspaceRef.current.getBlockById(args.childBlockId);
+            if (!parent || !child) return JSON.stringify({ error: 'Block not found' });
+            const nextConn = parent.nextConnection;
+            const prevConn = child.previousConnection;
+            if (nextConn && prevConn) {
+                nextConn.connect(prevConn);
+                return JSON.stringify({ success: true });
+            }
+            return JSON.stringify({ error: 'Blocks cannot be connected' });
+        },
+        create_square_variable: async (args: Record<string, any>) => {
+            const id = `var-${Date.now()}`;
+            const updated = [...variables, { id, name: args.name, value: 0 }];
+            setVariables(updated);
+            handleSave(initialXml, updated);
+            return JSON.stringify({ success: true, variableId: id });
+        },
+        delete_square_variable: async (args: Record<string, any>) => {
+            const updated = variables.filter(v => v.id !== args.variableId);
+            setVariables(updated);
+            handleSave(initialXml, updated);
+            return JSON.stringify({ success: true });
+        },
+    }), [project, selectedSquare, variables, initialXml, handleSave]);
+
+    useAIToolRegistration(squareToolHandlers);
 
     const spawnBlock = (type: string, x?: number, y?: number) => {
         if (!workspaceRef.current) return;
