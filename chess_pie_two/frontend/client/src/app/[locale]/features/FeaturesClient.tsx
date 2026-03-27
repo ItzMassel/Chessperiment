@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/firebase-client";
@@ -67,7 +67,7 @@ export default function FeaturesClient() {
             try {
                 const q = query(
                     collection(db, "features"),
-                    orderBy("date", "desc")
+                    orderBy("date", "asc")
                 );
                 const snap = await getDocs(q);
                 setFeatures(
@@ -82,8 +82,21 @@ export default function FeaturesClient() {
         load();
     }, []);
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const todayRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!loading && todayRef.current && scrollContainerRef.current) {
+            const container = scrollContainerRef.current;
+            const todayEl = todayRef.current;
+            const containerRect = container.getBoundingClientRect();
+            const todayRect = todayEl.getBoundingClientRect();
+            container.scrollTop += todayRect.top - containerRect.top;
+        }
+    }, [loading]);
+
     const grouped = groupByDate(features);
-    const sortedDates = Array.from(grouped.keys()).sort((a, b) => b.localeCompare(a));
+    const sortedDates = Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
 
     const handleFeedbackSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -180,7 +193,10 @@ export default function FeaturesClient() {
                 ) : sortedDates.length === 0 ? (
                     <p className="text-stone-400 dark:text-stone-500 text-sm py-8">{t("empty")}</p>
                 ) : (
-                    <div className="relative">
+                    <div
+                        ref={scrollContainerRef}
+                        className="relative overflow-y-auto max-h-[calc(100vh-16rem)] pr-1"
+                    >
                         {/* Vertical line */}
                         <div className="absolute left-[5px] top-2 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
 
@@ -194,6 +210,7 @@ export default function FeaturesClient() {
                                 return (
                                     <motion.div
                                         key={date}
+                                        ref={today ? todayRef : undefined}
                                         initial={{ opacity: 0, x: -8 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ duration: 0.3, delay: dateIndex * 0.05 }}
