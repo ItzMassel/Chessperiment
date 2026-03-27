@@ -36,12 +36,15 @@ function isPast(dateStr: string): boolean {
     return dateStr < new Date().toISOString().slice(0, 10);
 }
 
-// Group features by date
+// Group features by date, sorted by order within each group
 function groupByDate(features: Feature[]): Map<string, Feature[]> {
     const map = new Map<string, Feature[]>();
     for (const f of features) {
         const existing = map.get(f.date) ?? [];
         map.set(f.date, [...existing, f]);
+    }
+    for (const [date, group] of map) {
+        map.set(date, group.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
     }
     return map;
 }
@@ -64,8 +67,7 @@ export default function FeaturesClient() {
             try {
                 const q = query(
                     collection(db, "features"),
-                    orderBy("date", "desc"),
-                    orderBy("order", "asc")
+                    orderBy("date", "desc")
                 );
                 const snap = await getDocs(q);
                 setFeatures(
