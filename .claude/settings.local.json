@@ -15,7 +15,10 @@
       "Bash(ls -la .env*)",
       "Bash(npx tsx -e \":*)",
       "Bash(node --env-file=.env.local -e \"console.log\\(''PROJECT_ID:'', process.env.FIREBASE_PROJECT_ID ? ''SET'' : ''MISSING''\\); console.log\\(''CLIENT_EMAIL:'', process.env.FIREBASE_CLIENT_EMAIL ? ''SET'' : ''MISSING''\\); console.log\\(''PRIVATE_KEY:'', process.env.FIREBASE_PRIVATE_KEY ? ''SET'' : ''MISSING''\\);\")",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Read(//c/Users/lasse_xwl0mn6/Documents/GitHub/**)",
+      "Bash(npx create-next-app@16 chessperiment-admin --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npm install:*)"
     ]
   }
 }
