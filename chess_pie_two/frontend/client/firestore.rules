@@ -158,6 +158,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // ─── Features Timeline ─────────────────────────────────────────────
+    match /features/{featureId} {
+      allow read: if true;
+    }
+
     // ─── Deny everything else by default ───────────────────────────────
     match /{document=**} {
       allow read, write: if false;
