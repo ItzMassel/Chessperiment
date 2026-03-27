@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         languages: {
           en: `${baseUrl}/en${route}`,
           de: `${baseUrl}/de${route}`,
+          'x-default': `${baseUrl}/en${route}`,
         },
       },
     }))

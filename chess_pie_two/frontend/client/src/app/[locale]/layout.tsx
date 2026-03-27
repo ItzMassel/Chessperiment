@@ -91,6 +91,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description: "Create your own chess world. Design pieces, boards and play online.",
       images: ["/images/seo/twitter-image.png"],
     },
+    // Note: individual pages should override canonical with their full URL.
+    // This layout-level fallback points to the locale root.
     alternates: {
       canonical: localeUrl,
       languages: {
