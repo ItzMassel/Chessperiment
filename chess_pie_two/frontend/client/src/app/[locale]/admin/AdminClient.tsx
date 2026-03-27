@@ -240,18 +240,19 @@ export default function AdminClient() {
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
 
-    // Check auth on mount
+    // Check auth on mount (only sets false if not already logged in, to avoid race with login)
     useEffect(() => {
         fetch("/api/admin/features")
-            .then((r) => setAuthed(r.ok))
-            .catch(() => setAuthed(false));
+            .then((r) => setAuthed((prev) => (prev === true ? true : r.ok)))
+            .catch(() => setAuthed((prev) => (prev === true ? true : false)));
     }, []);
 
     const loadFeatures = useCallback(async () => {
         setLoadingFeatures(true);
         try {
             const res = await fetch("/api/admin/features");
-            if (!res.ok) { setAuthed(false); return; }
+            if (res.status === 401) { setAuthed(false); return; }
+            if (!res.ok) return;
             const data = await res.json();
             setFeatures(data.features ?? []);
         } finally {
