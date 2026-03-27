@@ -1,4 +1,4 @@
-const { toCoords } = require("../utils");
+import { toCoords } from "../utils.js";
 
 class SquareLogicRunner {
   static isExecuting = false;
@@ -192,4 +192,4 @@ class SquareLogicRunner {
   }
 }
 
-module.exports = { SquareLogicRunner };
+export { SquareLogicRunner };

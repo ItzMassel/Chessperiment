@@ -1,5 +1,5 @@
-const { toCoords } = require("../utils");
-const { EffectFactory } = require("../effects");
+import { toCoords } from "../utils.js";
+import { EffectFactory } from "../effects.js";
 
 class LogicRunner {
   // Prevent infinite recursion
@@ -316,4 +316,4 @@ class LogicRunner {
   }
 }
 
-module.exports = { LogicRunner };
+export { LogicRunner };

@@ -142,7 +142,7 @@ export default function FeaturesClient() {
                     href="/"
                     className="inline-flex items-center text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors mb-8"
                 >
-                    ← chessperiment
+                    ← Chessperiment
                 </Link>
 
                 <motion.div

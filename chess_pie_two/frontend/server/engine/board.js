@@ -1,9 +1,9 @@
-const { BoardStateManager } = require("./state");
-const { Piece, CustomPiece } = require("./piece");
-const { toSquare, toCoords } = require("./utils");
-const { LogicRunner } = require("./logic/LogicRunner");
-const { SquareLogicRunner } = require("./logic/SquareLogicRunner");
-const { EffectExecutor, EffectFactory } = require("./effects");
+import { BoardStateManager } from "./state.js";
+import { Piece, CustomPiece } from "./piece.js";
+import { toSquare, toCoords } from "./utils.js";
+import { LogicRunner } from "./logic/LogicRunner.js";
+import { SquareLogicRunner } from "./logic/SquareLogicRunner.js";
+import { EffectExecutor, EffectFactory } from "./effects.js";
 
 class BoardClass {
   constructor(config = {}) {
@@ -199,4 +199,4 @@ class BoardClass {
   }
 }
 
-module.exports = { BoardClass };
+export { BoardClass };

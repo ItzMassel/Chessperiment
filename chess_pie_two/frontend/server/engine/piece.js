@@ -1,4 +1,6 @@
-const { LogicRunner } = require("./logic/LogicRunner");
+import { LogicRunner } from "./logic/LogicRunner.js";
+import { toCoords, toSquare } from "./utils.js";
+import { ValidatorClass } from "./rules.js";
 
 class Piece {
   constructor(color, position, id) {
@@ -70,7 +72,6 @@ class CustomPiece extends Piece {
   }
 
   getOccupiedSquares(position = this.position) {
-    const { toCoords, toSquare } = require("./utils");
     const [x, y] = toCoords(position);
     return this.shape.map((offset) => toSquare([x + offset.x, y + offset.y]));
   }
@@ -86,7 +87,6 @@ class CustomPiece extends Piece {
   }
 
   isValidMove(to, board) {
-    const { ValidatorClass } = require("./rules");
     const validator = new ValidatorClass(board);
     return validator.isPseudoLegal(this, to);
   }
@@ -133,7 +133,6 @@ class Pawn extends Piece {
   }
 
   isValidMove(to, board) {
-    const { toCoords } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
     const direction = this.color === "white" ? 1 : -1;
@@ -162,7 +161,6 @@ class Pawn extends Piece {
   }
 
   canAttack(to, board) {
-    const { toCoords } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
     const direction = this.color === "white" ? 1 : -1;
@@ -178,7 +176,6 @@ class Knight extends Piece {
   }
 
   isValidMove(to, board) {
-    const { toCoords } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
     const dx = Math.abs(toX - fromX);
@@ -199,7 +196,6 @@ class Bishop extends Piece {
   }
 
   isValidMove(to, board) {
-    const { toCoords, toSquare } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
 
@@ -229,7 +225,6 @@ class Rook extends Piece {
   }
 
   isValidMove(to, board) {
-    const { toCoords, toSquare } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
 
@@ -273,7 +268,6 @@ class King extends Piece {
   }
 
   isValidMove(to, board) {
-    const { toCoords } = require("./utils");
     const [fromX, fromY] = toCoords(this.position);
     const [toX, toY] = toCoords(to);
 
@@ -285,13 +279,4 @@ class King extends Piece {
   }
 }
 
-module.exports = {
-  Piece,
-  CustomPiece,
-  Pawn,
-  Knight,
-  Bishop,
-  Rook,
-  Queen,
-  King,
-};
+export { Piece, CustomPiece, Pawn, Knight, Bishop, Rook, Queen, King };

@@ -66,4 +66,4 @@ class BoardStateManager {
   }
 }
 
-module.exports = { BoardStateManager };
+export { BoardStateManager };
