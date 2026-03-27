@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Client (Next.js)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "chess_pie_two/frontend/client",
+      "port": 3000
+    },
+    {
+      "name": "Server (Express / Socket.io)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "chess_pie_two/frontend/server",
+      "port": 3001
+    }
+  ]
+}

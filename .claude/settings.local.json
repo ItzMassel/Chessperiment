@@ -14,7 +14,8 @@
       "Bash(npx tsx:*)",
       "Bash(ls -la .env*)",
       "Bash(npx tsx -e \":*)",
-      "Bash(node --env-file=.env.local -e \"console.log\\(''PROJECT_ID:'', process.env.FIREBASE_PROJECT_ID ? ''SET'' : ''MISSING''\\); console.log\\(''CLIENT_EMAIL:'', process.env.FIREBASE_CLIENT_EMAIL ? ''SET'' : ''MISSING''\\); console.log\\(''PRIVATE_KEY:'', process.env.FIREBASE_PRIVATE_KEY ? ''SET'' : ''MISSING''\\);\")"
+      "Bash(node --env-file=.env.local -e \"console.log\\(''PROJECT_ID:'', process.env.FIREBASE_PROJECT_ID ? ''SET'' : ''MISSING''\\); console.log\\(''CLIENT_EMAIL:'', process.env.FIREBASE_CLIENT_EMAIL ? ''SET'' : ''MISSING''\\); console.log\\(''PRIVATE_KEY:'', process.env.FIREBASE_PRIVATE_KEY ? ''SET'' : ''MISSING''\\);\")",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
