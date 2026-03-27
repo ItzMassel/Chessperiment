@@ -13,7 +13,7 @@
         "creator": "Creator Dashboard",
         "library": "Bibliothek",
         "about": "Über uns",
-        "feedback": "Feedback",
+        "features": "Features",
         "editor": "Editor"
     },
     "filters": {
@@ -722,9 +722,9 @@
             "title": "Über Chessperiment — Kostenlose Schachvarianten- & Abstrakte Strategiespiel-Engine",
             "description": "Chessperiment ist keine Vorlagen-Sammlung — es bietet echte Anpassbarkeit. Eine kostenlose browserbasierte Game-Design-Engine zum Erstellen individueller Schachvarianten und abstrakter Strategiespiele. Vergleiche Chessperiment mit Chess Remix, ChessCraft, Tabletop Simulator und PyChess."
         },
-        "Feedback": {
-            "title": "Feedback",
-            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für Chessperiment vor"
+        "Features": {
+            "title": "Feature-Zeitstrahl — Chessperiment",
+            "description": "Verfolge, was bei Chessperiment gebaut wird – ein Feature pro Tag. Melde Fehler, fordere Features an oder gib allgemeines Feedback."
         },
         "Marketplace": {
             "title": "Chessperiment Marktplatz | Lade individuelle Schachsets herunter",
@@ -767,7 +767,7 @@
             "about": "Über uns",
             "privacyPolicy": "Datenschutzerklärung",
             "legalNotice": "Impressum",
-            "feedback": "Feedback",
+            "features": "Features",
             "builtBy": "Mit viel Liebe zum Detail für Schachbegeisterte entwickelt."
         },
         "Home": {
@@ -979,34 +979,24 @@
         "save": "Speichern",
         "cancel": "Abbrechen"
     },
-    "Feedback": {
-        "title": "Teilen Sie Ihr Feedback",
-        "subtitle": "Helfen Sie uns, Chessperiment zu verbessern, indem Sie Ihre Gedanken teilen",
-        "selectPrompt": "Was möchten Sie teilen?",
-        "reportBug": {
-            "title": "Fehler melden",
-            "description": "Haben Sie etwas gefunden, das nicht funktioniert? Lassen Sie es uns wissen, damit wir es beheben können.",
-            "placeholder": "Beschreiben Sie den Fehler, den Sie festgestellt haben..."
-        },
-        "featureSuggestion": {
-            "title": "Feature-Vorschlag",
-            "description": "Haben Sie eine Idee für eine neue Funktion? Wir würden sie gerne hören.",
-            "placeholder": "Teilen Sie Ihre Feature-Idee..."
-        },
-        "generalFeedback": {
-            "title": "Allgemeines Feedback",
-            "description": "Irgendwelche anderen Gedanken, Kommentare oder Vorschläge?",
-            "placeholder": "Teilen Sie Ihr Feedback..."
-        },
-        "submit": "Feedback senden",
-        "submitting": "Wird gesendet...",
-        "cancel": "Abbrechen",
-        "thankYou": "Vielen Dank für Ihr Feedback!",
-        "thankYouMessage": "Wir schätzen Ihren Beitrag und werden ihn bald prüfen.",
-        "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
-        "emailPlaceholder": "Ihre E-Mail (optional)",
-        "messageLabel": "Nachricht",
-        "backToHome": "Zurück zur Startseite"
+    "Features": {
+        "title": "Feature-Zeitstrahl",
+        "subtitle": "Ein Feature pro Tag — verfolge, wie Chessperiment wächst.",
+        "today": "Heute",
+        "empty": "Noch keine Features eingetragen. Schau bald wieder rein.",
+        "feedback": {
+            "title": "Deine Stimme",
+            "subtitle": "Melde einen Fehler, fordere ein Feature an oder sag einfach etwas.",
+            "bug": "Fehler melden",
+            "feature": "Feature anfragen",
+            "general": "Allgemeines Feedback",
+            "messagePlaceholder": "Beschreibe das Problem oder die Idee…",
+            "emailPlaceholder": "Deine E-Mail (optional)",
+            "submit": "Senden",
+            "cancel": "Abbrechen",
+            "thanks": "Danke! Wir lesen jede Nachricht.",
+            "error": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+        }
     },
     "creator": {
         "title": "Meine veröffentlichten Inhalte",

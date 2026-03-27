@@ -13,7 +13,7 @@
         "creator": "Creator Dashboard",
         "library": "Library",
         "about": "About Us",
-        "feedback": "Feedback",
+        "features": "Features",
         "editor": "Editor"
     },
     "filters": {
@@ -722,9 +722,9 @@
             "title": "About Chessperiment — Free Chess Variant Creator & Abstract Strategy Game Engine",
             "description": "Chessperiment is not a template library — it's real customization. A free, browser-based game design engine for creating custom chess variants and abstract strategy games. Compare Chessperiment with Chess Remix, ChessCraft, Tabletop Simulator, and PyChess."
         },
-        "Feedback": {
-            "title": "Feedback",
-            "description": "Share your feedback, report bugs, or suggest new features for Chessperiment"
+        "Features": {
+            "title": "Feature Timeline — Chessperiment",
+            "description": "See what's being built at Chessperiment — one feature a day. Report bugs, request features, or share feedback."
         },
         "Marketplace": {
             "title": "Chessperiment Marketplace | Download Custom Chess Sets",
@@ -767,7 +767,7 @@
             "about": "About Us",
             "privacyPolicy": "Privacy Policy",
             "legalNotice": "Legal Notice",
-            "feedback": "Feedback",
+            "features": "Features",
             "builtBy": "Built with great attention to detail for chess enthusiasts."
         },
         "Home": {
@@ -979,34 +979,24 @@
         "save": "Save",
         "cancel": "Cancel"
     },
-    "Feedback": {
-        "title": "Share Your Feedback",
-        "subtitle": "Help us improve Chessperiment by sharing your thoughts",
-        "selectPrompt": "What would you like to share?",
-        "reportBug": {
-            "title": "Report a Bug",
-            "description": "Found something that isn't working? Let us know so we can fix it.",
-            "placeholder": "Describe the bug you encountered..."
-        },
-        "featureSuggestion": {
-            "title": "Feature Suggestion",
-            "description": "Have an idea for a new feature? We'd love to hear it.",
-            "placeholder": "Share your feature idea..."
-        },
-        "generalFeedback": {
-            "title": "General Feedback",
-            "description": "Any other thoughts, comments, or suggestions?",
-            "placeholder": "Share your feedback..."
-        },
-        "submit": "Submit Feedback",
-        "submitting": "Submitting...",
-        "cancel": "Cancel",
-        "thankYou": "Thank you for your feedback!",
-        "thankYouMessage": "We appreciate your input and will review it soon.",
-        "error": "Something went wrong. Please try again.",
-        "emailPlaceholder": "Your email (optional)",
-        "messageLabel": "Message",
-        "backToHome": "Back to Home"
+    "Features": {
+        "title": "Feature Timeline",
+        "subtitle": "One feature a day — follow along as Chessperiment grows.",
+        "today": "Today",
+        "empty": "No features posted yet. Check back soon.",
+        "feedback": {
+            "title": "Your Voice",
+            "subtitle": "Report a bug, request a feature, or just say something.",
+            "bug": "Bug Report",
+            "feature": "Feature Request",
+            "general": "General Feedback",
+            "messagePlaceholder": "Describe the issue or idea…",
+            "emailPlaceholder": "Your email (optional)",
+            "submit": "Send",
+            "cancel": "Cancel",
+            "thanks": "Thanks! We read every message.",
+            "error": "Something went wrong. Please try again."
+        }
     },
     "creator": {
         "title": "My Published Content",
