@@ -67,12 +67,12 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                 setError(data.error ?? "Invalid password");
                 return;
             }
+            setPassword("");
             onSuccess();
         } catch {
             setError("Network error. Try again.");
         } finally {
             setLoading(false);
-            setPassword("");
         }
     };
 
