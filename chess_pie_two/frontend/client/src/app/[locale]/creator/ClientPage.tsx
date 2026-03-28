@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { MarketplaceItem } from '@/lib/marketplace-types';
 import { getCreatorMarketplaceItems } from '@/lib/marketplace-data';
 import { updateMarketplaceItem, deleteMarketplaceItem } from '@/app/actions/marketplace';
 import { getMyCreatorProfile } from '@/app/actions/creator';
-import { Loader2, Edit, Trash2, Eye, Star, GitFork, Gamepad2 } from 'lucide-react';
+import { Loader2, Edit, Trash2, Eye, Star, GitFork, Gamepad2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { storage } from '@/lib/firebase-client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { MarketplaceBoardPreview } from '@/components/marketplace/MarketplaceBoardPreview';
 
 export default function ClientPage() {
     const { user, loading: authLoading } = useAuth();
@@ -22,6 +25,8 @@ export default function ClientPage() {
         description: '',
         imageUrl: '',
     });
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!authLoading && user) {
@@ -73,6 +78,25 @@ export default function ClientPage() {
         } catch (error) {
             console.error('Error updating item:', error);
             toast.error('Failed to update item');
+        }
+    }
+
+    async function handleThumbnailUpload(file: File) {
+        if (!user) return;
+        setUploading(true);
+        try {
+            const ext = file.name.split('.').pop();
+            const path = `marketplace-thumbnails/${user.uid || user.id}/${Date.now()}.${ext}`;
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            setEditData(prev => ({ ...prev, imageUrl: url }));
+            toast.success('Image uploaded!');
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Failed to upload image');
+        } finally {
+            setUploading(false);
         }
     }
 
@@ -138,7 +162,7 @@ export default function ClientPage() {
                             key={item.id}
                             className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
                         >
-                            {/* Image */}
+                            {/* Thumbnail */}
                             <div className="aspect-video bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
                                 {item.imageUrl ? (
                                     <Image
@@ -147,6 +171,8 @@ export default function ClientPage() {
                                         fill
                                         className="object-cover"
                                     />
+                                ) : item.preview_config ? (
+                                    <MarketplaceBoardPreview config={item.preview_config} />
                                 ) : (
                                     <div className="flex items-center justify-center h-full">
                                         <Gamepad2 className="w-8 h-8 text-gray-400" />
@@ -194,13 +220,53 @@ export default function ClientPage() {
                                             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm resize-none"
                                             rows={2}
                                         />
-                                        <input
-                                            type="url"
-                                            value={editData.imageUrl}
-                                            onChange={(e) => setEditData({ ...editData, imageUrl: e.target.value })}
-                                            placeholder="Image URL"
-                                            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
-                                        />
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Custom thumbnail (optional — auto-preview is used otherwise)</p>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="url"
+                                                    value={editData.imageUrl}
+                                                    onChange={(e) => setEditData({ ...editData, imageUrl: e.target.value })}
+                                                    placeholder="Paste image URL…"
+                                                    className="flex-1 min-w-0 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    disabled={uploading}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0"
+                                                >
+                                                    {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                                                    {uploading ? 'Uploading…' : 'Upload'}
+                                                </button>
+                                                {editData.imageUrl && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditData({ ...editData, imageUrl: '' })}
+                                                        title="Remove custom thumbnail"
+                                                        className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-300 rounded-lg transition-colors shrink-0"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleThumbnailUpload(file);
+                                                    e.target.value = '';
+                                                }}
+                                            />
+                                            {editData.imageUrl && (
+                                                <div className="w-16 h-16 relative rounded overflow-hidden border border-gray-200 dark:border-gray-600 mt-1">
+                                                    <Image src={editData.imageUrl} alt="Thumbnail preview" fill className="object-cover" />
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => handleUpdateItem(item.id)}

@@ -28,6 +28,18 @@ export interface MarketplaceItem {
     isNew: boolean;
     imageUrl: string;
     description: string;
+
+    // Auto-generated board preview snapshot (populated at publish time)
+    preview_config?: {
+        rows: number;
+        cols: number;
+        gridType: string;
+        activeSquares: string[];
+        placedPieces: Record<string, { type: string; color: string }>;
+        customPieces: Array<{ id?: string; name?: string; imageWhite?: string; imageBlack?: string }>;
+        // For pieces-type items only
+        pieceShowcase?: Array<{ name: string; imageWhite?: string; imageBlack?: string }>;
+    } | null;
 }
 
 export interface Review {

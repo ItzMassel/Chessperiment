@@ -3,6 +3,7 @@
 import { MarketplaceItem } from '@/lib/marketplace-types';
 import Image from 'next/image';
 import { Star, Gamepad2, GitFork } from 'lucide-react';
+import { MarketplaceBoardPreview } from './MarketplaceBoardPreview';
 import { useRouter } from '@/i18n/navigation';
 
 interface MarketplaceItemCardProps {
@@ -28,6 +29,8 @@ export function MarketplaceItemCard({ item }: MarketplaceItemCardProps) {
                     <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold text-sm">
                         {item.imageUrl ? (
                             <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
+                        ) : item.preview_config ? (
+                            <MarketplaceBoardPreview config={item.preview_config} />
                         ) : (
                             <Gamepad2 size={48} className="text-gray-300 dark:text-gray-600" />
                         )}

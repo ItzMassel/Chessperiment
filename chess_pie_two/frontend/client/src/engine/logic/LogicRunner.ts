@@ -297,6 +297,10 @@ export class LogicRunner {
                 context.gameWon = true;
                 context.winner = piece.color;
                 break;
+
+            case 'tell-user':
+                board.triggerEffect('tell-user', piece.position, { message: vals.message || '' });
+                break;
         }
 
         if (block.childId) {

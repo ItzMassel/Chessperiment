@@ -10,6 +10,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2, Eye } from 'lucide-react';
 import KillEffect from '@/components/game/KillEffect';
+import SpeechBubble from '@/components/game/SpeechBubble';
 import HexPlayBoardRenderer from '@/components/game/HexPlayBoardRenderer';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
@@ -190,7 +191,12 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
             )}
 
             <AnimatePresence>
-                {effects.map((effect: any) => (
+                {effects.map((effect: any) => effect.type === 'tell-user' ? (
+                    <SpeechBubble
+                        key={effect.id}
+                        message={effect.params?.message || ''}
+                    />
+                ) : (
                     <KillEffect
                         key={effect.id}
                         size={size}
@@ -269,7 +275,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
     const [activePiece, setActivePiece] = useState<Piece | null>(null);
     const [logs, setLogs] = useState<{ msg: string, type: 'info' | 'move' | 'effect' }[]>([]);
-    const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: Square }[]>([]);
+    const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: Square, params?: Record<string, any> }[]>([]);
 
     // -- New State for Replicated Features --
     const [zoom, setZoom] = useState(1);
@@ -666,10 +672,15 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     useEffect(() => {
         if (!board) return;
-        const handleEffect = (effect: { type: string, position: Square }) => {
+        const handleEffect = (effect: { type: string, position: Square, params?: Record<string, any> }) => {
             const id = Date.now() + Math.random();
             setActiveEffects(prev => [...prev, { ...effect, id }]);
             addLog(`Effect: ${effect.type} at ${effect.position}`, 'effect');
+            if (effect.type === 'tell-user') {
+                setTimeout(() => {
+                    setActiveEffects(prev => prev.filter(e => e.id !== id));
+                }, 4000);
+            }
         };
 
         board.addEffectListener(handleEffect);

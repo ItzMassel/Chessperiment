@@ -14,7 +14,7 @@ export class BoardClass {
     public readonly height: number;
     public gridType: 'square' | 'hex';
     private grid: GridType;
-    private effectListeners: ((effect: { type: string, position: Square }) => void)[] = [];
+    private effectListeners: ((effect: { type: string, position: Square, params?: Record<string, any> }) => void)[] = [];
     public squareLogic: Record<Square, SquareLogic> = {};
     private squareStates: Record<Square, SquareState> = {}; // Runtime square state
     public topology?: BoardTopology; // For serialization support
@@ -29,16 +29,16 @@ export class BoardClass {
         if (squareLogic) this.squareLogic = squareLogic;
     }
 
-    addEffectListener(fn: (effect: { type: string, position: Square }) => void) {
+    addEffectListener(fn: (effect: { type: string, position: Square, params?: Record<string, any> }) => void) {
         this.effectListeners.push(fn);
     }
 
-    removeEffectListener(fn: (effect: { type: string, position: Square }) => void) {
+    removeEffectListener(fn: (effect: { type: string, position: Square, params?: Record<string, any> }) => void) {
         this.effectListeners = this.effectListeners.filter(l => l !== fn);
     }
 
-    triggerEffect(type: string, position: Square) {
-        this.effectListeners.forEach(fn => fn({ type, position }));
+    triggerEffect(type: string, position: Square, params?: Record<string, any>) {
+        this.effectListeners.forEach(fn => fn({ type, position, params }));
     }
 
     getGrid(): GridType {

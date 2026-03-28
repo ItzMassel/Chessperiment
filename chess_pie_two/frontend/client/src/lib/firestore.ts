@@ -207,6 +207,7 @@ export async function saveProject(project: Project) {
         name: project.name || "Untitled Project",
         description: project.description || "",
         isStarred: !!project.isStarred,
+        forkedFrom: project.forkedFrom,
         rows: project.rows || 8,
         cols: project.cols || 8,
         gridType: project.gridType || 'square',

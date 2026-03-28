@@ -35,6 +35,7 @@ export async function publishToMarketplace(
         let itemType: MarketplaceItem['type'];
         let sourceType: MarketplaceItem['sourceType'];
         let sourceId: string;
+        let preview_config: MarketplaceItem['preview_config'] = null;
 
         switch (payload.type) {
             case 'game': {
@@ -45,6 +46,19 @@ export async function publishToMarketplace(
                 itemType = 'game';
                 sourceType = 'project';
                 sourceId = payload.projectId;
+                preview_config = {
+                    rows: project.rows,
+                    cols: project.cols,
+                    gridType: project.gridType || 'square',
+                    activeSquares: project.activeSquares || [],
+                    placedPieces: project.placedPieces || {},
+                    customPieces: (project.customPieces || []).map((p: any) => ({
+                        id: p.id,
+                        name: p.name,
+                        imageWhite: p.imageWhite || undefined,
+                        imageBlack: p.imageBlack || undefined,
+                    })),
+                };
                 break;
             }
             case 'board': {
@@ -55,17 +69,43 @@ export async function publishToMarketplace(
                 itemType = 'board';
                 sourceType = 'board';
                 sourceId = payload.boardId;
+                preview_config = {
+                    rows: (board as any).rows,
+                    cols: (board as any).cols,
+                    gridType: (board as any).gridType || 'square',
+                    activeSquares: (board as any).activeSquares || [],
+                    placedPieces: (board as any).placedPieces || {},
+                    customPieces: ((board as any).customPieces || []).map((p: any) => ({
+                        id: p.id,
+                        name: p.name,
+                        imageWhite: p.imageWhite || undefined,
+                        imageBlack: p.imageBlack || undefined,
+                    })),
+                };
                 break;
             }
             case 'pieces': {
                 const set = await getPieceSet(payload.pieceSetId, userId);
                 if (!set) return { success: false, error: "Piece set not found." };
-                await getSetPieces(payload.pieceSetId, userId);
+                const pieces = await getSetPieces(payload.pieceSetId, userId);
                 title = set.name || "Untitled Piece Set";
                 description = set.description || "";
                 itemType = 'pieces';
                 sourceType = 'pieceSet';
                 sourceId = payload.pieceSetId;
+                preview_config = {
+                    rows: 0,
+                    cols: 0,
+                    gridType: 'square',
+                    activeSquares: [],
+                    placedPieces: {},
+                    customPieces: [],
+                    pieceShowcase: (pieces || []).slice(0, 12).map((p: any) => ({
+                        name: p.name,
+                        imageWhite: p.imageWhite || undefined,
+                        imageBlack: p.imageBlack || undefined,
+                    })),
+                };
                 break;
             }
         }
@@ -90,6 +130,7 @@ export async function publishToMarketplace(
             sourceType,
             sourceId,
             config_data: null, // Don't store config - fetch from source when needed for forking
+            preview_config,
         };
 
         const res = await db.collection('marketplace').add(marketplaceItem);
@@ -263,6 +304,95 @@ export async function deleteReview(marketplaceId: string, reviewId: string) {
     }
 }
 
+// ==================== HELPERS ====================
+
+/**
+ * Convert an algebraic square (e.g. "c3") to the x,y grid format (e.g. "2,5")
+ * used by the board editor. Leaves x,y coords untouched.
+ */
+function algebraicToGrid(sq: string, boardHeight: number): string {
+    if (sq.includes(',')) return sq; // already x,y
+    const x = sq.charCodeAt(0) - 97; // 'a' -> 0
+    const rank = parseInt(sq.slice(1), 10);
+    const y = boardHeight - rank;
+    return `${x},${y}`;
+}
+
+/**
+ * Convert any targetSquare socket value inside a logic block from algebraic to x,y.
+ */
+function convertBlockCoords(block: any, boardHeight: number): any {
+    if (!block?.socketValues) return block;
+    const sv = { ...block.socketValues };
+    if (typeof sv.targetSquare === 'string' && !sv.targetSquare.includes(',')) {
+        sv.targetSquare = algebraicToGrid(sv.targetSquare, boardHeight);
+    }
+    return { ...block, socketValues: sv };
+}
+
+/** Convert a Firestore Timestamp (or Date) to an ISO string safe for client components */
+function toISOSafe(val: any): string | undefined {
+    if (!val) return undefined;
+    if (typeof val.toDate === 'function') return val.toDate().toISOString();
+    if (val instanceof Date) return val.toISOString();
+    if (typeof val._seconds === 'number') return new Date(val._seconds * 1000).toISOString();
+    if (typeof val === 'string') return val;
+    return undefined;
+}
+
+/** Deserialize a project document fetched directly from Firestore */
+function deserializeProjectDoc(id: string, data: FirebaseFirestore.DocumentData) {
+    return {
+        id,
+        ...data,
+        createdAt: toISOSafe(data.createdAt),
+        updatedAt: toISOSafe(data.updatedAt),
+        customPieces: (data.customPieces || []).map((piece: any) => ({
+            ...piece,
+            pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : (piece.pixelsWhite || []),
+            pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : (piece.pixelsBlack || []),
+            logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : (piece.logic || []),
+            createdAt: toISOSafe(piece.createdAt),
+            updatedAt: toISOSafe(piece.updatedAt),
+        })),
+        squareLogic: data.squareLogic ? Object.fromEntries(
+            Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
+                k,
+                {
+                    ...v,
+                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : (v.logic || []),
+                    createdAt: toISOSafe(v.createdAt),
+                    updatedAt: toISOSafe(v.updatedAt),
+                },
+            ])
+        ) : {},
+    };
+}
+
+/** Resolve config_data for a marketplace item, falling back to sourceId when config_data is null */
+async function resolveConfigData(item: MarketplaceItem): Promise<any | null> {
+    if (item.config_data) return item.config_data;
+    if (!item.sourceId || !db) return null;
+
+    if (item.sourceType === 'project' || item.type === 'game') {
+        const doc = await db.collection('projects').doc(item.sourceId).get();
+        if (!doc.exists) return null;
+        return deserializeProjectDoc(doc.id, doc.data()!);
+    }
+    if (item.sourceType === 'board') {
+        const doc = await db.collection('boards').doc(item.sourceId).get();
+        if (!doc.exists) return null;
+        return { id: doc.id, ...doc.data() };
+    }
+    if (item.sourceType === 'pieceSet') {
+        const setDoc = await db.collection('pieceSets').doc(item.sourceId).get();
+        if (!setDoc.exists) return null;
+        const piecesSnap = await db.collection('customPieces').where('setId', '==', item.sourceId).get();
+        return { set: { id: setDoc.id, ...setDoc.data() }, pieces: piecesSnap.docs.map(d => ({ id: d.id, ...d.data() })) };
+    }
+    return null;
+}
+
 // ==================== FORK ====================
 
 export async function forkMarketplaceItem(marketplaceId: string) {
@@ -285,7 +415,10 @@ export async function forkMarketplaceItem(marketplaceId: string) {
             item = itemDoc.data() as MarketplaceItem;
         }
 
-        if (!item.config_data) return { success: false, error: "No data to fork" };
+        const configData = await resolveConfigData(item);
+        if (!configData) return { success: false, error: "No data to fork" };
+        // Temporarily attach so the switch below can use it uniformly
+        item = { ...item, config_data: configData };
 
         const forkedFrom = { marketplaceId, creatorHandle: item.creator_handle };
         let newItemId: string;
@@ -293,6 +426,51 @@ export async function forkMarketplaceItem(marketplaceId: string) {
         switch (item.type) {
             case 'game': {
                 const projectData = item.config_data;
+                const boardHeight = projectData.rows || 8;
+
+                // Detect if the source project uses algebraic notation (e.g. "a1") instead of
+                // the x,y format (e.g. "0,7") that the board editor requires.
+                const sampleSquare: string | undefined = (projectData.activeSquares || [])[0];
+                const needsConversion = !!sampleSquare && !sampleSquare.includes(',');
+
+                let activeSquares: string[] = projectData.activeSquares || [];
+                let placedPieces: Record<string, any> = { ...(projectData.placedPieces || {}) };
+                let squareLogic: Record<string, any> = { ...(projectData.squareLogic || {}) };
+
+                if (needsConversion) {
+                    // Convert activeSquares from algebraic to x,y
+                    activeSquares = activeSquares.map((sq: string) => algebraicToGrid(sq, boardHeight));
+
+                    // Convert placedPieces keys from algebraic to x,y
+                    const convertedPieces: Record<string, any> = {};
+                    for (const [sq, piece] of Object.entries(placedPieces)) {
+                        convertedPieces[algebraicToGrid(sq, boardHeight)] = piece;
+                    }
+                    placedPieces = convertedPieces;
+
+                    // Convert squareLogic keys + squareId + targetSquare inside logic blocks
+                    const convertedLogic: Record<string, any> = {};
+                    for (const [sq, def] of Object.entries(squareLogic) as [string, any][]) {
+                        const newKey = algebraicToGrid(sq, boardHeight);
+                        convertedLogic[newKey] = {
+                            ...def,
+                            squareId: algebraicToGrid(def.squareId || sq, boardHeight),
+                            userId,
+                            logic: Array.isArray(def.logic)
+                                ? def.logic.map((block: any) => convertBlockCoords(block, boardHeight))
+                                : def.logic,
+                        };
+                    }
+                    squareLogic = convertedLogic;
+                } else {
+                    // Even without coord conversion, update squareLogic ownership to current user
+                    const updatedLogic: Record<string, any> = {};
+                    for (const [sq, def] of Object.entries(squareLogic) as [string, any][]) {
+                        updatedLogic[sq] = { ...def, userId };
+                    }
+                    squareLogic = updatedLogic;
+                }
+
                 const newProject = {
                     ...projectData,
                     id: undefined,
@@ -300,10 +478,22 @@ export async function forkMarketplaceItem(marketplaceId: string) {
                     name: `${projectData.name || item.title} (Fork)`,
                     isStarred: false,
                     forkedFrom,
+                    activeSquares,
+                    placedPieces,
+                    squareLogic,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 };
                 newItemId = await saveProject(newProject);
+
+                // Back-fill the new projectId into every squareLogic entry
+                if (Object.keys(squareLogic).length > 0) {
+                    const updates: Record<string, string> = {};
+                    for (const sqKey of Object.keys(squareLogic)) {
+                        updates[`squareLogic.${sqKey}.projectId`] = newItemId;
+                    }
+                    await db.collection('projects').doc(newItemId).update(updates);
+                }
                 break;
             }
             case 'board': {
@@ -381,9 +571,10 @@ export async function getMarketplaceProjectAction(marketplaceId: string) {
     try {
         const doc = await db.collection('marketplace').doc(marketplaceId).get();
         if (!doc.exists) return { success: false, error: "Marketplace item not found" };
-        const data = doc.data() as MarketplaceItem;
-        if (!data.config_data) return { success: false, error: "Project data missing from marketplace item" };
-        return { success: true, data: data.config_data };
+        const item = doc.data() as MarketplaceItem;
+        const configData = await resolveConfigData(item);
+        if (!configData) return { success: false, error: "Project data missing from marketplace item" };
+        return { success: true, data: configData };
     } catch (error) {
         console.error("Error fetching marketplace project:", error);
         return { success: false, error: "Failed to fetch project" };

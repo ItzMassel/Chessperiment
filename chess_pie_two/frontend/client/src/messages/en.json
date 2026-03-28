@@ -522,7 +522,9 @@
                     "prevent": "Prevent Default",
                     "win": "Win Game",
                     "explode": "Explode",
-                    "radius": "Radius"
+                    "tellUser": "Tell User",
+                    "radius": "Radius",
+                    "message": "Message"
                 },
                 "descriptions": {
                     "onIsCaptured": "Triggered when a piece is captured.",
@@ -537,7 +539,8 @@
                     "kill": "Immediately removes the piece from the game.",
                     "prevent": "Prevents the engine's default behavior.",
                     "win": "Ends the game immediately with a win for the owner of this piece.",
-                    "explode": "Removes pieces within a radius around this piece."
+                    "explode": "Removes pieces within a radius around this piece.",
+                    "tellUser": "Displays a speech bubble from the piece with a custom message."
                 }
             }
         }

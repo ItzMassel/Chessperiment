@@ -222,6 +222,18 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 240
     },
     {
+        id: 'tell-user',
+        type: 'effect',
+        label: 'tellUser',
+        category: 'effects',
+        color: '#20B2AA',
+        description: 'tellUser',
+        sockets: [
+            { id: 'message', type: 'text', label: 'message' }
+        ],
+        width: 360
+    },
+    {
         id: 'variable-position',
         type: 'variable',
         label: 'position',

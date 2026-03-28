@@ -30,3 +30,7 @@ export const db = getFirestore(app);
 // Get Auth instance
 import { getAuth } from "firebase/auth";
 export const auth = getAuth(app);
+
+// Get Storage instance
+import { getStorage } from "firebase/storage";
+export const storage = getStorage(app);

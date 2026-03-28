@@ -14,6 +14,13 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "chess_pie_two/frontend/server",
       "port": 3001
+    },
+    {
+      "name": "Admin (chessperiment-admin)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3002"],
+      "cwd": "C:/Users/lasse_xwl0mn6/Documents/GitHub/chessperiment-admin",
+      "port": 3002
     }
   ]
 }
