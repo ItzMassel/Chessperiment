@@ -4,19 +4,17 @@ import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { OllamaRequest, OllamaResponse } from '@/lib/ai/types';
 
 // Ollama API configuration. 
-// Default to Ollama Cloud (api.ollama.com). 
-// Use OLLAMA_BASE_URL env var to override for self-hosted or different cloud providers.
-const rawBaseUrl = process.env.OLLAMA_BASE_URL || 'https://api.ollama.com';
+// Default to Ollama Cloud OpenAI-compatible endpoint.
+const rawBaseUrl = process.env.OLLAMA_BASE_URL || 'https://ollama.com/v1';
 const OLLAMA_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
-// Construct the full API URL. Ensure we don't double up on /api/ if the base includes it.
-const OLLAMA_API_URL = OLLAMA_BASE_URL.includes('/api') 
-  ? `${OLLAMA_BASE_URL}/chat` 
+// Construct the full API URL. If using /v1, the endpoint is usually /chat/completions.
+const OLLAMA_API_URL = OLLAMA_BASE_URL.includes('/v1') 
+  ? `${OLLAMA_BASE_URL}/chat/completions` 
   : `${OLLAMA_BASE_URL}/api/chat`;
 
-// Cloud models use the "-cloud" suffix for massive models (e.g. "qwen3-coder:480b-cloud").
-// Standard models like "qwen3:32b" might not have the -cloud suffix unless specifically tagged.
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:32b-cloud';
+// Use a confirmed cloud-enabled model from the Qwen3 family.
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3-vl:32b';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +48,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OLLAMA_API_KEY;
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
+    console.log('Calling Ollama API:', OLLAMA_API_URL, 'with model:', OLLAMA_MODEL);
     const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
       headers,
@@ -81,7 +80,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data: OllamaResponse = responseData;
+    // Transform OpenAI-compatible response back to Ollama format if necessary
+    let data: OllamaResponse;
+    if (responseData.choices && responseData.choices.length > 0) {
+      const choice = responseData.choices[0];
+      data = {
+        message: {
+          role: 'assistant',
+          content: choice.message.content || '',
+          tool_calls: choice.message.tool_calls
+        },
+        done: choice.finish_reason === 'stop'
+      };
+    } else {
+      data = responseData;
+    }
 
     return NextResponse.json({
       message: data.message,
