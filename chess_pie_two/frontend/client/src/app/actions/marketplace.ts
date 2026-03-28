@@ -603,11 +603,19 @@ export async function reportMarketplaceItem(
         const reporter = await getCreatorProfile(userId);
         const reporterEmail = session?.user?.email || '';
 
+        // Resolve creator's userId from their handle
+        let creatorUserId = '';
+        if (item.creator_handle) {
+            const handle = item.creator_handle.replace('@', '');
+            const creatorSnap = await db.collection('creators').where('handle', '==', handle).limit(1).get();
+            if (!creatorSnap.empty) creatorUserId = creatorSnap.docs[0].id;
+        }
+
         const report = {
             marketplaceId,
             itemTitle: item.title || 'Untitled',
             creatorHandle: item.creator_handle || '',
-            creatorUserId: item.creatorUserId || '',
+            creatorUserId,
             reporterUserId: userId,
             reporterHandle: reporter?.handle || '',
             reporterEmail,
