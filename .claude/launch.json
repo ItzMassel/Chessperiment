@@ -6,7 +6,8 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "chess_pie_two/frontend/client",
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     },
     {
       "name": "Server (Express / Socket.io)",

@@ -121,6 +121,14 @@ export class BoardClass {
         return this.stateManager.getPiece(square) as Piece | null;
     }
 
+    getSharedPieces(square: Square): Piece[] {
+        return this.stateManager.getSharedPieces(square) as Piece[];
+    }
+
+    getAllSharedPieces(): Record<Square, Piece[]> {
+        return this.stateManager.getAllSharedPieces() as Record<Square, Piece[]>;
+    }
+
     findNearestEmptySquare(target: Square): Square | null {
         const [targetX, targetY] = toCoords(target);
         const useAlgebraic = !target.includes(',');
@@ -192,13 +200,17 @@ export class BoardClass {
             this.saveSnapshot(); // Save state before any potential logic execution or move
 
             let destinationPiece = this.getPiece(to);
+            // Also consider shared pieces at the destination for capture detection
+            const sharedAtDest = this.getSharedPieces(to);
+
             if (!force && destinationPiece && destinationPiece.color === piece.color) {
                 console.warn(`[Engine] Move rejected: Cannot capture own pieces (${piece.color} at ${from} vs ${destinationPiece.color} at ${to})`);
                 this.snapshots.pop();
                 return false;
             }
 
-            const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
+            const isCapture = (destinationPiece !== null && destinationPiece.color !== piece.color)
+                || sharedAtDest.some(p => p.color !== piece.color && p.id !== piece.id);
 
             let pieceToMove = piece;
             if (promotion) {
@@ -206,31 +218,31 @@ export class BoardClass {
                 if (newPiece) pieceToMove = newPiece;
             }
 
-            // Save old state for potential rollback/bounce back
-            const oldPos = piece.position;
-            
             let movePrevented = false;
             let capturePrevented = false;
+            let preventAction = 'Jump Back';
 
             // Execute logic hooks BEFORE actually moving
+            const moveContext = {
+                from, to,
+                capturedPiece: isCapture ? destinationPiece : null,
+                prevented: false,
+                movePrevented: false,
+                capturePrevented: false,
+                preventAction: 'Jump Back',
+                gameWon: false,
+                winner: null as string | null
+            };
+
             if (pieceToMove && (pieceToMove as any).isCustom) {
-                // on-move trigger (check if move itself is prevented)
-                const moveContext = { 
-                    from, to, 
-                    capturedPiece: isCapture ? destinationPiece : null, 
-                    prevented: false, 
-                    movePrevented: false, 
-                    capturePrevented: false,
-                    gameWon: false,
-                    winner: null as string | null
-                };
                 (pieceToMove as any).executeLogic('on-move', moveContext, this);
-                
+
                 // Refresh reference in case of transformation
                 pieceToMove = this.getPiece(from) || pieceToMove;
 
                 if (moveContext.prevented || moveContext.movePrevented) {
                     movePrevented = true;
+                    preventAction = moveContext.preventAction || 'Jump Back';
                 }
 
                 if (moveContext.gameWon) {
@@ -239,15 +251,16 @@ export class BoardClass {
             }
 
             // on-capture trigger (only if move not prevented and it's a capture)
-            // This MUST be outside the pieceToMove.isCustom check so standard pieces can capture custom pieces
+            let commonContext: any = null;
             if (!movePrevented && isCapture) {
-                const commonContext = { 
+                commonContext = {
                     attacker: pieceToMove,
                     capturedPiece: destinationPiece,
-                    from, to, 
-                    prevented: false, 
-                    movePrevented: false, 
+                    from, to,
+                    prevented: false,
+                    movePrevented: false,
                     capturePrevented: false,
+                    preventAction: 'Jump Back',
                     gameWon: false,
                     winner: null as string | null
                 };
@@ -257,6 +270,7 @@ export class BoardClass {
                     (pieceToMove as any).executeLogic('on-captured', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         movePrevented = true;
+                        preventAction = commonContext.preventAction || 'Jump Back';
                     }
                 }
 
@@ -265,14 +279,27 @@ export class BoardClass {
                     (pieceToMove as any).executeLogic('on-is-captured', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         movePrevented = true;
+                        preventAction = commonContext.preventAction || preventAction;
                     }
                 }
 
                 if (destinationPiece && (destinationPiece as any).isCustom) {
                     (destinationPiece as any).executeLogic('on-is-captured', commonContext, this);
-                    
+
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;
+                        preventAction = commonContext.preventAction || preventAction;
+                    }
+                }
+
+                // Also fire on-is-captured for shared pieces at destination
+                for (const sharedPiece of sharedAtDest) {
+                    if ((sharedPiece as any).isCustom && sharedPiece.color !== piece.color) {
+                        (sharedPiece as any).executeLogic('on-is-captured', commonContext, this);
+                        if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
+                            capturePrevented = true;
+                            preventAction = commonContext.preventAction || preventAction;
+                        }
                     }
                 }
 
@@ -285,23 +312,60 @@ export class BoardClass {
             if (movePrevented || capturePrevented) {
                 // Check if the attacker was KILLED or removed during logic execution
                 if (this.getPiece(from) !== pieceToMove) {
-                    // Mark move as processed (success) so UI syncs and piece disappears, 
-                    // but don't place it at 'to' and end turn.
                     this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
                     return true;
                 }
-                console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (movePrevented: ${movePrevented}, capturePrevented: ${capturePrevented})`);
-                this.snapshots.pop(); // Don't keep snapshots for blocked moves
-                return false; 
+
+                // Handle Nearest Square: move attacker to nearest free neighbour instead
+                if (preventAction === 'Nearest Square' && isCapture) {
+                    const nearest = this.findNearestEmptySquare(to);
+                    if (nearest) {
+                        this.stateManager.setPiece(nearest, pieceToMove);
+                        this._leaveSquare(from, pieceToMove);
+                        pieceToMove.position = nearest;
+                        pieceToMove.hasMoved = true;
+                        this.stateManager.addMoveToHistory(from, nearest, pieceToMove.id);
+                        return true;
+                    }
+                    // Fall through to Jump Back if no free square found
+                }
+
+                // Handle Share Square: attacker coexists with defender
+                if (preventAction === 'Share Square' && isCapture) {
+                    // Defender (current primary at 'to') becomes shared, attacker becomes primary
+                    const defender = this.getPiece(to);
+                    if (defender) {
+                        this.stateManager.addSharedPiece(to, defender);
+                    }
+                    // Also demote existing shared pieces that were already there
+                    // (they stay as shared alongside the new arrival)
+                    this.stateManager.setPiece(to, pieceToMove);
+                    this._leaveSquare(from, pieceToMove);
+                    pieceToMove.position = to;
+                    pieceToMove.hasMoved = true;
+                    this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+                    this.triggerEffect('share-square', to);
+                    return true;
+                }
+
+                // Default: Jump Back (move denied, attacker returns to origin)
+                console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (preventAction: ${preventAction})`);
+                this.snapshots.pop();
+                return false;
             }
 
             // No prevention - execute the move normally
-            // If this was a capture and no transformation occurred, remove the captured piece first
+            // Remove all enemy pieces at 'to' (primary + any shared)
             if (isCapture) {
+                for (const sp of sharedAtDest) {
+                    if (sp.color !== piece.color) {
+                        this.stateManager.removeSharedPiece(to, sp.id);
+                    }
+                }
                 this.stateManager.setPiece(to, null);
             }
             this.stateManager.setPiece(to, pieceToMove);
-            this.stateManager.setPiece(from, null);
+            this._leaveSquare(from, pieceToMove);
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
@@ -375,6 +439,23 @@ export class BoardClass {
         }
     }
 
+    /**
+     * Handle a piece leaving a square. If there are shared pieces waiting there,
+     * promote the first one to primary. Otherwise just clear the square.
+     */
+    private _leaveSquare(square: Square, leavingPiece: Piece) {
+        const shared = this.getSharedPieces(square);
+        const remaining = shared.filter(p => p.id !== leavingPiece.id);
+        if (remaining.length > 0) {
+            const newPrimary = remaining[0];
+            this.stateManager.removeSharedPiece(square, newPrimary.id);
+            this.stateManager.setPiece(square, newPrimary);
+            // remaining[1..] stay as shared
+        } else {
+            this.stateManager.setPiece(square, null);
+        }
+    }
+
     setPiece(square: Square, piece: Piece | null): void {
         this.stateManager.setPiece(square, piece);
     }
@@ -401,20 +482,20 @@ export class BoardClass {
         squares: Record<Square, Piece | null>;
         turn: 'white' | 'black';
         pieceVariables: Record<string, Record<string, number>>;
+        sharedPieces: Record<Square, Piece[]>;
     }> = [];
 
     private saveSnapshot() {
         const currentSquares = this.getSquares();
         const squaresCopy: Record<Square, Piece | null> = {} as any;
         const pieceVariables: Record<string, Record<string, any>> = {};
+        const sharedCopy: Record<Square, Piece[]> = {};
 
         for (const s in currentSquares) {
             const piece = currentSquares[s as Square];
             if (piece) {
-                // Perform a deep clone for the snapshot
                 const clonedPiece = (piece as any).clone ? (piece as any).clone() : piece;
                 squaresCopy[s as Square] = clonedPiece;
-                
                 if (piece instanceof CustomPiece) {
                     pieceVariables[piece.id] = JSON.parse(JSON.stringify(piece.variables || {}));
                 }
@@ -423,10 +504,18 @@ export class BoardClass {
             }
         }
 
+        const allShared = this.getAllSharedPieces();
+        for (const s in allShared) {
+            sharedCopy[s as Square] = allShared[s as Square].map(p =>
+                (p as any).clone ? (p as any).clone() : p
+            ) as Piece[];
+        }
+
         this.snapshots.push({
             squares: squaresCopy,
             turn: this.getTurn(),
-            pieceVariables
+            pieceVariables,
+            sharedPieces: sharedCopy
         });
     }
 
@@ -439,20 +528,32 @@ export class BoardClass {
             for (const s in snapshot.squares) {
                 const p = snapshot.squares[s as Square];
                 this.setPiece(s as Square, p);
-                if (p) p.position = s as Square; 
+                if (p) p.position = s as Square;
             }
-            
+
+            // Restore shared pieces: clear current, then restore from snapshot
+            const allSquares = this.getSquares();
+            for (const s in allSquares) {
+                this.stateManager.clearSharedPieces(s as Square);
+            }
+            if (snapshot.sharedPieces) {
+                for (const s in snapshot.sharedPieces) {
+                    for (const p of snapshot.sharedPieces[s as Square]) {
+                        this.stateManager.addSharedPiece(s as Square, p);
+                    }
+                }
+            }
+
             // Restore variables
             const currentSquares = this.getSquares();
             for (const s in currentSquares) {
-                 const p = currentSquares[s as Square];
-                 if (p instanceof CustomPiece && snapshot.pieceVariables[p.id]) {
-                     p.variables = { ...snapshot.pieceVariables[p.id] };
-                 }
+                const p = currentSquares[s as Square];
+                if (p instanceof CustomPiece && snapshot.pieceVariables[p.id]) {
+                    p.variables = { ...snapshot.pieceVariables[p.id] };
+                }
             }
 
-            // Restore turn (sync state manager)
-            this.stateManager.revertLastMove(); 
+            this.stateManager.revertLastMove();
             if (this.stateManager.turn !== snapshot.turn) {
                 this.stateManager.turn = snapshot.turn;
             }

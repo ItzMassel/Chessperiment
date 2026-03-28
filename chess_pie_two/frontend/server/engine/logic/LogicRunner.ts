@@ -250,6 +250,7 @@ export class LogicRunner {
                 context.prevented = true;
                 context.movePrevented = true;
                 context.capturePrevented = true;
+                context.preventAction = vals.action || 'Jump Back';
                 break;
 
             case 'win':

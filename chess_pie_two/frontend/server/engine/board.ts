@@ -97,6 +97,29 @@ export class BoardClass {
         return this.stateManager.getPiece(square) as Piece | null;
     }
 
+    getSharedPieces(square: Square): Piece[] {
+        return this.stateManager.getSharedPieces(square) as Piece[];
+    }
+
+    getAllSharedPieces(): Record<Square, Piece[]> {
+        return this.stateManager.getAllSharedPieces() as Record<Square, Piece[]>;
+    }
+
+    /**
+     * Handle a piece leaving a square. Promotes a shared piece to primary if present.
+     */
+    private _leaveSquare(square: Square, leavingPiece: Piece) {
+        const shared = this.getSharedPieces(square);
+        const remaining = shared.filter(p => p.id !== leavingPiece.id);
+        if (remaining.length > 0) {
+            const newPrimary = remaining[0];
+            this.stateManager.removeSharedPiece(square, newPrimary.id);
+            this.stateManager.setPiece(square, newPrimary);
+        } else {
+            this.stateManager.setPiece(square, null);
+        }
+    }
+
     findNearestEmptySquare(target: Square): Square | null {
         const [targetX, targetY] = toCoords(target);
         const useAlgebraic = !target.includes(',');
@@ -165,16 +188,19 @@ export class BoardClass {
     movePiece(from: Square, to: Square, promotion?: string): boolean {
         const piece = this.getPiece(from);
         if (piece) {
-            this.saveSnapshot(); // Save state before any potential logic execution or move
+            this.saveSnapshot();
 
             let destinationPiece = this.getPiece(to);
+            const sharedAtDest = this.getSharedPieces(to);
+
             if (destinationPiece && destinationPiece.color === piece.color) {
                 console.warn(`[Engine] Move rejected: Cannot capture own pieces (${piece.color} at ${from} vs ${destinationPiece.color} at ${to})`);
                 this.snapshots.pop();
                 return false;
             }
 
-            const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
+            const isCapture = (destinationPiece !== null && destinationPiece.color !== piece.color)
+                || sharedAtDest.some(p => p.color !== piece.color && p.id !== piece.id);
 
             let pieceToMove = piece;
             if (promotion) {
@@ -182,65 +208,71 @@ export class BoardClass {
                 if (newPiece) pieceToMove = newPiece;
             }
 
-            // Save old state for potential rollback/bounce back
-            const oldPos = piece.position;
-            
             let movePrevented = false;
             let capturePrevented = false;
+            let preventAction = 'Jump Back';
 
-            // Execute logic hooks BEFORE actually moving
+            const moveContext = {
+                from, to,
+                capturedPiece: isCapture ? destinationPiece : null,
+                prevented: false,
+                movePrevented: false,
+                capturePrevented: false,
+                preventAction: 'Jump Back',
+                gameWon: false,
+                winner: null as string | null
+            };
+
             if (pieceToMove && (pieceToMove as any).isCustom) {
-                // on-move trigger (check if move itself is prevented)
-                const moveContext = { 
-                    from, to, 
-                    capturedPiece: isCapture ? destinationPiece : null, 
-                    prevented: false, 
-                    movePrevented: false, 
-                    capturePrevented: false,
-                    gameWon: false,
-                    winner: null as string | null
-                };
                 (pieceToMove as any).executeLogic('on-move', moveContext, this);
-                
-                // Refresh reference in case of transformation
                 pieceToMove = this.getPiece(from) || pieceToMove;
 
                 if (moveContext.prevented || moveContext.movePrevented) {
                     movePrevented = true;
+                    preventAction = moveContext.preventAction || 'Jump Back';
                 }
-
                 if (moveContext.gameWon) {
                     this.triggerEffect('win', moveContext.winner === 'white' ? 'white_win' as any : 'black_win' as any);
                 }
             }
 
-            // on-capture trigger (only if move not prevented and it's a capture)
-            // This MUST be outside the pieceToMove.isCustom check so standard pieces can capture custom pieces
+            let commonContext: any = null;
             if (!movePrevented && isCapture) {
-                const commonContext = { 
+                commonContext = {
                     attacker: pieceToMove,
                     capturedPiece: destinationPiece,
-                    from, to, 
-                    prevented: false, 
-                    movePrevented: false, 
+                    from, to,
+                    prevented: false,
+                    movePrevented: false,
                     capturePrevented: false,
+                    preventAction: 'Jump Back',
                     gameWon: false,
                     winner: null as string | null
                 };
 
-                // Fire consolidated on-is-captured logic on both sides
                 if ((pieceToMove as any).isCustom) {
                     (pieceToMove as any).executeLogic('on-is-captured', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         movePrevented = true;
+                        preventAction = commonContext.preventAction || 'Jump Back';
                     }
                 }
 
                 if (destinationPiece && (destinationPiece as any).isCustom) {
                     (destinationPiece as any).executeLogic('on-is-captured', commonContext, this);
-                    
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;
+                        preventAction = commonContext.preventAction || preventAction;
+                    }
+                }
+
+                for (const sharedPiece of sharedAtDest) {
+                    if ((sharedPiece as any).isCustom && sharedPiece.color !== piece.color) {
+                        (sharedPiece as any).executeLogic('on-is-captured', commonContext, this);
+                        if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
+                            capturePrevented = true;
+                            preventAction = commonContext.preventAction || preventAction;
+                        }
                     }
                 }
 
@@ -251,25 +283,53 @@ export class BoardClass {
 
             // NOW decide what to do based on prevention flags
             if (movePrevented || capturePrevented) {
-                // Check if the attacker was KILLED or removed during logic execution
                 if (this.getPiece(from) !== pieceToMove) {
-                    // Mark move as processed (success) so UI syncs and piece disappears, 
-                    // but don't place it at 'to' and end turn.
                     this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
                     return true;
                 }
-                console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (movePrevented: ${movePrevented}, capturePrevented: ${capturePrevented})`);
-                this.snapshots.pop(); // Don't keep snapshots for blocked moves
-                return false; 
+
+                if (preventAction === 'Nearest Square' && isCapture) {
+                    const nearest = this.findNearestEmptySquare(to);
+                    if (nearest) {
+                        this.stateManager.setPiece(nearest, pieceToMove);
+                        this._leaveSquare(from, pieceToMove);
+                        pieceToMove.position = nearest;
+                        pieceToMove.hasMoved = true;
+                        this.stateManager.addMoveToHistory(from, nearest, pieceToMove.id);
+                        return true;
+                    }
+                }
+
+                if (preventAction === 'Share Square' && isCapture) {
+                    const defender = this.getPiece(to);
+                    if (defender) {
+                        this.stateManager.addSharedPiece(to, defender);
+                    }
+                    this.stateManager.setPiece(to, pieceToMove);
+                    this._leaveSquare(from, pieceToMove);
+                    pieceToMove.position = to;
+                    pieceToMove.hasMoved = true;
+                    this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+                    this.triggerEffect('share-square', to);
+                    return true;
+                }
+
+                console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (preventAction: ${preventAction})`);
+                this.snapshots.pop();
+                return false;
             }
 
             // No prevention - execute the move normally
-            // If this was a capture and no transformation occurred, remove the captured piece first
             if (isCapture) {
+                for (const sp of sharedAtDest) {
+                    if (sp.color !== piece.color) {
+                        this.stateManager.removeSharedPiece(to, sp.id);
+                    }
+                }
                 this.stateManager.setPiece(to, null);
             }
             this.stateManager.setPiece(to, pieceToMove);
-            this.stateManager.setPiece(from, null);
+            this._leaveSquare(from, pieceToMove);
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
@@ -369,20 +429,20 @@ export class BoardClass {
         squares: Record<Square, Piece | null>;
         turn: 'white' | 'black';
         pieceVariables: Record<string, Record<string, number>>;
+        sharedPieces: Record<Square, Piece[]>;
     }> = [];
 
     private saveSnapshot() {
         const currentSquares = this.getSquares();
         const squaresCopy: Record<Square, Piece | null> = {} as any;
         const pieceVariables: Record<string, Record<string, any>> = {};
+        const sharedCopy: Record<Square, Piece[]> = {};
 
         for (const s in currentSquares) {
             const piece = currentSquares[s as Square];
             if (piece) {
-                // Perform a deep clone for the snapshot
                 const clonedPiece = (piece as any).clone ? (piece as any).clone() : piece;
                 squaresCopy[s as Square] = clonedPiece;
-                
                 if (piece instanceof CustomPiece) {
                     pieceVariables[piece.id] = JSON.parse(JSON.stringify(piece.variables || {}));
                 }
@@ -391,10 +451,18 @@ export class BoardClass {
             }
         }
 
+        const allShared = this.getAllSharedPieces();
+        for (const s in allShared) {
+            sharedCopy[s as Square] = allShared[s as Square].map(p =>
+                (p as any).clone ? (p as any).clone() : p
+            ) as Piece[];
+        }
+
         this.snapshots.push({
             squares: squaresCopy,
             turn: this.getTurn(),
-            pieceVariables
+            pieceVariables,
+            sharedPieces: sharedCopy
         });
     }
 
@@ -403,24 +471,34 @@ export class BoardClass {
             const snapshot = this.snapshots.pop();
             if (!snapshot) return;
 
-            // Restore board state
             for (const s in snapshot.squares) {
                 const p = snapshot.squares[s as Square];
                 this.setPiece(s as Square, p);
-                if (p) p.position = s as Square; 
-            }
-            
-            // Restore variables
-            const currentSquares = this.getSquares();
-            for (const s in currentSquares) {
-                 const p = currentSquares[s as Square];
-                 if (p instanceof CustomPiece && snapshot.pieceVariables[p.id]) {
-                     p.variables = { ...snapshot.pieceVariables[p.id] };
-                 }
+                if (p) p.position = s as Square;
             }
 
-            // Restore turn (sync state manager)
-            this.stateManager.revertLastMove(); 
+            // Restore shared pieces
+            const allSquares = this.getSquares();
+            for (const s in allSquares) {
+                this.stateManager.clearSharedPieces(s as Square);
+            }
+            if (snapshot.sharedPieces) {
+                for (const s in snapshot.sharedPieces) {
+                    for (const p of snapshot.sharedPieces[s as Square]) {
+                        this.stateManager.addSharedPiece(s as Square, p);
+                    }
+                }
+            }
+
+            const currentSquares = this.getSquares();
+            for (const s in currentSquares) {
+                const p = currentSquares[s as Square];
+                if (p instanceof CustomPiece && snapshot.pieceVariables[p.id]) {
+                    p.variables = { ...snapshot.pieceVariables[p.id] };
+                }
+            }
+
+            this.stateManager.revertLastMove();
             if (this.stateManager.turn !== snapshot.turn) {
                 this.stateManager.turn = snapshot.turn;
             }

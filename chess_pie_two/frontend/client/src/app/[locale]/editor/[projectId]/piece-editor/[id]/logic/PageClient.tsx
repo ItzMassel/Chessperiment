@@ -198,7 +198,10 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#FF4500',
         description: 'prevent',
-        width: 160
+        sockets: [
+            { id: 'action', type: 'select', label: 'by', options: ['Jump Back', 'Nearest Square', 'Share Square'] }
+        ],
+        width: 320
     },
     {
         id: 'win',

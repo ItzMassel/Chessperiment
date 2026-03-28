@@ -158,6 +158,7 @@ const SquareTile = memo(function SquareTile({
   pos,
   isWhite,
   piece,
+  sharedPieces,
   blockSize,
   selected,
   isMoveFrom,
@@ -175,6 +176,7 @@ const SquareTile = memo(function SquareTile({
   pos: string;
   isWhite: boolean;
   piece?: PieceType;
+  sharedPieces?: PieceType[];
   blockSize: number;
   selected: boolean;
   isMoveFrom: boolean;
@@ -190,6 +192,7 @@ const SquareTile = memo(function SquareTile({
   redMarked: boolean;
 }) {
   const { setNodeRef } = useDroppable({ id: pos });
+  const hasShared = sharedPieces && sharedPieces.length > 0;
 
   return (
     <div
@@ -209,7 +212,11 @@ const SquareTile = memo(function SquareTile({
       {redMarked && (
         <div className="absolute inset-0 z-10 pointer-events-none bg-red-500/40 rounded-sm" />
       )}
-      {piece && (
+      {/* Shared square indicator */}
+      {hasShared && (
+        <div className="absolute inset-0 z-5 pointer-events-none ring-2 ring-inset ring-purple-400/60 rounded-sm" />
+      )}
+      {piece && !hasShared && (
         <DraggablePiece
           piece={piece}
           size={piece.size as number}
@@ -224,6 +231,39 @@ const SquareTile = memo(function SquareTile({
           myColor={myColor}
           gameMode={gameMode}
         />
+      )}
+      {/* Shared square: render both pieces scaled & offset */}
+      {piece && hasShared && (
+        <>
+          {/* Primary piece — top-right */}
+          <div className="absolute pointer-events-none" style={{ transform: 'translate(18%, -18%) scale(0.62)', transformOrigin: 'center' }}>
+            <DraggablePiece
+              piece={piece}
+              size={piece.size as number}
+              amIAtTurn={amIAtTurn}
+              onClick={(e) => { e.stopPropagation(); onClick(pos); }}
+              boardStyle={boardStyle}
+              isViewingHistory={isViewingHistory}
+              gameStatus={gameStatus}
+              myColor={myColor}
+              gameMode={gameMode}
+            />
+          </div>
+          {/* Shared piece(s) — bottom-left */}
+          {sharedPieces!.map((sp, i) => (
+            <div key={sp.type + sp.color + i} className="absolute pointer-events-none" style={{ transform: 'translate(-18%, 18%) scale(0.62)', transformOrigin: 'center' }}>
+              <PieceRenderer
+                type={sp.type}
+                color={sp.color}
+                size={sp.size as number}
+                boardStyle={boardStyle}
+                className="pointer-events-none"
+                pixels={(sp as any).pixels}
+                image={(sp as any).image}
+              />
+            </div>
+          ))}
+        </>
       )}
     </div>
   );
@@ -823,41 +863,45 @@ export default function Board({
   }, [gameStatus, isSearching, customBoard]); // Re-run when layout changes or custom board initializes
 
 
-  const displayPieces = useMemo(() => {
+  const { displayPieces, sharedPiecesMap } = useMemo(() => {
     if (isCustomGame && customBoard) {
       const squares = customBoard.getSquares();
       const pieces: PieceType[] = [];
       const customPieces = customData?.customPieces || [];
 
-      for (const [pos, p] of Object.entries(squares)) {
-        if (p) {
-          const cp = customPieces.find((c: any) => c.name === p.type);
-          let pixels, image;
-          if (cp) {
-            if (p.color === 'white') {
-              pixels = cp.pixelsWhite;
-              image = cp.imageWhite;
-            } else {
-              pixels = cp.pixelsBlack;
-              image = cp.imageBlack;
-            }
-          }
-
-          pieces.push({
-            type: p.type,
-            color: p.color,
-            position: pos,
-            size: 80, // Updated in render loop
-            ...(pixels ? { pixels } : {}),
-            ...(image ? { image } : {})
-          } as any);
+      const toPieceType = (p: any, pos: string): PieceType => {
+        const cp = customPieces.find((c: any) => c.name === p.type);
+        let pixels, image;
+        if (cp) {
+          pixels = p.color === 'white' ? cp.pixelsWhite : cp.pixelsBlack;
+          image = p.color === 'white' ? cp.imageWhite : cp.imageBlack;
         }
+        return {
+          type: p.type,
+          color: p.color,
+          position: pos,
+          size: 80,
+          ...(pixels ? { pixels } : {}),
+          ...(image ? { image } : {})
+        } as any;
+      };
+
+      for (const [pos, p] of Object.entries(squares)) {
+        if (p) pieces.push(toPieceType(p, pos));
       }
-      return pieces;
+
+      // Build shared pieces map for rendering
+      const shared = customBoard.getAllSharedPieces();
+      const sharedMap: Record<string, PieceType[]> = {};
+      for (const [pos, list] of Object.entries(shared)) {
+        sharedMap[pos] = list.map(p => toPieceType(p, pos));
+      }
+
+      return { displayPieces: pieces, sharedPiecesMap: sharedMap };
     }
 
     const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
-    return activeFEN ? parseFen(activeFEN) : boardPieces;
+    return { displayPieces: activeFEN ? parseFen(activeFEN) : boardPieces, sharedPiecesMap: {} };
   }, [isViewingHistory, historyIndex, historyFens, initialFen, boardPieces, isCustomGame, customBoard, customData]);
 
   const activeTurn = useMemo(() => {
@@ -1247,9 +1291,12 @@ export default function Board({
         (isViewingHistory && gameMode === 'computer' && (myColor ? activeTurn === (myColor === "white" ? "w" : "b") : false))
       );
 
+      const sharedHere = sharedPiecesMap[pos]?.map(sp => ({ ...sp, size: blockSize * getGamePieceScale(sp.type) }));
       boardContent.push(
         <SquareTile
-          key={pos} pos={pos} isWhite={isWhiteSq} piece={piece ? { ...piece, size: pieceSize } : undefined} blockSize={blockSize}
+          key={pos} pos={pos} isWhite={isWhiteSq} piece={piece ? { ...piece, size: pieceSize } : undefined}
+          sharedPieces={sharedHere?.length ? sharedHere : undefined}
+          blockSize={blockSize}
           selected={selectedPos === pos} isMoveFrom={isMoveFrom} isMoveTo={isMoveTo}
           onClick={handlePieceSelect} onContextMenu={handleContextMenu}
           boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
