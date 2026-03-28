@@ -581,6 +581,76 @@ export async function getMarketplaceProjectAction(marketplaceId: string) {
     }
 }
 
+// ==================== REPORTS ====================
+
+export async function reportMarketplaceItem(
+    marketplaceId: string,
+    reason: string,
+    details: string
+) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+    if (!db) return { success: false, error: "Database error" };
+    if (!reason) return { success: false, error: "Reason required" };
+
+    try {
+        const itemRef = db.collection('marketplace').doc(marketplaceId);
+        const itemDoc = await itemRef.get();
+        if (!itemDoc.exists) return { success: false, error: "Item not found" };
+        const item = itemDoc.data()!;
+
+        const reporter = await getCreatorProfile(userId);
+        const reporterEmail = session?.user?.email || '';
+
+        const report = {
+            marketplaceId,
+            itemTitle: item.title || 'Untitled',
+            creatorHandle: item.creator_handle || '',
+            creatorUserId: item.creatorUserId || '',
+            reporterUserId: userId,
+            reporterHandle: reporter?.handle || '',
+            reporterEmail,
+            reason,
+            details: details.trim(),
+            status: 'new',
+            createdAt: new Date(),
+        };
+
+        await db.collection('marketplace_reports').add(report);
+
+        // Send email notification
+        const { Resend } = await import('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+            from: 'Marketplace Reports <onboarding@resend.dev>',
+            to: ['lasse.secaccbs@gmail.com'],
+            subject: `New Marketplace Report: ${item.title || 'Untitled'}`,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+                    <h2 style="color: #ef4444;">New Marketplace Report</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                        <tr><td style="padding: 6px 0; color: #666; font-weight: 600;">Item</td><td style="padding: 6px 0;">${item.title || 'Untitled'}</td></tr>
+                        <tr><td style="padding: 6px 0; color: #666; font-weight: 600;">Creator</td><td style="padding: 6px 0;">${item.creator_handle || '—'}</td></tr>
+                        <tr><td style="padding: 6px 0; color: #666; font-weight: 600;">Reporter</td><td style="padding: 6px 0;">${reporter?.handle || userId} (${reporterEmail})</td></tr>
+                        <tr><td style="padding: 6px 0; color: #666; font-weight: 600;">Reason</td><td style="padding: 6px 0;">${reason}</td></tr>
+                    </table>
+                    ${details.trim() ? `<div style="background: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444; margin-top: 8px;"><strong>Details:</strong><br/>${details.trim()}</div>` : ''}
+                    <p style="margin-top: 20px; font-size: 0.8em; color: #666;">
+                        Marketplace ID: ${marketplaceId}<br/>
+                        View in admin dashboard to take action.
+                    </p>
+                </div>
+            `,
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error submitting report:", error);
+        return { success: false, error: "Failed to submit report." };
+    }
+}
+
 // ==================== CREATOR MANAGEMENT ====================
 
 export async function updateMarketplaceItem(

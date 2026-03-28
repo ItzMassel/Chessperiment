@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { outfit, mono } from '@/lib/fonts';
 import { Menu, X } from 'lucide-react';
 
-export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void }) {
+export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen, user }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void, user: any }) {
     const t = useTranslations('Header');
 
     const small = pathname?.includes("/game")
@@ -61,7 +61,7 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
                     <Link href="/creator" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('creator')}</Link>
                     <Link href="/about" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('about')}</Link>
                     <Link href="/features" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('features')}</Link>
-                    <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>
+                    {!user && <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>}
                 </div>
                 <div className="flex relative items-center bg-amber-400/10 rounded-full p-1 border border-amber-400/20 ml-4 focus-within:ring-2 focus-within:ring-amber-400/40 outline-none">
                     <div

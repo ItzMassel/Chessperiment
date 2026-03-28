@@ -522,7 +522,9 @@
                     "prevent": "Standard verhindern",
                     "win": "Spiel gewinnen",
                     "explode": "Explosion",
-                    "radius": "Radius"
+                    "tellUser": "Sprechblase",
+                    "radius": "Radius",
+                    "message": "Nachricht"
                 },
                 "descriptions": {
                     "onIsCaptured": "Wird ausgelöst, wenn eine Figur geschlagen wird.",
@@ -537,7 +539,8 @@
                     "kill": "Entfernt die Figur sofort aus dem Spiel.",
                     "prevent": "Verhindert das Standardverhalten der Engine.",
                     "win": "Beendet das Spiel sofort mit einem Sieg für den Besitzer dieser Figur.",
-                    "explode": "Entfernt Figuren in einem Umkreis um diese Figur."
+                    "explode": "Entfernt Figuren in einem Umkreis um diese Figur.",
+                    "tellUser": "Zeigt eine Sprechblase an der Figur mit einer eigenen Nachricht an."
                 }
             }
         }

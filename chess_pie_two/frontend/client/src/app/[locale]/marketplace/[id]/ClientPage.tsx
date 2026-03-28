@@ -8,6 +8,7 @@ import { MarketplaceItem, Review } from '@/lib/marketplace-types';
 import { incrementView, forkMarketplaceItem } from '@/app/actions/marketplace';
 import { useAuth } from '@/context/AuthContext';
 import ReviewSection from '@/components/marketplace/ReviewSection';
+import { ReportModal } from '@/components/marketplace/ReportModal';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -196,6 +197,10 @@ export default function ClientPage({ item, reviews }: ClientPageProps) {
                                     {item.type === 'game' ? t('fork.forkToEditor') : t('fork.importToLibrary')}
                                 </button>
                             </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <ReportModal marketplaceId={item.id} itemTitle={item.title} />
                         </div>
                     </div>
                 </div>

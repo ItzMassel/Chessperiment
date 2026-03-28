@@ -14,6 +14,7 @@ import { headers } from "next/headers";
 import { Providers } from "../providers";
 import { SEOFooter } from "@/components/SEOFooter";
 import { ReferralSurvey } from "@/components/ReferralSurvey";
+import { WarningSplashModal } from "@/components/WarningSplashModal";
 
 import { AuthProvider } from "@/context/AuthContext";
 import { BotIdClient } from "botid/client";
@@ -151,6 +152,7 @@ export default async function RootLayout({
                   <UserPanel />
                   <ThemeToggle />
                   <ReferralSurvey />
+                  <WarningSplashModal />
                   <HeaderWrapper />
                   {children}
                   <SEOFooter />

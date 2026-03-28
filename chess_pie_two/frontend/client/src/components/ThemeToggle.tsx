@@ -6,18 +6,14 @@ import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function ThemeToggle() {
-    const { theme, setTheme } = useTheme()
+    const { resolvedTheme, setTheme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
 
     React.useEffect(() => {
         setMounted(true)
     }, [])
 
-    if (!mounted) {
-        return null
-    }
-
-    const isDark = theme === "dark"
+    const isDark = resolvedTheme === "dark"
 
     const toggleTheme = () => {
         setTheme(isDark ? "light" : "dark")
@@ -26,6 +22,7 @@ export function ThemeToggle() {
     return (
         <div className="fixed bottom-6 left-6 z-[100]">
             <motion.button
+                style={{ visibility: mounted ? "visible" : "hidden" }}
                 onClick={toggleTheme}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}

@@ -22,7 +22,7 @@ export function HeaderWrapper() {
     }
 
     return <>
-        <MobileMenu locale={locale} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-        <Header pathname={pathname} locale={locale} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+        <MobileMenu locale={locale} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={user} />
+        <Header pathname={pathname} locale={locale} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={user} />
     </>;
 }
