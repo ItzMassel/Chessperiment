@@ -302,7 +302,9 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `API error: ${response.status}`);
+          const errorMsg = errorData.error || `API error: ${response.status}`;
+          const finalError = errorData.details ? `${errorMsg} - ${errorData.details}` : errorMsg;
+          throw new Error(finalError);
         }
 
         const data = await response.json();
