@@ -20,9 +20,13 @@ export function ThemeToggle() {
     }
 
     return (
-        <div className="fixed bottom-6 left-6 z-[100]">
+        <div 
+            className="fixed bottom-6 z-100 transition-all duration-500 ease-in-out"
+            style={{ 
+                left: `calc(1.5rem + var(--ai-sidebar-width, 0px))`
+            }}
+        >
             <motion.button
-                style={{ visibility: mounted ? "visible" : "hidden" }}
                 onClick={toggleTheme}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -30,6 +34,7 @@ export function ThemeToggle() {
           ${isDark ? "bg-slate-900 border-2 border-slate-700" : "bg-sky-400 border-2 border-sky-300"}
         `}
                 style={{
+                    visibility: mounted ? "visible" : "hidden",
                     boxShadow: isDark
                         ? "0 0 30px -5px rgba(30, 41, 59, 0.6)"
                         : "0 0 30px -5px rgba(56, 189, 248, 0.8)"

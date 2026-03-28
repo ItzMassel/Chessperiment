@@ -57,7 +57,7 @@ export default function AIAssistantPanel() {
         className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
           isOpen
             ? 'bg-white/10 text-white/60 hover:bg-white/20 scale-90'
-            : 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:scale-110 hover:shadow-purple-500/30 hover:shadow-xl'
+            : 'bg-linear-to-br from-purple-500 to-indigo-600 text-white hover:scale-110 hover:shadow-purple-500/30 hover:shadow-xl'
         }`}
         title="AI Assistant"
       >
@@ -75,30 +75,47 @@ export default function AIAssistantPanel() {
             className="fixed left-0 top-24 h-[calc(100vh-6rem)] w-[380px] z-40 bg-stone-950 border-r border-white/10 flex flex-col shadow-2xl shadow-black/50"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                  <Bot className="w-4.5 h-4.5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">AI Assistant</h3>
-                  <p className="text-[10px] text-white/40 leading-tight">{currentPage.replace('-', ' ')}</p>
-                </div>
+            <div className="relative px-5 py-4 border-b border-white/5 bg-linear-to-b from-white/3 to-transparent backdrop-blur-xl">
+              {/* Glow effects */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="w-32 h-32 bg-purple-500/20 blur-[50px] absolute -top-16 -left-16" />
+                <div className="w-32 h-32 bg-indigo-500/20 blur-2xl absolute top-0 -right-16" />
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={clearMessages}
-                  className="p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
-                  title="Clear chat"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={togglePanel}
-                  className="p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              
+              <div className="relative flex items-center justify-between z-10">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative flex items-center justify-center w-10 h-10 shadow-lg shadow-purple-500/20 rounded-xl bg-linear-to-br from-purple-500 to-indigo-600 border border-white/10">
+                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-white/80 animate-pulse" />
+                    <Bot className="w-5 h-5 text-white drop-shadow-md" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-[15px] font-semibold text-transparent bg-clip-text bg-linear-to-r from-white to-white/70 tracking-tight">
+                      AI Assistant
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
+                        {currentPage.replace('-', ' ')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={clearMessages}
+                    className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
+                    title="Clear chat"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={togglePanel}
+                    className="p-2 rounded-xl text-white/40 hover:text-rose-400 hover:bg-white/10 hover:shadow-lg transition-all active:scale-95"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -106,7 +123,7 @@ export default function AIAssistantPanel() {
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
               {visibleMessages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-3 pb-20">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-600/20 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-purple-500/20 to-indigo-600/20 flex items-center justify-center">
                     <Sparkles className="w-7 h-7 text-purple-400" />
                   </div>
                   <div>
@@ -163,7 +180,7 @@ export default function AIAssistantPanel() {
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || isLoading}
-                  className="flex-shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                  className="shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
                 >
                   <Send className="w-4 h-4" />
                 </button>

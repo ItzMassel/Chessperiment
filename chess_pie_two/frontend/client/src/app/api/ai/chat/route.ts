@@ -3,11 +3,19 @@ import { getToolsForPage } from '@/lib/ai/tools';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { OllamaRequest, OllamaResponse } from '@/lib/ai/types';
 
-// Ollama Cloud base URL. Override with OLLAMA_BASE_URL for self-hosted.
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'https://ollama.com';
-const OLLAMA_API_URL = `${OLLAMA_BASE_URL}/api/chat`;
-// Cloud models use the "-cloud" suffix, e.g. "qwen3:32b-cloud".
-// Override with OLLAMA_MODEL env var to use a different model.
+// Ollama API configuration. 
+// Default to Ollama Cloud (api.ollama.com). 
+// Use OLLAMA_BASE_URL env var to override for self-hosted or different cloud providers.
+const rawBaseUrl = process.env.OLLAMA_BASE_URL || 'https://api.ollama.com';
+const OLLAMA_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+
+// Construct the full API URL. Ensure we don't double up on /api/ if the base includes it.
+const OLLAMA_API_URL = OLLAMA_BASE_URL.includes('/api') 
+  ? `${OLLAMA_BASE_URL}/chat` 
+  : `${OLLAMA_BASE_URL}/api/chat`;
+
+// Cloud models use the "-cloud" suffix for massive models (e.g. "qwen3-coder:480b-cloud").
+// Standard models like "qwen3:32b" might not have the -cloud suffix unless specifically tagged.
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:32b-cloud';
 
 export async function POST(request: NextRequest) {
@@ -49,10 +57,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Ollama API error:', response.status, errorText);
+      let errorDetails = '';
+      try {
+        const errorJson = await response.json();
+        errorDetails = JSON.stringify(errorJson);
+      } catch (e) {
+        errorDetails = await response.text();
+      }
+      
+      console.error('Ollama API error:', response.status, errorDetails);
       return NextResponse.json(
-        { error: `Ollama API error: ${response.status}`, details: errorText },
+        { error: `Ollama API error: ${response.status}`, details: errorDetails },
         { status: response.status }
       );
     }

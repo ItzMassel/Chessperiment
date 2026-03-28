@@ -111,9 +111,15 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
     if (mounted) saveMessages(projectId, messages);
   }, [messages, projectId, mounted]);
 
-  // Persist panel state
+  // Persist panel state and set CSS variable for theme toggle movement
   useEffect(() => {
-    if (mounted) savePanelOpen(projectId, isOpen);
+    if (mounted) {
+        savePanelOpen(projectId, isOpen);
+        // Set global CSS variable for other components (like ThemeToggle) to adapt
+        if (typeof document !== 'undefined') {
+            document.documentElement.style.setProperty('--ai-sidebar-width', isOpen ? '380px' : '0px');
+        }
+    }
   }, [isOpen, projectId, mounted]);
 
   const togglePanel = useCallback(() => {
