@@ -56,15 +56,16 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(ollamaRequest)
     });
 
+    let responseText = await response.text();
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (e) {
+      responseData = null;
+    }
+
     if (!response.ok) {
-      let errorDetails = '';
-      try {
-        const errorJson = await response.json();
-        errorDetails = JSON.stringify(errorJson);
-      } catch (e) {
-        errorDetails = await response.text();
-      }
-      
+      const errorDetails = responseData ? JSON.stringify(responseData, null, 2) : responseText;
       console.error('Ollama API error:', response.status, errorDetails);
       return NextResponse.json(
         { error: `Ollama API error: ${response.status}`, details: errorDetails },
@@ -72,7 +73,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data: OllamaResponse = await response.json();
+    if (!responseData) {
+      console.error('Ollama API returned invalid JSON:', responseText);
+      return NextResponse.json(
+        { error: 'Invalid JSON response from AI API', details: responseText },
+        { status: 502 }
+      );
+    }
+
+    const data: OllamaResponse = responseData;
 
     return NextResponse.json({
       message: data.message,
