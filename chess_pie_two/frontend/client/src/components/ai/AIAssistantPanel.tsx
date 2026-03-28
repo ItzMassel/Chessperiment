@@ -54,11 +54,10 @@ export default function AIAssistantPanel() {
       {/* Toggle button — fixed left side */}
       <button
         onClick={togglePanel}
-        className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-          isOpen
+        className={`fixed left-4 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isOpen
             ? 'bg-white/10 text-white/60 hover:bg-white/20 scale-90'
             : 'bg-linear-to-br from-purple-500 to-indigo-600 text-white hover:scale-110 hover:shadow-purple-500/30 hover:shadow-xl'
-        }`}
+          }`}
         title="AI Assistant"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
@@ -81,11 +80,10 @@ export default function AIAssistantPanel() {
                 <div className="w-32 h-32 bg-purple-500/20 blur-[50px] absolute -top-16 -left-16" />
                 <div className="w-32 h-32 bg-indigo-500/20 blur-2xl absolute top-0 -right-16" />
               </div>
-              
+
               <div className="relative flex items-center justify-between z-10">
                 <div className="flex items-center gap-3.5">
                   <div className="relative flex items-center justify-center w-10 h-10 shadow-lg shadow-purple-500/20 rounded-xl bg-linear-to-br from-purple-500 to-indigo-600 border border-white/10">
-                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-white/80 animate-pulse" />
                     <Bot className="w-5 h-5 text-white drop-shadow-md" />
                   </div>
                   <div className="flex flex-col">
