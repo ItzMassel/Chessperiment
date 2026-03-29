@@ -3,18 +3,18 @@ import { getToolsForPage } from '@/lib/ai/tools';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { OllamaRequest, OllamaResponse } from '@/lib/ai/types';
 
-// Ollama API configuration. 
-// Default to Ollama Cloud OpenAI-compatible endpoint.
-const rawBaseUrl = process.env.OLLAMA_BASE_URL || 'https://ollama.com/v1';
+// Ollama API configuration.
+// Default to Ollama Cloud API. Override with OLLAMA_BASE_URL env var for self-hosted.
+const rawBaseUrl = process.env.OLLAMA_BASE_URL || 'https://api.ollama.com';
 const OLLAMA_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
-// Construct the full API URL. If using /v1, the endpoint is usually /chat/completions.
-const OLLAMA_API_URL = OLLAMA_BASE_URL.includes('/v1') 
-  ? `${OLLAMA_BASE_URL}/chat/completions` 
+// Construct the full API URL. OpenAI-compatible endpoints use /chat/completions.
+const OLLAMA_API_URL = OLLAMA_BASE_URL.includes('/v1')
+  ? `${OLLAMA_BASE_URL}/chat/completions`
   : `${OLLAMA_BASE_URL}/api/chat`;
 
-// Use a confirmed cloud-enabled model from the Qwen3 family.
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3-vl:32b';
+// Model to use. Override with OLLAMA_MODEL env var (e.g. qwen2.5-coder:7b, llama3.1:8b).
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5-coder:7b';
 
 export async function POST(request: NextRequest) {
   try {
