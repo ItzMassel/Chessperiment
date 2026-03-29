@@ -27,9 +27,10 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface MoveCondition {
     id: string;
-    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY';
+    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist' | 'cooldown' | 'charge' | 'mode';
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
+    valueVariable?: string; // If set, compare against this piece variable instead of `value`
     logic?: 'AND' | 'OR';
 }
 
@@ -45,6 +46,7 @@ interface VisualMoveEditorProps {
     onUpdate: (moves: MoveRule[]) => void;
     pieceId?: string;
     projectId?: string;
+    variables?: { id: string; name: string }[];
 }
 
 const VAR_MATH = {
@@ -52,7 +54,14 @@ const VAR_MATH = {
     absDiffY: '|ΔY|',
     diffX: 'ΔX',
     diffY: 'ΔY',
+    dist: 'dist',
+    cooldown: 'cooldown',
+    charge: 'charge',
+    mode: 'mode',
 } as const;
+
+// Built-in piece variables that can be referenced as comparison values
+const BUILTIN_VALUE_VARS = ['cooldown', 'charge', 'mode'] as const;
 
 function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MATH, onClose: () => void }) {
     const t = useTranslations('Editor.Piece');
@@ -204,6 +213,7 @@ function SortableRule({
     onDeleteCondition,
     onToggleResult,
     onToggleType,
+    variables,
     t
 }: {
     rule: MoveRule,
@@ -214,6 +224,7 @@ function SortableRule({
     onDeleteCondition: (ruleId: string, condId: string) => void,
     onToggleResult: (id: string) => void,
     onToggleType: (id: string) => void,
+    variables: { id: string; name: string }[],
     t: any
 }) {
     const [explaining, setExplaining] = useState<keyof typeof VAR_MATH | null>(null);
@@ -300,12 +311,47 @@ function SortableRule({
                                     <option value="<=">&lt;=</option>
                                 </select>
 
-                                <input
-                                    type="number"
-                                    value={cond.value}
-                                    onChange={(e) => onUpdateCondition(rule.id, cond.id, { value: parseInt(e.target.value) || 0 })}
-                                    className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900 dark:text-white w-12 px-2 py-1 outline-none text-center hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
-                                />
+                                {cond.valueVariable !== undefined ? (
+                                    <div className="flex items-center gap-1">
+                                        <select
+                                            value={cond.valueVariable}
+                                            onChange={(e) => onUpdateCondition(rule.id, cond.id, { valueVariable: e.target.value })}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-violet-500 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        >
+                                            {BUILTIN_VALUE_VARS.map(v => (
+                                                <option key={v} value={v}>{v}</option>
+                                            ))}
+                                            {variables.map(v => (
+                                                <option key={v.id} value={v.name}>{v.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            title="Switch to number"
+                                            onClick={() => onUpdateCondition(rule.id, cond.id, { valueVariable: undefined })}
+                                            className="text-[10px] font-black text-violet-500 hover:text-stone-500 px-1 py-1 rounded transition-colors"
+                                        >
+                                            123
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="number"
+                                            value={cond.value}
+                                            onChange={(e) => onUpdateCondition(rule.id, cond.id, { value: parseInt(e.target.value) || 0 })}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900 dark:text-white w-12 px-2 py-1 outline-none text-center hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            title="Use a piece variable"
+                                            onClick={() => onUpdateCondition(rule.id, cond.id, { valueVariable: BUILTIN_VALUE_VARS[0] })}
+                                            className="text-[10px] font-black text-stone-400 hover:text-violet-500 px-1 py-1 rounded transition-colors"
+                                        >
+                                            var
+                                        </button>
+                                    </div>
+                                )}
 
                                 {rule.conditions.length > 1 && (
                                     <button
@@ -378,7 +424,7 @@ function SortableRule({
     );
 }
 
-export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }: VisualMoveEditorProps) {
+export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId, variables = [] }: VisualMoveEditorProps) {
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
     const router = useRouter();
@@ -551,6 +597,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }
                                     onDeleteCondition={deleteCondition}
                                     onToggleResult={toggleResult}
                                     onToggleType={toggleType}
+                                    variables={variables}
                                     t={t}
                                 />
                             ))}

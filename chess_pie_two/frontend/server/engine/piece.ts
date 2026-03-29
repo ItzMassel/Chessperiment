@@ -185,13 +185,18 @@ export class CustomPiece extends Piece {
                 else if (cond.variable === 'mode') value = this.variables['mode'] || 0;
 
 
+                // Resolve the comparison value: either a literal number or a piece variable reference
+                const compareValue = cond.valueVariable !== undefined
+                    ? (this.variables[cond.valueVariable] ?? 0)
+                    : cond.value;
+
                 let condSatisfied = false;
                 switch (cond.operator) {
-                    case '===': condSatisfied = value === cond.value; break;
-                    case '>': condSatisfied = value > cond.value; break;
-                    case '<': condSatisfied = value < cond.value; break;
-                    case '>=': condSatisfied = value >= cond.value; break;
-                    case '<=': condSatisfied = value <= cond.value; break;
+                    case '===': condSatisfied = value === compareValue; break;
+                    case '>': condSatisfied = value > compareValue; break;
+                    case '<': condSatisfied = value < compareValue; break;
+                    case '>=': condSatisfied = value >= compareValue; break;
+                    case '<=': condSatisfied = value <= compareValue; break;
                 }
 
                 if (i === 0) {

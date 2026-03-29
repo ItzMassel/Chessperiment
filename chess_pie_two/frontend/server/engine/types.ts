@@ -19,9 +19,10 @@ export interface BoardState {
 
 export interface MoveCondition {
     id: string;
-    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY';
+    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist' | 'cooldown' | 'charge' | 'mode';
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
+    valueVariable?: string; // If set, compare against this piece variable instead of `value`
     logic?: 'AND' | 'OR';
 }
 

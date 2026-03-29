@@ -496,6 +496,22 @@
                 "absDiffY": {
                     "label": "Vertikaler Abstand",
                     "desc": "Der absolute vertikale Abstand, unabhängig von vorwärts oder rückwärts."
+                },
+                "dist": {
+                    "label": "Distanz",
+                    "desc": "Die Chebyshev-Distanz (Schachfelder) oder Hex-Distanz vom Start- zum Zielfeld."
+                },
+                "cooldown": {
+                    "label": "Cooldown",
+                    "desc": "Der aktuelle Cooldown-Zähler der Figur. Wenn größer als 0, kann die Figur sich nicht bewegen."
+                },
+                "charge": {
+                    "label": "Ladung",
+                    "desc": "Eine allgemeine numerische Variable der Figur. Kann für Ladungen, Energie oder ähnlichen Zustand genutzt werden."
+                },
+                "mode": {
+                    "label": "Modus",
+                    "desc": "Eine allgemeine numerische Variable, die den aktuellen Modus oder Zustand der Figur repräsentiert."
                 }
             },
             "Logic": {

@@ -496,6 +496,22 @@
                 "absDiffY": {
                     "label": "Vertical Distance",
                     "desc": "The absolute vertical distance, regardless of forward or backward."
+                },
+                "dist": {
+                    "label": "Distance",
+                    "desc": "The Chebyshev distance (square grids) or hex distance from the starting square to the target square."
+                },
+                "cooldown": {
+                    "label": "Cooldown",
+                    "desc": "The piece's current cooldown counter. When above 0, the piece cannot move."
+                },
+                "charge": {
+                    "label": "Charge",
+                    "desc": "A general-purpose numeric variable for the piece. Can be used to track charges, energy, or similar state."
+                },
+                "mode": {
+                    "label": "Mode",
+                    "desc": "A general-purpose numeric variable representing the piece's current mode or state."
                 }
             },
             "Logic": {

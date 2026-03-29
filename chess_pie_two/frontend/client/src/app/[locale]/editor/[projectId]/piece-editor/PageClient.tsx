@@ -56,6 +56,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [currentImageWhite, setCurrentImageWhite] = useState<string | undefined>(undefined);
     const [currentImageBlack, setCurrentImageBlack] = useState<string | undefined>(undefined);
     const [currentMoves, setCurrentMoves] = useState<any[]>([]);
+    const [currentVariables, setCurrentVariables] = useState<{ id: string, name: string }[]>([]);
 
     // History for undo/redo
     const [history, setHistory] = useState<any[]>([]);
@@ -76,6 +77,7 @@ export default function PageClient({ projectId }: PageClientProps) {
             setCurrentImageWhite(piece.imageWhite);
             setCurrentImageBlack(piece.imageBlack);
             setCurrentMoves(piece.moves || []);
+            setCurrentVariables(piece.variables || []);
             setHistory([JSON.parse(JSON.stringify(editingColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack))]);
             setHistoryIndex(0);
         }
@@ -521,6 +523,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                                 }}
                                 pieceId={selectedPieceId || undefined}
                                 projectId={projectId}
+                                variables={currentVariables}
                             />
                         </div>
                         {showTestBoard && selectedPieceId && (
