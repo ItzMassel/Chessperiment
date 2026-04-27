@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Project } from '@/types/Project';
 import { useTranslations } from 'next-intl';
 import { ChevronUp, ChevronDown } from 'lucide-react';
@@ -22,6 +22,88 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
     const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white');
     const [pieceMovements, setPieceMovements] = useState<Record<string, 'run' | 'jump'>>({});
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, piece: string } | null>(null);
+
+    const touchDragRef = useRef<{ type: string; color: string; movement?: 'run' | 'jump'; custom?: boolean } | null>(null);
+    const ghostRef = useRef<HTMLElement | null>(null);
+
+    const startTouchDrag = (
+        e: React.TouchEvent,
+        pieceData: { type: string; color: string; movement?: 'run' | 'jump'; custom?: boolean }
+    ) => {
+        e.preventDefault();
+        touchDragRef.current = pieceData;
+
+        const source = e.currentTarget as HTMLElement;
+        const ghost = source.cloneNode(true) as HTMLElement;
+        const touch = e.touches[0];
+
+        ghost.style.position = 'fixed';
+        ghost.style.left = `${touch.clientX}px`;
+        ghost.style.top = `${touch.clientY}px`;
+        ghost.style.width = `${source.offsetWidth}px`;
+        ghost.style.height = `${source.offsetHeight}px`;
+        ghost.style.pointerEvents = 'none';
+        ghost.style.zIndex = '9999';
+        ghost.style.opacity = '0.85';
+        ghost.style.transform = 'translate(-50%, -50%) scale(1.2)';
+        ghost.style.borderRadius = '8px';
+        ghost.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+        ghost.style.border = '2px solid #6366f1';
+
+        document.body.appendChild(ghost);
+        ghostRef.current = ghost;
+    };
+
+    // Document-level touch handlers for the piece drag gesture
+    useEffect(() => {
+        const handleTouchMove = (e: TouchEvent) => {
+            if (!touchDragRef.current || !ghostRef.current) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            ghostRef.current.style.left = `${touch.clientX}px`;
+            ghostRef.current.style.top = `${touch.clientY}px`;
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const dragData = touchDragRef.current;
+            if (!dragData) return;
+
+            const touch = e.changedTouches[0];
+
+            // Hide ghost before elementFromPoint so it doesn't block hit-testing
+            if (ghostRef.current) ghostRef.current.style.display = 'none';
+
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+            if (ghostRef.current) {
+                document.body.removeChild(ghostRef.current);
+                ghostRef.current = null;
+            }
+            touchDragRef.current = null;
+
+            if (!element) return;
+
+            // Walk up the DOM to find a square's data-coord attribute
+            let el: Element | null = element;
+            while (el) {
+                const coord = el.getAttribute('data-coord');
+                if (coord) {
+                    document.dispatchEvent(new CustomEvent('touch-piece-drop', {
+                        detail: { coord, piece: dragData }
+                    }));
+                    break;
+                }
+                el = el.parentElement;
+            }
+        };
+
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+        return () => {
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, []);
 
     // Close context menu on click elsewhere
     useEffect(() => {
@@ -106,7 +188,10 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
                                         onDragStart={(e) => {
                                             onSelectPiece?.({ type: piece, color: selectedColor, movement: currentMovement });
                                             e.dataTransfer.setData('piece', JSON.stringify({ type: piece, color: selectedColor, movement: currentMovement }));
-                                            // Optional: set a smaller drag image? Standard HTML5 drag image is a bit limited.
+                                        }}
+                                        onTouchStart={(e) => {
+                                            onSelectPiece?.({ type: piece, color: selectedColor, movement: currentMovement });
+                                            startTouchDrag(e, { type: piece, color: selectedColor, movement: currentMovement });
                                         }}
                                     >
                                         <div className="w-full h-full relative pointer-events-none">
@@ -203,6 +288,10 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
                                             onDragStart={(e) => {
                                                 onSelectPiece?.({ type: pieceId, color: selectedColor });
                                                 e.dataTransfer.setData('piece', JSON.stringify({ type: pieceId, color: selectedColor, custom: true }));
+                                            }}
+                                            onTouchStart={(e) => {
+                                                onSelectPiece?.({ type: pieceId, color: selectedColor });
+                                                startTouchDrag(e, { type: pieceId, color: selectedColor, custom: true });
                                             }}
                                         >
                                             <div className="w-full h-full flex items-center justify-center pointer-events-none">

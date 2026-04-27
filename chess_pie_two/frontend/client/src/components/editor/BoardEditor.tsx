@@ -690,21 +690,66 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     useEffect(() => {
         const handleTouchMove = (e: TouchEvent) => {
             if (!isPaintingRef.current) return;
-            e.preventDefault(); // Prevent scrolling
+            e.preventDefault();
 
-            // Calculate which square we are over
             const touch = e.touches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!element) return;
 
-            // We need to find the coordinate from the element. 
-            // Since we can't easily get props from DOM, we rely on the grid calculation
-            // This requires mapping screen space to grid space, which is complex with zoom/pan.
-            // Alternatively, if the element is an EditorSquare (or child), maybe we can get data-coord?
+            // Walk up to find data-coord on the square wrapper
+            let el: Element | null = element;
+            while (el) {
+                const coord = el.getAttribute('data-coord');
+                if (coord) {
+                    const coordObj = grid.stringToCoord(coord);
+                    if (coordObj) handleSquareAction(coordObj, false);
+                    break;
+                }
+                el = el.parentElement;
+            }
         };
-        // Implementing proper touch-drag painting requires screen-to-coord mapping, 
-        // which exists in the resize logic but might be heavy here. 
-        // For now, simple tapping works with proper touchstart integration.
-    }, []);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        return () => document.removeEventListener('touchmove', handleTouchMove);
+    }, [grid, handleSquareAction]);
+
+    // Handle pieces dropped via touch drag from the BottomPiecePanel
+    useEffect(() => {
+        const handleTouchPieceDrop = (e: Event) => {
+            const { coord, piece } = (e as CustomEvent<{
+                coord: string;
+                piece: { type: string; color: string; movement?: 'run' | 'jump' };
+            }>).detail;
+            if (!piece?.type || !piece?.color) return;
+
+            const coordObj = grid.stringToCoord(coord);
+            if (!coordObj) return;
+
+            const key = grid.coordToString(coordObj);
+            if (!activeSquaresRef.current.has(key)) return;
+
+            const pieceToPlace = {
+                type: piece.type,
+                color: piece.color,
+                size: squareSizeRef.current * 0.8,
+                movement: piece.movement,
+            };
+
+            setPlacedPieces(prev => {
+                const next = { ...prev, [key]: pieceToPlace };
+                const symSquares = getSymmetricSquares(coordObj);
+                symSquares.forEach((s: Coordinate) => {
+                    const symKey = grid.coordToString(s);
+                    if (activeSquaresRef.current.has(symKey)) {
+                        next[symKey] = { ...pieceToPlace };
+                    }
+                });
+                return next;
+            });
+        };
+
+        document.addEventListener('touch-piece-drop', handleTouchPieceDrop);
+        return () => document.removeEventListener('touch-piece-drop', handleTouchPieceDrop);
+    }, [grid, getSymmetricSquares]);
 
     const handleDrop = useCallback((coord: Coordinate, e: React.DragEvent) => {
         e.preventDefault();
@@ -1049,6 +1094,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                         return (
                             <div
                                 key={key}
+                                data-coord={key}
                                 className="absolute transform -translate-x-1/2 -translate-y-1/2"
                                 style={{
                                     left: pos.x + (gridType === 'hex' ? (Math.max(rows, cols) * 0.75 * SQUARE_SIZE) : 0),
