@@ -235,6 +235,25 @@ export class BoardClass {
             };
 
             if (pieceToMove && (pieceToMove as any).isCustom) {
+                // Fire every-square triggers for each intermediate square the piece slides through
+                const fromC = toCoords(from);
+                const toC = toCoords(to);
+                const dxSlide = toC[0] - fromC[0];
+                const dySlide = toC[1] - fromC[1];
+                if (dxSlide !== 0 || dySlide !== 0) {
+                    const gcdFn = (a: number, b: number): number => b === 0 ? a : gcdFn(b, a % b);
+                    const steps = gcdFn(Math.abs(dxSlide), Math.abs(dySlide));
+                    if (steps > 1) {
+                        const stepX = dxSlide / steps;
+                        const stepY = dySlide / steps;
+                        for (let s = 1; s < steps; s++) {
+                            const iSq = toSquare([fromC[0] + s * stepX, fromC[1] + s * stepY], this.gridType === 'square');
+                            const sqContext = { ...moveContext, to: iSq, intermediateSquare: true };
+                            (pieceToMove as any).executeLogicForSquare('on-move', sqContext, this);
+                        }
+                    }
+                }
+
                 (pieceToMove as any).executeLogic('on-move', moveContext, this);
 
                 // Refresh reference in case of transformation

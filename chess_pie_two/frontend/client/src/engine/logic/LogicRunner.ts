@@ -70,6 +70,24 @@ export class LogicRunner {
         this.isExecuting = false;
     }
 
+    // Fires only triggers with checkFrequency === 'every-square' for the given triggerType.
+    // Used when a sliding piece passes through intermediate squares.
+    static executeForIntermediateSquare(piece: LogicPiece, triggerType: string, context: any, board: BoardClass) {
+        if (!piece.logic || !Array.isArray(piece.logic)) return;
+
+        const triggers = piece.logic.filter((b: any) =>
+            b.type === 'trigger' && b.id === triggerType && b.checkFrequency === 'every-square'
+        );
+
+        for (const trigger of triggers) {
+            if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
+                if (trigger.childId) {
+                    this.runBlock(piece, trigger.childId, context, board);
+                }
+            }
+        }
+    }
+
     private static executeInternal(piece: LogicPiece, triggerType: string, context: any, board: BoardClass) {
         // Fallback for renamed triggers
         let targetType = triggerType;

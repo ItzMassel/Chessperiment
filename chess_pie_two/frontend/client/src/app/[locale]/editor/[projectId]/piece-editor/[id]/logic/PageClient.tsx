@@ -56,6 +56,7 @@ interface BlockInstance extends BlockTemplate {
     socketValues: Record<string, any>;
     parentId?: string;
     childId?: string;
+    checkFrequency?: 'every-move' | 'every-square';
 }
 
 interface GhostState {
@@ -948,7 +949,10 @@ function Canvas({
                                     setCanvasBlocks(prev => prev.map(b => b.instanceId === block.instanceId ? { ...b, socketValues: { ...b.socketValues, [sid]: val } } : b));
                                 }}
                                 onShowInfo={() => setInfoPanelBlock(block)}
-                            />
+                            onSetFrequency={(freq) => {
+                                setCanvasBlocks(prev => prev.map(b => b.instanceId === block.instanceId ? { ...b, checkFrequency: freq } : b));
+                            }}
+                        />
                         </DraggableCanvasBlock>
                     ))}
 
@@ -1047,17 +1051,34 @@ function BlockComponent({
     isGhost = false,
     onDelete,
     onUpdateSocket,
-    onShowInfo
+    onShowInfo,
+    onSetFrequency
 }: {
     block: BlockInstance | (BlockTemplate & { instanceId: string; position: { x: number; y: number }; socketValues: any }),
     isGhost?: boolean,
     onDelete?: () => void,
     onUpdateSocket?: (socketId: string, value: any) => void,
-    onShowInfo?: () => void
+    onShowInfo?: () => void,
+    onSetFrequency?: (freq: 'every-move' | 'every-square') => void
 }) {
     const [isHovered, setIsHovered] = useState(false);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [contextMenu, setContextMenu] = useState(false);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!contextMenu) return;
+        const handler = (e: MouseEvent) => {
+            if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+                setContextMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [contextMenu]);
+
+    const currentFrequency = (block as BlockInstance).checkFrequency || 'every-move';
 
     const filledVariablesCount = Object.values(block.socketValues || {}).filter((v: any) => v && v.type === 'variable').length;
     const extraWidth = filledVariablesCount * 100;
@@ -1157,6 +1178,13 @@ function BlockComponent({
             className="relative select-none group"
             style={{ width, height: height + 20 }}
             onDoubleClick={onShowInfo}
+            onContextMenu={(e) => {
+                if (block.type === 'trigger' && onSetFrequency) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu(true);
+                }
+            }}
         >
             <svg width={width} height={height + 20} className="drop-shadow-lg">
                 <path
@@ -1195,6 +1223,38 @@ function BlockComponent({
                 >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
+            )}
+
+            {block.type === 'trigger' && currentFrequency === 'every-square' && (
+                <div className="absolute -bottom-2 left-2 bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded pointer-events-none">
+                    every square
+                </div>
+            )}
+
+            {contextMenu && onSetFrequency && (
+                <div
+                    ref={contextMenuRef}
+                    className="absolute top-full mt-1 left-0 bg-[#1a1d26] border border-white/10 rounded-lg shadow-xl z-[100] overflow-hidden min-w-[140px]"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        className={`w-full text-left px-3 py-2 text-[11px] font-bold flex items-center gap-2 transition-colors ${currentFrequency === 'every-move' ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5'}`}
+                        onClick={() => { onSetFrequency('every-move'); setContextMenu(false); }}
+                    >
+                        {currentFrequency === 'every-move' && <span>✓</span>}
+                        {currentFrequency !== 'every-move' && <span className="w-3" />}
+                        Every Move
+                    </button>
+                    <button
+                        className={`w-full text-left px-3 py-2 text-[11px] font-bold flex items-center gap-2 transition-colors ${currentFrequency === 'every-square' ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5'}`}
+                        onClick={() => { onSetFrequency('every-square'); setContextMenu(false); }}
+                    >
+                        {currentFrequency === 'every-square' && <span>✓</span>}
+                        {currentFrequency !== 'every-square' && <span className="w-3" />}
+                        Every Square
+                    </button>
+                </div>
             )}
 
             <AnimatePresence>

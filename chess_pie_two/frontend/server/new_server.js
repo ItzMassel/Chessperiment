@@ -13,54 +13,10 @@ import { createClient } from "redis";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
-// Load the loadEngine module - it's a CommonJS module that exports a function
-// The IIFE in loadEngine.js executes and should export the function directly
+// Engine imports - BoardClass, Piece, and EngineGame are used for custom game logic
 import { BoardClass } from "./engine/board.js";
 import { Piece } from "./engine/piece.js";
 import { EngineGame } from "./engine/game.js";
-
-const loadEngineCode = fs.readFileSync(loadEnginePath, "utf8");
-// Create a temporary module context to execute the IIFE
-const vm = require("vm");
-// Create a require function that can access Node.js built-in modules
-const nodeRequire = (moduleName) => {
-  if (moduleName === "child_process") return require("child_process");
-  if (moduleName === "path") return require("path");
-  if (moduleName === "fs") return require("fs");
-  // For other modules, try to require them
-  try {
-    return require(moduleName);
-  } catch (e) {
-    throw new Error(`Cannot find module '${moduleName}'`);
-  }
-};
-const loadEngineContext = {
-  module: { exports: {} },
-  exports: {},
-  require: nodeRequire,
-  __dirname: __dirname,
-  __filename: loadEnginePath,
-  console: console,
-  process: process,
-  Buffer: Buffer,
-  global: global,
-  setTimeout: setTimeout,
-  clearTimeout: clearTimeout,
-  setInterval: setInterval,
-  clearInterval: clearInterval,
-};
-vm.createContext(loadEngineContext);
-vm.runInContext(loadEngineCode, loadEngineContext);
-const loadEngine =
-  loadEngineContext.module.exports ||
-  loadEngineContext.exports ||
-  loadEngineContext.loadEngine;
-
-if (typeof loadEngine !== "function") {
-  throw new Error(
-    `loadEngine is not a function. Got type: ${typeof loadEngine}, value: ${loadEngine}`,
-  );
-}
 
 // Import Stockfish pool for efficient engine management
 import { stockfishPool } from "./stockfish-pool.js";
@@ -651,6 +607,14 @@ io.on("connection", (socket) => {
     await removeFromQueue(playerId);
     const game = new Game(playerId);
 
+    // Use client-provided roomId if present — this makes shareable room codes work
+    if (data && data.roomId) {
+      const provided = data.roomId.trim().toUpperCase().substring(0, 12);
+      if (provided.length >= 4) {
+        game.roomId = provided;
+      }
+    }
+
     // Handle Custom Game Data
     if (data && data.customData) {
       console.log("🎮 Creating custom game with data");
@@ -673,6 +637,7 @@ io.on("connection", (socket) => {
       roomId: game.roomId,
       color: "white",
       isCustom: game.isCustom,
+      customData: game.customData || null,
     });
     console.log("📤 room_created event emitted");
   });

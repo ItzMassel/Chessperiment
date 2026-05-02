@@ -127,6 +127,10 @@ export class CustomPiece extends Piece {
         LogicRunner.execute(this, triggerType, context, board);
     }
 
+    executeLogicForSquare(triggerType: string, context: any, board: BoardClass) {
+        LogicRunner.executeForIntermediateSquare(this, triggerType, context, board);
+    }
+
 
 
     updateTurnState(board: BoardClass) {

@@ -17,12 +17,20 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // For 'create' and 'computer' modes the room doesn't exist on the server yet —
+        // skip the probe entirely and let Board handle creation / joining itself.
+        if (mode === 'create' || mode === 'computer') {
+            setIsCustom(false);
+            setIsLoading(false);
+            return;
+        }
+
         if (!socket || !roomId) return;
 
-        console.log("[BoardRouter] Joining room to determine type:", roomId);
+        console.log("[BoardRouter] Probing room type:", roomId);
 
         const onJoinedRoom = (data: any) => {
-            if (data.roomId === roomId) {
+            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
                 console.log("[BoardRouter] Joined room, isCustom:", !!data.isCustom);
                 setIsCustom(!!data.isCustom);
                 setCustomData(data.customData);
@@ -32,7 +40,7 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
         };
 
         const onRejoinGame = (data: any) => {
-            if (data.roomId === roomId) {
+            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
                 console.log("[BoardRouter] Rejoined room, isCustom:", !!data.isCustom);
                 setIsCustom(!!data.isCustom);
                 setCustomData(data.customData);
@@ -42,7 +50,7 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
         };
 
         const onRoomNotFound = (data: any) => {
-            if (data.roomId === roomId) {
+            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
                 console.log("[BoardRouter] Room not found");
                 setIsCustom(false);
                 setIsLoading(false);
@@ -53,7 +61,7 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
         socket.on("rejoin_game", onRejoinGame);
         socket.on("room_not_found", onRoomNotFound);
 
-        // Emit join request to get the room type
+        // Probe join to determine if this is a custom or standard game
         socket.emit("join_room", { roomId });
 
         return () => {
@@ -61,7 +69,7 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
             socket.off("rejoin_game", onRejoinGame);
             socket.off("room_not_found", onRoomNotFound);
         };
-    }, [socket, roomId]);
+    }, [socket, roomId, mode]);
 
     if (isLoading) {
         return (
