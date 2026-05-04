@@ -16,6 +16,7 @@ interface PieceEditorSidebarProps {
     onCreateNewPiece: () => void;
     onSavePiece: () => void;
     isSaving: boolean;
+    saveStatus?: 'idle' | 'success' | 'error';
     currentName: string;
     setCurrentName: (name: string) => void;
     currentColor: 'white' | 'black';
@@ -42,6 +43,7 @@ export default function PieceEditorSidebar({
     onCreateNewPiece,
     onSavePiece,
     isSaving,
+    saveStatus,
     currentName,
     setCurrentName,
     currentColor,
@@ -365,14 +367,14 @@ export default function PieceEditorSidebar({
                 <button
                     onClick={() => onSavePiece()}
                     disabled={isSaving}
-                    className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white dark:text-bg py-5 rounded-4xl font-black text-sm uppercase tracking-[0.2em] shadow-xl hover:shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 group"
+                    className={`w-full py-5 rounded-4xl font-black text-sm uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 ${saveStatus === 'error' ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/20' : saveStatus === 'success' ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-500/20' : 'bg-amber-500 hover:bg-amber-600 text-white dark:text-bg hover:shadow-amber-500/20'}`}
                 >
                     {isSaving ? (
                         <Loader2 size={20} className="animate-spin" />
                     ) : (
                         <Save size={20} />
                     )}
-                    {t('save')}
+                    {saveStatus === 'error' ? 'Save Failed' : saveStatus === 'success' ? 'Saved!' : t('save')}
                 </button>
 
                 {selectedPieceId && (

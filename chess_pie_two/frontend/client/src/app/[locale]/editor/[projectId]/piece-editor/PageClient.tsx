@@ -119,12 +119,12 @@ export default function PageClient({ projectId }: PageClientProps) {
     }, [editingColor, selectedPieceId]);
 
     const createNewPiece = async () => {
-        if (!project || !user) return;
+        if (!project) return;
 
         const newPiece: CustomPiece = {
             id: crypto.randomUUID(),
             projectId: projectId,
-            userId: user.uid,
+            userId: user?.uid || 'guest',
             name: 'New Piece',
             pixelsWhite: Array(64).fill(null).map(() => Array(64).fill('transparent')),
             pixelsBlack: Array(64).fill(null).map(() => Array(64).fill('transparent')),
@@ -144,7 +144,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     };
 
     const handleSavePiece = async (overrides?: Partial<CustomPiece>, silent: boolean = false) => {
-        if (!project || !user || !selectedPieceId) return;
+        if (!project || !selectedPieceId) return;
 
         // 1. Calculate the updated piece
         const pieceToUpdate = project.customPieces.find(p => p.id === selectedPieceId || p.name === selectedPieceId);
@@ -158,6 +158,7 @@ export default function PageClient({ projectId }: PageClientProps) {
             imageWhite: overrides?.imageWhite ?? currentImageWhite,
             imageBlack: overrides?.imageBlack ?? currentImageBlack,
             moves: overrides?.moves ?? currentMoves,
+            variables: overrides?.variables ?? currentVariables,
             updatedAt: new Date()
         };
 
@@ -557,6 +558,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                 onCreateNewPiece={() => createNewPiece()}
                 onSavePiece={() => handleSavePiece()}
                 isSaving={isSaving}
+                saveStatus={saveStatus}
                 currentName={currentName}
                 setCurrentName={setCurrentName}
                 currentColor={editingColor}
