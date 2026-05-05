@@ -1,3 +1,4 @@
 node_modules/
 .env
 chess_pie_two/frontend/secrets.json
+chess_pie_two/frontend/client/public/inscription.html
