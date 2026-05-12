@@ -82,6 +82,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.1.4",
     "lightningcss": "^1.30.2",
+    "puppeteer-core": "^24.42.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

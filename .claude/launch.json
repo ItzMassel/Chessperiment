@@ -1,7 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
+{
       "name": "Client (Next.js)",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
