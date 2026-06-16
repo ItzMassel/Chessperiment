@@ -1118,6 +1118,40 @@ setInterval(
   10 * 60 * 1000,
 ); // Run every 10 minutes
 
+// DeepSeek chat proxy endpoint
+app.use(express.json());
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
+  if (!message) {
+    return res.status(400).json({ error: "message is required" });
+  }
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "DEEPSEEK_API_KEY not set on server" });
+  }
+  try {
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: message }],
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data });
+    }
+    const reply = data.choices?.[0]?.message?.content ?? "";
+    res.json({ reply });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port", PORT);
