@@ -23,7 +23,7 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3002";
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment-server.onrender.com";
     socket = io(SOCKET_URL, {
       transports: ["websocket"],
     });
