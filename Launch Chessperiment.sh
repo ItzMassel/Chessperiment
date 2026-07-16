@@ -2,7 +2,7 @@
 set -e
 
 cd "$(dirname "$0")" || { echo "[X] Can't change to script directory"; exit 1; }
-cd client || { echo "[X] Can't find the 'client' folder. Make sure this file is in the Chessperiment root."; exit 1; }
+cd client || { echo "[X] Can't find the 'client' folder. Make sure this script is in the Chessperiment root."; exit 1; }
 
 echo ""
 echo " +------------------------------------------+"
