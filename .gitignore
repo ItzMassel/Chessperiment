@@ -1,4 +1,71 @@
+# ====================
+# Node.js / Next.js
+# ====================
 node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Build & Output
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files
 .env
-chess_pie_two/frontend/secrets.json
-chess_pie_two/frontend/client/public/inscription.html
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS-Dateien
+.DS_Store
+Thumbs.db
+
+# ====================
+# TypeScript
+# ====================
+*.tsbuildinfo
+next-env.d.ts
+
+# ====================
+# Python / Flask
+# ====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+
+# Flask instance folders
+instance/
+*.env
+
+# Flask caches
+*.cache
+
+# Migrations
+migrations/
+
+# ====================
+# Editor / IDE
+# ====================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Secrets
+frontend/secrets.json
+frontend/client/public/inscription.html
