@@ -1,6 +1,11 @@
 const createNextIntlPlugin = require("next-intl/plugin");
 
 const nextConfig = {
+  serverExternalPackages: [
+    'firebase-admin',
+    'jsdom',
+    'blockly',
+  ],
   // Redirects: www → non-www
   trailingSlash: false,
   compress: true,
