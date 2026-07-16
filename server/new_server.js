@@ -134,15 +134,15 @@ class Game {
   initializeEngine() {
     try {
       const data = this.customData;
-      // New BoardClass takes a config object
-      const board = new BoardClass({
-        width: data.cols || 8,
-        height: data.rows || 8,
-        topology: data.gridType || "square",
-        activeSquares: data.activeSquares || [],
-        pieces: data.placedPieces || {},
-        squareLogic: data.squareLogic || {},
-      });
+      // BoardClass takes positional arguments
+      const board = new BoardClass(
+        data.placedPieces || {},
+        data.activeSquares || [],
+        data.cols || 8,
+        data.rows || 8,
+        data.gridType || "square",
+        data.squareLogic || {}
+      );
 
       this.engine = board;
       this.gameEngine = new EngineGame(board);

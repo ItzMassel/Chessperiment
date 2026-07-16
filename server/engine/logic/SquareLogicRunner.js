@@ -1,4 +1,4 @@
-import { toCoords } from '../utils';
+import { toCoords } from '../utils.js';
 export class SquareLogicRunner {
     static execute(squareId, triggerType, context, board) {
         const squareLogic = board.squareLogic?.[squareId];

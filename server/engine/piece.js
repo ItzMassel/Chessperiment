@@ -1,5 +1,5 @@
-import { toCoords, toSquare } from './utils';
-import { LogicRunner } from './logic/LogicRunner';
+import { toCoords, toSquare } from './utils.js';
+import { LogicRunner } from './logic/LogicRunner.js';
 export class Piece {
     constructor(id, type, color, position, name) {
         this.hasMoved = false;
