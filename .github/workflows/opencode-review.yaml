@@ -8,18 +8,15 @@ jobs:
   review:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: ItzMassel/Chessperiment/github@latest
+      - uses: anomalyco/opencode/github@latest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           model: opencode/deepseek-v4-flash-free
           use_github_token: true
