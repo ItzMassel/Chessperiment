@@ -238,13 +238,22 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 360
     },
     {
-        id: 'variable-position',
+        id: 'variable-pos-x',
         type: 'variable',
-        label: 'position',
+        label: 'x',
         category: 'variables',
         color: '#32CD32',
-        description: 'The current position of this piece.',
-        width: 120
+        description: 'The x-coordinate (column) of this piece\'s position.',
+        width: 80
+    },
+    {
+        id: 'variable-pos-y',
+        type: 'variable',
+        label: 'y',
+        category: 'variables',
+        color: '#32CD32',
+        description: 'The y-coordinate (row) of this piece\'s position.',
+        width: 80
     }
 ];
 
@@ -791,7 +800,10 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Position Presets</h3>
                                     <div className="flex flex-wrap gap-2">
                                         <BlockTemplateItem
-                                            template={BLOCK_TEMPLATES.find(t => t.id === 'variable-position')!}
+                                            template={BLOCK_TEMPLATES.find(t => t.id === 'variable-pos-x')!}
+                                        />
+                                        <BlockTemplateItem
+                                            template={BLOCK_TEMPLATES.find(t => t.id === 'variable-pos-y')!}
                                         />
                                     </div>
                                 </div>
