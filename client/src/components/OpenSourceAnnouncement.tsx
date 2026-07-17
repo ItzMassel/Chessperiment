@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, MessageCircle, PartyPopper, X, ExternalLink } from "lucide-react";
+import { Github, MessageCircle, PartyPopper, X, ExternalLink, Users, Sparkles, ArrowRight } from "lucide-react";
 import confetti from "canvas-confetti";
 
 const STORAGE_KEY = "open_source_announcement_seen";
@@ -142,39 +142,96 @@ export const OpenSourceAnnouncement = () => {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.35 }}
-                                    className="text-stone-600 dark:text-stone-300 text-base lg:text-lg leading-relaxed mb-8"
+                                    className="text-stone-600 dark:text-stone-300 text-base lg:text-lg leading-relaxed mb-6"
                                 >
                                     We&apos;re thrilled to announce that Chessperiment is now fully open source! 
-                                    Join us on this journey — contribute to the code, report issues, 
-                                    or just hang out with the community.
+                                    The real action happens in our{" "}
+                                    <span className="text-indigo-500 dark:text-indigo-400 font-semibold">Discord</span>
+                                    {" "}— come hang out, share your variants, and help shape the future.
                                 </motion.p>
 
-                                {/* Community Buttons */}
+                                {/* Discord CTA - big and animated */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 15 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                    className="flex flex-col sm:flex-row gap-3 mb-8"
+                                    transition={{ delay: 0.45 }}
+                                    className="mb-6"
+                                >
+                                    <motion.a
+                                        href="https://discord.gg/2XrGZw9PMP"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        animate={{
+                                            boxShadow: [
+                                                "0 0 0 0 rgba(99,102,241,0.4)",
+                                                "0 0 0 20px rgba(99,102,241,0)",
+                                                "0 0 0 0 rgba(99,102,241,0)",
+                                            ],
+                                        }}
+                                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
+                                        className="relative flex items-center justify-center gap-3 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-6 rounded-2xl transition-all active:scale-[0.97] shadow-xl shadow-indigo-500/25 group overflow-hidden"
+                                    >
+                                        {/* Shimmer sweep */}
+                                        <motion.div
+                                            animate={{ x: ["-100%", "200%"] }}
+                                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+                                            className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] pointer-events-none"
+                                        />
+
+                                        {/* Floating sparkles */}
+                                        <motion.div
+                                            animate={{ y: [-4, -8, -4], opacity: [1, 0.5, 1] }}
+                                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                            className="absolute -top-2 -right-2"
+                                        >
+                                            <Sparkles size={16} className="text-yellow-300" />
+                                        </motion.div>
+                                        <motion.div
+                                            animate={{ y: [-3, -7, -3], opacity: [0.7, 1, 0.7], scale: [1, 1.2, 1] }}
+                                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                                            className="absolute -bottom-1 -left-1"
+                                        >
+                                            <Sparkles size={12} className="text-yellow-300" />
+                                        </motion.div>
+
+                                        <motion.div
+                                            animate={{ rotate: [0, 10, -10, 0] }}
+                                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                        >
+                                            <MessageCircle size={24} />
+                                        </motion.div>
+                                        <span className="text-lg">Join our Discord</span>
+                                        <motion.div
+                                            animate={{ x: [0, 4, 0] }}
+                                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                        >
+                                            <ArrowRight size={20} />
+                                        </motion.div>
+
+                                        {/* Member count badge */}
+                                        <div className="absolute -top-2.5 -right-2.5 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
+                                            <Users size={10} />
+                                            <span>200+</span>
+                                        </div>
+                                    </motion.a>
+                                </motion.div>
+
+                                {/* Secondary row with GitHub */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                    className="flex items-center justify-center mb-6"
                                 >
                                     <a
                                         href="https://github.com/ItzMassel/Chessperiment"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2.5 flex-1 bg-stone-900 dark:bg-white hover:bg-stone-800 dark:hover:bg-stone-100 text-white dark:text-stone-900 font-bold py-3.5 px-5 rounded-2xl transition-all active:scale-[0.97] shadow-lg group"
+                                        className="flex items-center justify-center gap-2 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 py-2.5 px-5 rounded-xl transition-all group"
                                     >
-                                        <Github size={20} className="group-hover:scale-110 transition-transform" />
-                                        <span>GitHub</span>
-                                        <ExternalLink size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
-                                    </a>
-                                    <a
-                                        href="https://discord.gg/2XrGZw9PMP"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2.5 flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-5 rounded-2xl transition-all active:scale-[0.97] shadow-lg group"
-                                    >
-                                        <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
-                                        <span>Discord</span>
-                                        <ExternalLink size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                                        <Github size={16} className="group-hover:scale-110 transition-transform" />
+                                        <span>Star us on GitHub</span>
+                                        <ExternalLink size={12} className="opacity-40 group-hover:opacity-80 transition-opacity" />
                                     </a>
                                 </motion.div>
 

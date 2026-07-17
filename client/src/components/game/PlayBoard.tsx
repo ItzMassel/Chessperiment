@@ -618,13 +618,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
                     // Check for game-over on remote moves
                     if (!isOnline) {
-                        if (currentGame.isCheckmate()) {
+                        const status = currentGame.getGameStatus();
+                        if (status === 'checkmate') {
                             const loser = currentGame.getTurn();
                             const winner = loser === 'white' ? 'Black' : 'White';
                             setGameResultMessage(`Checkmate! ${winner} wins!`);
                             setGameOver(true);
                             addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
-                        } else if (currentGame.isStalemate()) {
+                        } else if (status === 'stalemate') {
                             setGameResultMessage('Stalemate! Draw!');
                             setGameOver(true);
                             addLog(`[STALEMATE] Draw!`, 'effect');
@@ -814,14 +815,15 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
             // Check for checkmate/stalemate in local play
             if (!isOnline) {
-                if (game.isCheckmate()) {
+                const status = game.getGameStatus();
+                if (status === 'checkmate') {
                     const loser = game.getTurn();
                     const winner = loser === 'white' ? 'Black' : 'White';
                     setGameResultMessage(`Checkmate! ${winner} wins!`);
                     setGameOver(true);
                     addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
                     new Audio('/sounds/game-end.mp3').play().catch(() => { });
-                } else if (game.isStalemate()) {
+                } else if (status === 'stalemate') {
                     setGameResultMessage('Stalemate! Draw!');
                     setGameOver(true);
                     addLog(`[STALEMATE] Draw!`, 'effect');
