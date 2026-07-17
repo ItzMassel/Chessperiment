@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: ItzMassel/chessperiment/github@latest
         env:
           ANTHROPIC_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
