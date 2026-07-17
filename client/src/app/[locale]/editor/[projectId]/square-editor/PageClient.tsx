@@ -118,7 +118,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const [newVarName, setNewVarName] = useState('');
     const workspaceRef = useRef<Blockly.Workspace | null>(null);
     const variablesRef = useRef(variables);
-    const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         variablesRef.current = variables;
