@@ -199,6 +199,10 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
     try {
         const itemRef = db.collection('marketplace').doc(marketplaceId);
 
+        // Get creator profile for display info
+        const creator = await getCreatorProfile(userId);
+        const displayName = creator?.displayName || creator?.handle || 'Anonymous';
+
         // Use a transaction to ensure atomic rating update
         await db.runTransaction(async (transaction) => {
             const itemDoc = await transaction.get(itemRef);
@@ -221,10 +225,6 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
             if (!existing.empty) {
                 throw new Error("ALREADY_REVIEWED");
             }
-
-            // Get creator profile for display info
-            const creator = await getCreatorProfile(userId);
-            const displayName = creator?.displayName || creator?.handle || 'Anonymous';
 
             const review: Omit<Review, 'id'> = {
                 userId,
