@@ -66,6 +66,8 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [history, setHistory] = useState<any[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const gridSize = 64;
+    const SAVE_DEBOUNCE_MS = 1500;
+    const lastSavedDataRef = useRef(JSON.stringify({ name: currentName, variables: currentVariables }));
 
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const initialPieceId = searchParams?.get('pieceId');
@@ -82,6 +84,7 @@ export default function PageClient({ projectId }: PageClientProps) {
             setCurrentImageBlack(piece.imageBlack);
             setCurrentMoves(piece.moves || []);
             setCurrentVariables(piece.variables || []);
+            lastSavedDataRef.current = JSON.stringify({ name: piece.name, variables: piece.variables || [] });
             setHistory([JSON.parse(JSON.stringify(editingColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack))]);
             setHistoryIndex(0);
         }
@@ -176,6 +179,23 @@ export default function PageClient({ projectId }: PageClientProps) {
             setSaveStatus('error');
         }
     };
+
+    const handleSavePieceRef = useRef(handleSavePiece);
+    handleSavePieceRef.current = handleSavePiece;
+
+    useEffect(() => {
+        if (!project || !selectedPieceId) return;
+
+        const currentData = JSON.stringify({ name: currentName, variables: currentVariables });
+        if (currentData === lastSavedDataRef.current) return;
+
+        const timer = setTimeout(async () => {
+            lastSavedDataRef.current = currentData;
+            await handleSavePieceRef.current({}, true);
+        }, SAVE_DEBOUNCE_MS);
+
+        return () => clearTimeout(timer);
+    }, [currentName, currentVariables, project, selectedPieceId]);
 
     const handleDeletePiece = async (pieceId: string) => {
         if (!project || !confirm(t('deleteConfirm'))) return;
