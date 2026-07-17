@@ -1,6 +1,9 @@
 # Chessperiment
 
-A web-based custom chess variant sandbox platform. Create custom boards, design unique pieces with a visual Blockly-based logic editor, define custom rules, and play online against friends or Stockfish AI.
+An opensource web-based custom chess variant sandbox platform. Create custom boards, design unique pieces with a visual Blockly-based logic editor, define custom rules, and play online against friends or Stockfish AI.
+
+## Contributing
+Feel free to contribute, you can take a look at the issues for inspiration. You should also [join the Discord!](https://discord.gg/ZNVHKZpnGh)
 
 ## Features
 
@@ -76,6 +79,9 @@ This starts both servers in separate windows:
 ```
 docker run -d -p 6379:6379 redis
 ```
+## Links
+[Website](https://chessperiment.app)
+[Discord](https://discord.gg/ZNVHKZpnGh)
 
 ## License
 
