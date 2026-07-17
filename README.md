@@ -3,7 +3,7 @@
 An opensource web-based custom chess variant sandbox platform. Create custom boards, design unique pieces with a visual Blockly-based logic editor, define custom rules, and play online against friends or Stockfish AI.
 
 ## Contributing
-Feel free to contribute, you can take a look at the issues for inspiration. You should also [join the Discord!](https://discord.gg/ZNVHKZpnGh)
+Feel free to contribute, you can take a look at the [canban board](https://github.com/users/ItzMassel/projects/1/views/1) for inspiration. You should also [join the Discord!](https://discord.gg/ZNVHKZpnGh)
 
 ## Features
 
