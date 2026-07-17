@@ -10,7 +10,7 @@ import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink 
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
-import { useServerWakeup } from '@/context/ServerWakeupContext';
+
 import type { Socket } from 'socket.io-client';
 
 interface PageClientProps {
@@ -23,7 +23,6 @@ export default function PageClient({ projectId }: PageClientProps) {
     const router = useRouter();
     const socket = useSocket();
     const isConnected = useSocketConnection();
-    const { requireServer } = useServerWakeup();
 
     const {
         project,
@@ -98,10 +97,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const handlePlayOnline = () => {
         console.log('🎮 Play Online clicked');
 
-        if (!socket || !isConnected) {
-            requireServer();
-            return;
-        }
+        if (!socket || !isConnected) return;
 
         if (!project) {
             console.error('❌ No project loaded');

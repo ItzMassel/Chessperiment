@@ -162,7 +162,7 @@ class Game {
         const pieceId = `${normalizedSq}_${pData.color}_${pData.type}`;
         const customDef = customDefMap.get(pData.type) || customDefMap.get(pData.id);
 
-        const rules = customDef ? (customDef.rules || []) : [];
+        const rules = customDef ? (customDef.rules || customDef.moves || []) : [];
         const logic = customDef ? (customDef.logic || []) : [];
         const name = customDef ? (customDef.name || pData.type) : pData.type;
 
@@ -838,6 +838,22 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Single-shot room probe (used by BoardRouter to decide standard vs custom rendering)
+  socket.on("probe_room", async (data, callback) => {
+    const playerId = socketToPlayer.get(socket.id);
+    if (!playerId || !data?.roomId) { if (callback) callback(null); return; }
+    const game = await getGame(data.roomId.trim().toUpperCase());
+    if (!game) { if (callback) callback(null); return; }
+    const color = game.getColorForPlayer(playerId);
+    if (callback) callback({
+      isCustom: !!game.isCustom,
+      customData: game.customData || null,
+      fen: game.board_fen,
+      color: color ? (color === "w" ? "white" : "black") : "",
+      boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
+    });
+  });
+
   socket.on("move", async (data) => {
     let playerId = socketToPlayer.get(socket.id);
     if (!playerId && data.pId) {
@@ -912,7 +928,7 @@ io.on("connection", (socket) => {
           // Update game state
           if (data.fen) game.board_fen = data.fen;
           if (data.san) game.history.push(data.san);
-          else game.history.push(`${data.from} -> ${data.to}`);
+          else game.history.push(`CUSTOM:${data.from}-${data.to}`);
 
           // Update turn from engine if possible
           if (game.gameEngine) {
@@ -1018,6 +1034,7 @@ io.on("connection", (socket) => {
           san: moveResult.san,
           fen: game.board_fen,
           gameStatus: game.status,
+          turn: chess.turn(),
         });
         if (game.status === "ended" && status) {
           io.to(roomId).emit("game_ended", {
@@ -1186,6 +1203,15 @@ setInterval(
   },
   10 * 60 * 1000,
 ); // Run every 10 minutes
+
+// Periodic game state sync to all clients (every 5 seconds)
+setInterval(() => {
+    for (const [roomId, game] of games.entries()) {
+        if (game.status === "playing" || game.status === "ended") {
+            io.to(roomId).emit("receive_fen", { board_fen: game.board_fen });
+        }
+    }
+}, 5000);
 
 // DeepSeek chat proxy endpoint
 app.use(express.json());

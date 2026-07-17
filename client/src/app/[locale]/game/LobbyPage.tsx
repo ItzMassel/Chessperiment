@@ -2,13 +2,12 @@
 import { useRouter } from 'next/navigation';
 import GameLobby from './GameLobby';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
-import { useServerWakeup } from '@/context/ServerWakeupContext';
+
 import { useState, useEffect } from 'react';
 export default function GamePage() {
     const router = useRouter();
     const socket = useSocket();
     const isConnected = useSocketConnection();
-    const { requireServer } = useServerWakeup();
     const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
@@ -38,7 +37,7 @@ export default function GamePage() {
 
     const handleQuickSearch = () => {
         if (!socket) return;
-        if (!isConnected) { requireServer(); return; }
+        if (!isConnected) return;
         socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
         setIsSearching(true);
     };
@@ -51,7 +50,7 @@ export default function GamePage() {
     };
 
     const handleCreateRoom = () => {
-        if (!isConnected) { requireServer(); return; }
+        if (!isConnected) return;
         // Generate room ID and navigate
         const roomId = Math.random().toString(36).substring(2, 10).toUpperCase();
         router.push(`/game/${roomId}?mode=create`);
@@ -59,12 +58,12 @@ export default function GamePage() {
 
     const handleJoinRoom = (roomId: string) => {
         if (!roomId || roomId.length < 4) return;
-        if (!isConnected) { requireServer(); return; }
+        if (!isConnected) return;
         router.push(`/game/${roomId}?mode=join`);
     };
 
     const handleVsComputer = (elo: number) => {
-        if (!isConnected) { requireServer(); return; }
+        if (!isConnected) return;
         const roomId = `computer-${elo}`;
         router.push(`/game/${roomId}?mode=computer`);
     };

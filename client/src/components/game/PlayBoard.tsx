@@ -16,7 +16,7 @@ import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
-import { useServerWakeup } from '@/context/ServerWakeupContext';
+
 import { useSession } from 'next-auth/react';
 import EngineToggleCard from '@/components/editor/EngineToggleCard';
 
@@ -265,7 +265,6 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const router = useRouter();
     const socket = useSocket();
     const isConnected = useSocketConnection();
-    const { requireServer } = useServerWakeup();
     const { data: session } = useSession();
 
     // Use local state for project to allow hydration from socket
@@ -455,7 +454,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     // Socket Connection
     useEffect(() => {
         if (!isOnline || !roomId) return;
-        if (!socket || !isConnected) { requireServer(); return; }
+        if (!socket || !isConnected) return;
 
         const register = () => {
             let pId = localStorage.getItem("chess_player_id");

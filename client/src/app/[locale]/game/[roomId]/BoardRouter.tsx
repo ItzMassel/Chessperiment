@@ -1,11 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSocket, useSocketConnection } from '@/context/SocketContext';
-import { useServerWakeup } from '@/context/ServerWakeupContext';
+import { useSocket } from '@/context/SocketContext';
+
 import Board from '../Board';
 import PlayBoard from '@/components/game/PlayBoard';
 
-// Standard chess starting position
 const DEFAULT_STANDARD_PROJECT = {
     id: 'local-hotseat',
     userId: 'guest',
@@ -14,8 +13,7 @@ const DEFAULT_STANDARD_PROJECT = {
     isStarred: false,
     createdAt: new Date(),
     updatedAt: new Date(),
-    rows: 8,
-    cols: 8,
+    rows: 8, cols: 8,
     gridType: 'square' as const,
     activeSquares: [
         'a1','b1','c1','d1','e1','f1','g1','h1',
@@ -71,12 +69,9 @@ interface BoardRouterProps {
 
 export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
     const socket = useSocket();
-    const isConnected = useSocketConnection();
-    const { requireServer } = useServerWakeup();
-    const [isCustom, setIsCustom] = useState<boolean | null>(null);
+    const [resolved, setResolved] = useState<'loading' | 'custom' | 'standard'>('loading');
     const [customData, setCustomData] = useState<any>(null);
     const [boardState, setBoardState] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     const localProject = useMemo(() => ({
         ...DEFAULT_STANDARD_PROJECT,
@@ -84,102 +79,40 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
     }), [roomId]);
 
     useEffect(() => {
-        // For 'create', 'computer', and 'local' modes the room doesn't exist on the server yet —
-        // skip the probe entirely and let Board / PlayBoard handle creation / joining itself.
-        if (mode === 'create' || mode === 'computer') {
-            setIsCustom(false);
-            setIsLoading(false);
-            return;
-        }
-        if (mode === 'local') {
-            setIsCustom(true);
-            setIsLoading(false);
-            return;
-        }
-
+        if (mode === 'local') { setResolved('custom'); return; }
+        if (mode === 'create' || mode === 'computer') { setResolved('standard'); return; }
         if (!socket || !roomId) return;
-        if (!isConnected) { requireServer(); setIsLoading(false); return; }
 
-        console.log("[BoardRouter] Probing room type:", roomId);
-
-        const onJoinedRoom = (data: any) => {
-            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
-                console.log("[BoardRouter] Joined room, isCustom:", !!data.isCustom);
-                setIsCustom(!!data.isCustom);
-                setCustomData(data.customData);
-                if (data.boardState) setBoardState(data.boardState);
-                setIsLoading(false);
+        // Single-shot probe: no persistent socket listeners
+        socket.emit("probe_room", { roomId }, (response: any) => {
+            if (response?.isCustom) {
+                setCustomData(response.customData);
+                setBoardState(response.boardState);
+                setResolved('custom');
+            } else {
+                setResolved('standard');
             }
-        };
-
-        const onRejoinGame = (data: any) => {
-            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
-                console.log("[BoardRouter] Rejoined room, isCustom:", !!data.isCustom);
-                setIsCustom(!!data.isCustom);
-                setCustomData(data.customData);
-                if (data.boardState) setBoardState(data.boardState);
-                setIsLoading(false);
-            }
-        };
-
-        const onRoomNotFound = (data: any) => {
-            if (data.roomId === roomId || data.roomId?.toUpperCase() === roomId?.toUpperCase()) {
-                console.log("[BoardRouter] Room not found");
-                setIsCustom(false);
-                setIsLoading(false);
-            }
-        };
-
-        socket.on("joined_room", onJoinedRoom);
-        socket.on("rejoin_game", onRejoinGame);
-        socket.on("room_not_found", onRoomNotFound);
-
-        // Probe join to determine if this is a custom or standard game
-        socket.emit("join_room", { roomId });
-
-        return () => {
-            socket.off("joined_room", onJoinedRoom);
-            socket.off("rejoin_game", onRejoinGame);
-            socket.off("room_not_found", onRoomNotFound);
-        };
+        });
     }, [socket, roomId, mode]);
 
-    if (isLoading) {
+    if (resolved === 'loading') {
         return (
             <div className="min-h-screen w-full flex items-center justify-center select-none caret-transparent">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Determining game type...</p>
+                    <p className="text-gray-600 dark:text-gray-400">Loading...</p>
                 </div>
             </div>
         );
     }
 
     if (mode === 'local') {
-        return (
-            <PlayBoard
-                project={localProject}
-                mode="local"
-            />
-        );
+        return <PlayBoard project={localProject} mode="local" />;
     }
 
-    if (isCustom) {
-        return (
-            <PlayBoard
-                roomId={roomId}
-                project={customData}
-                initialBoardState={boardState}
-                mode="online"
-            />
-        );
+    if (resolved === 'custom') {
+        return <PlayBoard roomId={roomId} project={customData} initialBoardState={boardState} mode="online" />;
     }
 
-    return (
-        <Board
-            initialRoomId={roomId}
-            gameModeVar={mode === 'computer' ? 'computer' : 'online'}
-            mode={mode as any}
-        />
-    );
+    return <Board initialRoomId={roomId} gameModeVar={mode === 'computer' ? 'computer' : 'online'} mode={mode as any} />;
 }
