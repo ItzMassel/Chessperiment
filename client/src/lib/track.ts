@@ -1,8 +1,3 @@
-/**
- * Fire-and-forget anonymous event counter.
- * No cookies, no user IDs — just increments a server-side counter.
- * Safe to call anywhere; errors are swallowed silently.
- */
 export function trackEvent(
   event:
     | "play_game"
@@ -13,11 +8,16 @@ export function trackEvent(
     | "new_visitor"
     | "new_session"
 ): void {
+  let visitorId: string | null = null;
+  let sessionId: string | null = null;
+  try {
+    visitorId = localStorage.getItem("chess_visitor_id");
+    sessionId = sessionStorage.getItem("chess_session_id");
+  } catch {}
+
   fetch("/api/track", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event }),
-  }).catch(() => {
-    // Swallow — tracking should never affect the user experience
-  });
+    body: JSON.stringify({ event, visitorId, sessionId }),
+  }).catch(() => {});
 }

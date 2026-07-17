@@ -18,7 +18,7 @@ import { WarningSplashModal } from "@/components/WarningSplashModal";
 import { OpenSourceAnnouncement } from "@/components/OpenSourceAnnouncement";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
-import { BotIdClient } from "botid/client";
+
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -126,6 +126,7 @@ export default async function RootLayout({
       suppressHydrationWarning={true}
     >
       <head>
+        <meta name="darkreader-lock" />
         <Script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(generateBreadcrumbs(pathname)) }}
@@ -137,9 +138,6 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
-        {/* BotID Protection for API routes */}
-        <BotIdClient protect={[{ path: '/api/auth/*', method: 'POST' }]} />
-
         <SessionWrapper>
           <NextIntlClientProvider messages={messages}>
             <AuthProvider>

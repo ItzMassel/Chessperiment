@@ -134,19 +134,67 @@ class Game {
   initializeEngine() {
     try {
       const data = this.customData;
-      // BoardClass takes positional arguments
+      const placedPieces = data.placedPieces || {};
+      const customPieces = data.customPieces || [];
+      const boardHeight = data.rows || 8;
+
+      // Convert coordinate-format positions to algebraic notation (e.g. "4,1" → "e7")
+      const toAlgebraic = (coord) => {
+        if (typeof coord !== 'string' || !coord.includes(',')) return coord;
+        const [x, y] = coord.split(',').map(Number);
+        const file = String.fromCharCode(97 + x);
+        const rank = boardHeight - y;
+        return `${file}${rank}`;
+      };
+
+      // Build lookup for custom piece definitions (match by id, type, or name)
+      const customDefMap = new Map();
+      for (const cp of customPieces) {
+        if (cp.id) customDefMap.set(cp.id, cp);
+        if (cp.type) customDefMap.set(cp.type, cp);
+        if (cp.name && cp.name !== cp.type) customDefMap.set(cp.name, cp);
+      }
+
+      // Deserialize placedPieces into proper Piece instances with normalized positions
+      const initialSquares = {};
+      for (const [sq, pData] of Object.entries(placedPieces)) {
+        const normalizedSq = toAlgebraic(sq);
+        const pieceId = `${normalizedSq}_${pData.color}_${pData.type}`;
+        const customDef = customDefMap.get(pData.type) || customDefMap.get(pData.id);
+
+        const rules = customDef ? (customDef.rules || []) : [];
+        const logic = customDef ? (customDef.logic || []) : [];
+        const name = customDef ? (customDef.name || pData.type) : pData.type;
+
+        const piece = Piece.create(pieceId, pData.type, pData.color, normalizedSq, rules, logic, name);
+        if (piece) {
+          initialSquares[normalizedSq] = piece;
+        }
+      }
+
+      // Normalize active squares from coordinate to algebraic notation
+      const rawActiveSquares = data.activeSquares || [];
+      const normalizedActiveSquares = rawActiveSquares.map(sq => toAlgebraic(sq));
+
+      // Normalize square logic keys from coordinate to algebraic notation
+      const rawSquareLogic = data.squareLogic || {};
+      const normalizedSquareLogic = {};
+      for (const [sqId, def] of Object.entries(rawSquareLogic)) {
+        normalizedSquareLogic[toAlgebraic(sqId)] = def;
+      }
+
       const board = new BoardClass(
-        data.placedPieces || {},
-        data.activeSquares || [],
+        Object.keys(initialSquares).length > 0 ? initialSquares : undefined,
+        normalizedActiveSquares.length > 0 ? normalizedActiveSquares : undefined,
         data.cols || 8,
-        data.rows || 8,
+        boardHeight,
         data.gridType || "square",
-        data.squareLogic || {}
+        Object.keys(normalizedSquareLogic).length > 0 ? normalizedSquareLogic : {}
       );
 
       this.engine = board;
       this.gameEngine = new EngineGame(board);
-      console.log(`[Engine] Initialized custom board for room ${this.roomId}`);
+      console.log(`[Engine] Initialized custom board for room ${this.roomId} with ${Object.keys(initialSquares).length} pieces`);
     } catch (err) {
       console.error(
         `[Engine] Failed to initialize for room ${this.roomId}:`,
@@ -806,9 +854,18 @@ io.on("connection", (socket) => {
     try {
       // --- CUSTOM GAME LOGIC ---
       if (game.isCustom) {
+        console.log(`[Custom Move] Room ${roomId}, Player ${playerId}, Color ${color}, Move ${data.from}->${data.to}`);
+
         if (!game.gameEngine) {
-          console.error(`[Custom Move] No engine for room ${roomId}`);
-          game.initializeEngine(); // Try to recovery
+          console.error(`[Custom Move] No engine for room ${roomId} — reinitializing`);
+          game.initializeEngine();
+        }
+
+        if (game.gameEngine) {
+          const boardTurn = game.gameEngine.getBoard().getTurn();
+          console.log(`[Custom Move] Engine turn: ${boardTurn}, game.turn: ${game.turn}`);
+        } else {
+          console.error(`[Custom Move] STILL no engine after reinit!`);
         }
 
         const expectedTurn =
@@ -818,6 +875,7 @@ io.on("connection", (socket) => {
               ? "w"
               : "b"
             : "w");
+        console.log(`[Custom Move] Expected turn: ${expectedTurn}, Player color: ${color}`);
         if (color !== expectedTurn) {
           console.warn(
             `[Custom Move Rejected] Wrong turn. Expected ${expectedTurn}, Got ${color}`,
@@ -826,12 +884,23 @@ io.on("connection", (socket) => {
           return;
         }
 
+        if (!game.gameEngine) {
+          console.error(`[Custom Move] No gameEngine, accepting move blindly`);
+          socket.emit("error", { message: "Server not ready" });
+          return;
+        }
+
+        console.log(`[Custom Move] Checking board.getPiece(${data.from}):`, game.gameEngine.getBoard().getPiece(data.from) ? 'found' : 'NOT FOUND');
+        console.log(`[Custom Move] Active squares count:`, game.gameEngine.getBoard().stateManager.activeSquares?.size || 'all');
+        console.log(`[Custom Move] isActive(${data.to}):`, game.gameEngine.getBoard().isActive(data.to));
+        console.log(`[Custom Move] getPiece at ${data.from} color:`, game.gameEngine.getBoard().getPiece(data.from)?.color);
+        console.log(`[Custom Move] getPiece at ${data.from} type:`, game.gameEngine.getBoard().getPiece(data.from)?.type);
+
         let success = false;
         if (game.gameEngine) {
-          // For custom games, we validate the move using the engine
           success = game.gameEngine.makeMove(data.from, data.to, data.promotion);
+          console.log(`[Custom Move] makeMove result: ${success}`);
         } else {
-          // Fallback to trust if engine failed to init
           success = true;
         }
 

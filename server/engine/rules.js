@@ -117,20 +117,23 @@ export class ValidatorClass {
   }
 
   isLegal(from, to, promotion, effectExecutor) {
-    if (!this.isStructurallyLegal(from, to)) {
-      return false;
+        // Layer 1: Structural checks
+        if (!this.isStructurallyLegal(from, to)) {
+            return false;
+        }
+        
+        // Layer 2: Rule-based checks
+        if (!this.isRuleLegal(from, to, promotion)) {
+            return false;
+        }
+        
+        // Layer 3: Trigger vetoes (check if triggers cancel the move)
+        if (effectExecutor && this.isTriggerVetoed(from, to, effectExecutor)) {
+            return false;
+        }
+        
+        return true;
     }
-
-    if (!this.isRuleLegal(from, to, promotion)) {
-      return false;
-    }
-
-    if (effectExecutor && this.isTriggerVetoed(from, to, effectExecutor)) {
-      return false;
-    }
-
-    return true;
-  }
 
   isStructurallyLegal(from, to) {
     const piece = this.board.getPiece(from);

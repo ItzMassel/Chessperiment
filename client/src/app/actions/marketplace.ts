@@ -391,9 +391,9 @@ function deserializeProjectDoc(id: string, data: FirebaseFirestore.DocumentData)
         updatedAt: toISOSafe(data.updatedAt),
         customPieces: (data.customPieces || []).map((piece: any) => ({
             ...piece,
-            pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : (piece.pixelsWhite || []),
-            pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : (piece.pixelsBlack || []),
-            logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : (piece.logic || []),
+            pixelsWhite: typeof piece.pixelsWhite === 'string' && piece.pixelsWhite ? JSON.parse(piece.pixelsWhite) : (piece.pixelsWhite || []),
+            pixelsBlack: typeof piece.pixelsBlack === 'string' && piece.pixelsBlack ? JSON.parse(piece.pixelsBlack) : (piece.pixelsBlack || []),
+            logic: typeof piece.logic === 'string' && piece.logic ? JSON.parse(piece.logic) : (piece.logic || []),
             createdAt: toISOSafe(piece.createdAt),
             updatedAt: toISOSafe(piece.updatedAt),
         })),
@@ -402,7 +402,7 @@ function deserializeProjectDoc(id: string, data: FirebaseFirestore.DocumentData)
                 k,
                 {
                     ...v,
-                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : (v.logic || []),
+                    logic: typeof v.logic === 'string' && v.logic ? JSON.parse(v.logic) : (v.logic || []),
                     createdAt: toISOSafe(v.createdAt),
                     updatedAt: toISOSafe(v.updatedAt),
                 },

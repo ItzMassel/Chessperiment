@@ -641,6 +641,37 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         socket.on("rejoin_game", onRejoinGame);
         socket.on("room_not_found", onRoomNotFound);
         socket.on("move", onMove);
+        socket.on("error", (data: any) => {
+            console.warn("[Socket] Server error:", data.message, "pending local move:", !!lastLocalMoveRef.current);
+            toast.error(data.message || "Invalid move");
+
+            // Revert optimistic move if we have one pending
+            if (lastLocalMoveRef.current) {
+                lastLocalMoveRef.current = null;
+                const currentGame = gameRef.current;
+                if (currentGame) {
+                    try {
+                        currentGame.getBoard().undo();
+                        const clonedBoard = currentGame.getBoard().clone();
+                        setBoard(clonedBoard);
+                        boardRef.current = clonedBoard;
+
+                        setHistorySnapshots(prev => {
+                            const next = prev.slice(0, -1);
+                            console.log("[Socket] Reverted history snapshots, was", prev.length, "now", next.length);
+                            return next;
+                        });
+                        setMoveHistory(prev => prev.slice(0, -1));
+                        setViewIndex(prev => {
+                            console.log("[Socket] Reverting viewIndex from", prev, "to", prev - 1);
+                            return prev - 1;
+                        });
+                    } catch (err) {
+                        console.error("[Socket] Failed to revert optimistic move:", err);
+                    }
+                }
+            }
+        });
 
         return () => {
             socket.off("room_created", onRoomCreated);
@@ -649,6 +680,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             socket.off("rejoin_game", onRejoinGame);
             socket.off("room_not_found", onRoomNotFound);
             socket.off("move", onMove);
+            socket.off("error");
         };
     }, [socket, isOnline, game, board, activeProject, roomId]);
 
