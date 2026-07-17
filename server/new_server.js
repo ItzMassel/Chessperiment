@@ -829,7 +829,7 @@ io.on("connection", (socket) => {
         let success = false;
         if (game.gameEngine) {
           // For custom games, we validate the move using the engine
-          success = game.gameEngine.makeMove(data.from, data.to);
+          success = game.gameEngine.makeMove(data.from, data.to, data.promotion);
         } else {
           // Fallback to trust if engine failed to init
           success = true;
@@ -910,7 +910,7 @@ io.on("connection", (socket) => {
       }
       const piece = chess.get(data.from);
       const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
-      const boardHeight = 8; // Default for chess.js, but prepared for future expansion
+      const boardHeight = game.customData?.rows || 8;
       const isPawnPromotion =
         piece &&
         piece.type === "p" &&
