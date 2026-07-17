@@ -112,8 +112,43 @@ service cloud.firestore {
       // Users can only update their own profile, and cannot change handle or userId
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['handle', 'userId'])
-        && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['displayName', 'bio', 'photoUrl']);
+        && (
+          // Case 1: Profile metadata edits
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['displayName', 'bio', 'photoUrl'])
+          ||
+          // Case 2: Follow/unfollow (add/remove self to/from followers array)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
+            && (
+              (
+                request.resource.data.followers.size() == resource.data.followers.size() + 1
+                && request.resource.data.followers.hasAll(resource.data.followers)
+              )
+              ||
+              (
+                request.resource.data.followers.size() == resource.data.followers.size() - 1
+                && resource.data.followers.hasAll(request.resource.data.followers)
+              )
+            )
+          )
+          ||
+          // Case 3: Update own following array (when following/unfollowing someone)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['following'])
+            && (
+              (
+                request.resource.data.following.size() == resource.data.following.size() + 1
+                && request.resource.data.following.hasAll(resource.data.following)
+              )
+              ||
+              (
+                request.resource.data.following.size() == resource.data.following.size() - 1
+                && resource.data.following.hasAll(request.resource.data.following)
+              )
+            )
+          )
+        );
 
       // Users can only delete their own profile
       allow delete: if isOwner(userId);
@@ -161,6 +196,17 @@ service cloud.firestore {
     // ─── Features Timeline ─────────────────────────────────────────────
     match /features/{featureId} {
       allow read: if true;
+    }
+
+    // ─── Notifications ──────────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
 
     // ─── Deny everything else by default ───────────────────────────────

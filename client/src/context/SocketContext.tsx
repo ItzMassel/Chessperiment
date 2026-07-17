@@ -8,22 +8,12 @@ import type { Socket } from "socket.io-client";
 const SocketContext = createContext<Socket | null | undefined>(undefined);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const [socket, setSocket] = useState<Socket | null>(() => {
-    if (typeof window !== 'undefined') {
-      return getSocket();
-    }
-    return null;
-  });
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!socket && typeof window !== 'undefined') {
-      setSocket(getSocket());
-    }
-
-    return () => {
-      socket?.disconnect();
-    };
-  }, [socket]);
+    if (typeof window === 'undefined') return;
+    setSocket(getSocket());
+  }, []);
 
   return (
     <SocketContext.Provider value={socket}>

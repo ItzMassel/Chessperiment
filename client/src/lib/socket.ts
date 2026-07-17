@@ -36,12 +36,18 @@ export function getSocket() {
     });
 
     socket.on("connect_error", (error) => {
-      // Silently ignore socket errors — backend may not be running
-      // console.error('❌ Socket connection error:', error.message);
+      console.error('❌ Socket connection error:', error.message);
     });
 
     socket.on("disconnect", (reason) => {
       console.warn('⚠️ Socket disconnected:', reason);
+      if (socket) {
+        if (reason === "io server disconnect") {
+          socket.connect();
+        } else if (reason === "transport close") {
+          socket.connect();
+        }
+      }
     });
   }
   return socket;

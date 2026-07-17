@@ -28,6 +28,9 @@ export interface MarketplaceItem {
     imageUrl: string;
     description: string;
 
+    // Search keywords for Firestore-based search
+    searchKeywords?: string[];
+
     // Auto-generated board preview snapshot (populated at publish time)
     preview_config?: {
         rows: number;
