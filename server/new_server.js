@@ -826,10 +826,24 @@ io.on("connection", (socket) => {
           return;
         }
 
+        // Check for pawn promotion on custom boards
+        if (game.engine && game.engine.isPromotionMove(data.from, data.to)) {
+          if (!data.promotion) {
+            console.log(
+              `[Promotion Needed] Room: ${roomId}, Move: ${data.from}->${data.to}`,
+            );
+            socket.emit("promotion_needed", { from: data.from, to: data.to });
+            game.pendingMove = { from: data.from, to: data.to };
+            game.updateActivity();
+            await saveGame(game);
+            return;
+          }
+        }
+
         let success = false;
         if (game.gameEngine) {
           // For custom games, we validate the move using the engine
-          success = game.gameEngine.makeMove(data.from, data.to);
+          success = game.gameEngine.makeMove(data.from, data.to, data.promotion);
         } else {
           // Fallback to trust if engine failed to init
           success = true;
@@ -910,7 +924,7 @@ io.on("connection", (socket) => {
       }
       const piece = chess.get(data.from);
       const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
-      const boardHeight = 8; // Default for chess.js, but prepared for future expansion
+      const boardHeight = game.engine ? game.engine.height : 8;
       const isPawnPromotion =
         piece &&
         piece.type === "p" &&
