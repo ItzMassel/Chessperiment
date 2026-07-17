@@ -33,4 +33,20 @@ export class Game {
     getLegalMoves(color?: 'white' | 'black'): { from: Square, to: Square }[] {
         return this.validator.getLegalMoves(color || this.getTurn());
     }
+
+    isCheckmate(): boolean {
+        const turn = this.board.getTurn();
+        const legalMoves = this.getLegalMoves(turn);
+        return legalMoves.length === 0 && this.validator.isInCheck(turn);
+    }
+
+    isStalemate(): boolean {
+        const turn = this.board.getTurn();
+        const legalMoves = this.getLegalMoves(turn);
+        return legalMoves.length === 0 && !this.validator.isInCheck(turn);
+    }
+
+    isGameOver(): boolean {
+        return this.isCheckmate() || this.isStalemate();
+    }
 }
