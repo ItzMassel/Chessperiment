@@ -29,30 +29,34 @@ export async function runJob(job: Job): Promise<void> {
       const systemPrompt = buildSystemPrompt(null, job.currentPage);
       const tools = getToolsForPage(job.currentPage);
 
-      const openaiMessages = [
-        { role: 'system' as const, content: systemPrompt },
-        ...job.apiMessages.map((msg) => {
-          const formatted: any = { role: msg.role, content: msg.content || '' };
-          if (msg.tool_calls) {
-            formatted.tool_calls = msg.tool_calls.map((tc: any) => ({
-              id: tc.id,
-              type: tc.type || 'function',
-              function: {
-                name: tc.function.name,
-                arguments: typeof tc.function.arguments === 'object'
-                  ? JSON.stringify(tc.function.arguments)
-                  : tc.function.arguments,
-              },
-            }));
-          }
-          if (msg.reasoning_content) formatted.reasoning_content = msg.reasoning_content;
-          if (msg.tool_call_id) formatted.tool_call_id = msg.tool_call_id;
-          return formatted;
-        }),
-      ];
+const openaiMessages = [
+    { role: 'system' as const, content: systemPrompt },
+    ...job.apiMessages.map((msg) => {
+      const hasToolCalls = msg.tool_calls && msg.tool_calls.length > 0;
+      const formatted: any = {
+        role: msg.role,
+        content: hasToolCalls ? null : (msg.content || ''),
+      };
+      if (msg.tool_calls) {
+        formatted.tool_calls = msg.tool_calls.map((tc: any) => ({
+          id: tc.id,
+          type: tc.type || 'function',
+          function: {
+            name: tc.function.name,
+            arguments: typeof tc.function.arguments === 'object'
+              ? JSON.stringify(tc.function.arguments)
+              : tc.function.arguments,
+          },
+        }));
+      }
+      if (msg.reasoning_content) formatted.reasoning_content = msg.reasoning_content;
+      if (msg.tool_call_id) formatted.tool_call_id = msg.tool_call_id;
+      return formatted;
+    }),
+  ];
 
       const completionOptions: any = { model, messages: openaiMessages, stream: false };
-      if (!isOpenRouter) {
+      if (!isOpenRouter && !(tools && tools.length > 0)) {
         completionOptions.thinking = { type: 'enabled' };
         completionOptions.reasoning_effort = 'high';
       }
@@ -102,7 +106,7 @@ export async function runJob(job: Job): Promise<void> {
 
         job.apiMessages.push({
           role: 'assistant',
-          content: message.content || '',
+          content: null,
           ...((message as any).reasoning_content ? { reasoning_content: (message as any).reasoning_content } : {}),
           tool_calls: toolCalls,
         });

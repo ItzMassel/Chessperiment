@@ -10,7 +10,7 @@ export interface SSEEvent {
 
 export interface ApiMessage {
   role: 'user' | 'assistant' | 'tool' | 'system';
-  content: string;
+  content: string | null;
   reasoning_content?: string;
   tool_calls?: any[];
   tool_call_id?: string;

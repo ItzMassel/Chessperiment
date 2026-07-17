@@ -26,13 +26,16 @@ export async function POST(request: NextRequest) {
 
     const isGuest = String(projectId).startsWith('guest-');
 
-    const apiMessages = messages.map((m: any) => ({
-      role: m.role,
-      content: m.content || '',
-      ...(m.reasoning_content ? { reasoning_content: m.reasoning_content } : {}),
-      ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
-      ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-    }));
+    const apiMessages = messages.map((m: any) => {
+      const hasToolCalls = m.tool_calls && m.tool_calls.length > 0;
+      return {
+        role: m.role,
+        content: hasToolCalls ? null : (m.content || ''),
+        ...(m.reasoning_content ? { reasoning_content: m.reasoning_content } : {}),
+        ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
+        ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
+      };
+    });
 
     const chatMessages = (body.chatMessages || []).map((m: any) => ({
       id: m.id,
