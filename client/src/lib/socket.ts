@@ -25,7 +25,11 @@ export function getSocket() {
   if (!socket) {
     const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment-server.onrender.com";
     socket = io(SOCKET_URL, {
-      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 20000,
     });
     // Register player immediately on connection
     socket.on("connect", () => {
