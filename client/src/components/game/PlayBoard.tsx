@@ -302,6 +302,10 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const [engineEnabled, setEngineEnabled] = useState(false);
     const [engineColor, setEngineColor] = useState<'white' | 'black'>('black');
 
+    // Game-over state
+    const [gameOver, setGameOver] = useState(false);
+    const [gameResultMessage, setGameResultMessage] = useState<string | null>(null);
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
@@ -606,6 +610,21 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     const newBoard = currentGame.getBoard().clone();
                     setBoard(newBoard);
                     boardRef.current = newBoard;
+
+                    // Check for game-over on remote moves
+                    if (!isOnline) {
+                        if (currentGame.isCheckmate()) {
+                            const loser = currentGame.getTurn();
+                            const winner = loser === 'white' ? 'Black' : 'White';
+                            setGameResultMessage(`Checkmate! ${winner} wins!`);
+                            setGameOver(true);
+                            addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
+                        } else if (currentGame.isStalemate()) {
+                            setGameResultMessage('Stalemate! Draw!');
+                            setGameOver(true);
+                            addLog(`[STALEMATE] Draw!`, 'effect');
+                        }
+                    }
                 }
             }
         };
@@ -629,7 +648,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     // Engine Move Execution
     useEffect(() => {
-        if (!engineEnabled || !game || !board || isOnline) return;
+        if (!engineEnabled || !game || !board || isOnline || gameOver) return;
 
         const currentTurn = board.getTurn();
         if (currentTurn !== engineColor) return;
@@ -646,7 +665,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         }, 800);
 
         return () => clearTimeout(timer);
-    }, [engineEnabled, engineColor, board, game, viewIndex, historySnapshots.length, isOnline]);
+    }, [engineEnabled, engineColor, board, game, viewIndex, historySnapshots.length, isOnline, gameOver]);
 
 
     // -- Prototype Logic --
@@ -686,6 +705,21 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
         board.addEffectListener(handleEffect);
         return () => board.removeEffectListener(handleEffect);
+    }, [board, addLog]);
+
+    // Listen for 'win' effect from custom piece logic
+    useEffect(() => {
+        if (!board) return;
+        const handleWin = (effect: { type: string, position: Square, params?: Record<string, any> }) => {
+            if (effect.type === 'win') {
+                const winner = effect.position === 'white_win' ? 'White' : 'Black';
+                setGameResultMessage(`${winner} wins! (Custom Rule)`);
+                setGameOver(true);
+                addLog(`[WIN] ${winner} wins via custom rule!`, 'effect');
+            }
+        };
+        board.addEffectListener(handleWin);
+        return () => board.removeEffectListener(handleWin);
     }, [board, addLog]);
 
     const handleEffectComplete = (id: number) => {
@@ -731,6 +765,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     const handleDragStart = (e: DragStartEvent) => {
         if (!squares) return;
+        if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
 
         const piece = squares[e.active.id as Square];
@@ -745,7 +780,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     };
 
     const executeMove = (from: Square, to: Square) => {
-        if (!game || !board || !squares) return false;
+        if (!game || !board || !squares || gameOver) return false;
 
         let success = false;
         if (validationEnabled) {
@@ -765,6 +800,23 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             setHistorySnapshots(prev => [...prev, snapshot]);
             setMoveHistory(prev => [...prev, moveDesc]);
             setViewIndex(prev => prev + 1);
+
+            // Check for checkmate/stalemate in local play
+            if (!isOnline) {
+                if (game.isCheckmate()) {
+                    const loser = game.getTurn();
+                    const winner = loser === 'white' ? 'Black' : 'White';
+                    setGameResultMessage(`Checkmate! ${winner} wins!`);
+                    setGameOver(true);
+                    addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
+                    new Audio('/sounds/game-end.mp3').play().catch(() => { });
+                } else if (game.isStalemate()) {
+                    setGameResultMessage('Stalemate! Draw!');
+                    setGameOver(true);
+                    addLog(`[STALEMATE] Draw!`, 'effect');
+                    new Audio('/sounds/game-end.mp3').play().catch(() => { });
+                }
+            }
 
             // Emit to server if online
             if (isOnline && socket) {
@@ -786,6 +838,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     };
 
     const handleSquareClick = (pos: Square) => {
+        if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
 
         if (selectedSquare) {
@@ -834,6 +887,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     };
 
     const handleDragEnd = (e: DragEndEvent) => {
+        if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
         setActivePiece(null);
 
@@ -970,6 +1024,26 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
                 {/* Board Area */}
                 <div className="flex-1 flex flex-col items-center justify-center min-h-0 relative">
+
+                    {gameOver && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm rounded-xl">
+                            <div className="bg-stone-900/90 rounded-2xl p-8 max-w-sm text-center border border-amber-500/30 shadow-2xl">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                    <span className="text-3xl text-amber-500 font-black">!</span>
+                                </div>
+                                <h3 className="text-2xl font-black text-white mb-2">Game Over</h3>
+                                <p className="text-amber-400 font-bold text-lg mb-6">{gameResultMessage}</p>
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={handleReset}
+                                        className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors"
+                                    >
+                                        New Game
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {waitingForOpponent && (
                         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl">
