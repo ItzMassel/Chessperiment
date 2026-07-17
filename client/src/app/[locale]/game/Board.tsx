@@ -28,7 +28,8 @@ import {
 } from "@dnd-kit/core";
 import Toast from "./Toast";
 import "./Board.css";
-import { useSocket } from "@/context/SocketContext";
+import { useSocket, useSocketConnection } from "@/context/SocketContext";
+import { useServerWakeup } from "@/context/ServerWakeupContext";
 import filter from "leo-profanity";
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
@@ -297,6 +298,8 @@ export default function Board({
   });
   const sensors = useSensors(pointerSensor, touchSensor);
   const socket = useSocket();
+  const isConnected = useSocketConnection();
+  const { requireServer } = useServerWakeup();
 
   const [boardStyle, setBoardStyle] = useState("v3");
   const [blockSize, setBlockSize] = useState(80);
@@ -1320,14 +1323,14 @@ export default function Board({
               <div className="text-center p-6 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto mx-4">
                 <h1 className="text-3xl lg:text-6xl font-black mb-6 lg:mb-8 text-stone-900 dark:text-white uppercase tracking-tighter italic">Chess PIE</h1>
                 <button
-                  onClick={() => { if (socket) { setIsSearching(true); socket.emit("find_match"); } }}
+                  onClick={() => { if (!isConnected) { requireServer(); return; } if (socket) { setIsSearching(true); socket.emit("find_match"); } }}
                   className="w-full py-4 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-lg lg:text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t("quickPlay")}
                 </button>
                 <div className="mt-6 lg:mt-8 flex flex-col gap-3 lg:gap-4">
-                  <button onClick={() => { if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("createPrivateRoom")}</button>
-                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("vsStockfish")}</button>
+                  <button onClick={() => { if (!isConnected) { requireServer(); return; } if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("createPrivateRoom")}</button>
+                  <button onClick={() => { if (!isConnected) { requireServer(); return; } startComputerGame(); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("vsStockfish")}</button>
                 </div>
               </div>
             ) : isSearching ? (

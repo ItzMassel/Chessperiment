@@ -15,7 +15,8 @@ import HexPlayBoardRenderer from '@/components/game/HexPlayBoardRenderer';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useSocket } from '@/context/SocketContext';
+import { useSocket, useSocketConnection } from '@/context/SocketContext';
+import { useServerWakeup } from '@/context/ServerWakeupContext';
 import { useSession } from 'next-auth/react';
 import EngineToggleCard from '@/components/editor/EngineToggleCard';
 
@@ -263,6 +264,8 @@ function createPieceFromData(id: string, type: string, color: string, position: 
 export default function PlayBoard({ project, projectId, roomId, mode, isMarketplace, initialBoardState }: PlayBoardProps) {
     const router = useRouter();
     const socket = useSocket();
+    const isConnected = useSocketConnection();
+    const { requireServer } = useServerWakeup();
     const { data: session } = useSession();
 
     // Use local state for project to allow hydration from socket
@@ -451,7 +454,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     // Socket Connection
     useEffect(() => {
-        if (!socket || !isOnline || !roomId) return;
+        if (!isOnline || !roomId) return;
+        if (!socket || !isConnected) { requireServer(); return; }
 
         const register = () => {
             let pId = localStorage.getItem("chess_player_id");

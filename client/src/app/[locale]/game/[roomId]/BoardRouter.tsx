@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSocket } from '@/context/SocketContext';
+import { useSocket, useSocketConnection } from '@/context/SocketContext';
+import { useServerWakeup } from '@/context/ServerWakeupContext';
 import Board from '../Board';
 import PlayBoard from '@/components/game/PlayBoard';
 
@@ -70,6 +71,8 @@ interface BoardRouterProps {
 
 export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
     const socket = useSocket();
+    const isConnected = useSocketConnection();
+    const { requireServer } = useServerWakeup();
     const [isCustom, setIsCustom] = useState<boolean | null>(null);
     const [customData, setCustomData] = useState<any>(null);
     const [boardState, setBoardState] = useState<any>(null);
@@ -95,6 +98,7 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
         }
 
         if (!socket || !roomId) return;
+        if (!isConnected) { requireServer(); setIsLoading(false); return; }
 
         console.log("[BoardRouter] Probing room type:", roomId);
 

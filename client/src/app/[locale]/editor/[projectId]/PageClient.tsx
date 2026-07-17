@@ -9,7 +9,8 @@ import { useProject } from '@/hooks/useProject';
 import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
-import { useSocket } from '@/context/SocketContext';
+import { useSocket, useSocketConnection } from '@/context/SocketContext';
+import { useServerWakeup } from '@/context/ServerWakeupContext';
 import type { Socket } from 'socket.io-client';
 
 interface PageClientProps {
@@ -21,6 +22,8 @@ export default function PageClient({ projectId }: PageClientProps) {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const socket = useSocket();
+    const isConnected = useSocketConnection();
+    const { requireServer } = useServerWakeup();
 
     const {
         project,
@@ -95,41 +98,13 @@ export default function PageClient({ projectId }: PageClientProps) {
     const handlePlayOnline = () => {
         console.log('🎮 Play Online clicked');
 
-        if (!socket) {
-            console.error('❌ Socket not available');
-            alert('Connection error. Please refresh the page and try again.');
+        if (!socket || !isConnected) {
+            requireServer();
             return;
         }
 
         if (!project) {
             console.error('❌ No project loaded');
-            alert('Project not loaded. Please try again.');
-            return;
-        }
-
-        if (!socket.connected) {
-            console.warn('⚠️ Socket not connected, attempting reconnect...');
-            setIsConnecting(true);
-            socket.connect();
-
-            const onConnect = () => {
-                console.log('✅ Reconnected, proceeding with room creation');
-                socket.off("connect", onConnect);
-                socket.off("connect_error", onError);
-                setIsConnecting(false);
-                emitCreateRoom(socket, serializedProject!);
-            };
-
-            const onError = (error: Error) => {
-                console.error('❌ Reconnect failed:', error.message);
-                socket.off("connect", onConnect);
-                socket.off("connect_error", onError);
-                setIsConnecting(false);
-                alert('Connection error. Please refresh the page and try again.');
-            };
-
-            socket.once("connect", onConnect);
-            socket.once("connect_error", onError);
             return;
         }
 
