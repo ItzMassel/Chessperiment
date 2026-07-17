@@ -32,6 +32,7 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
+          TOKEN: ${{ github.token }}
         with:
           model: opencode/deepseek-v4-flash-free
           use_github_token: true

@@ -117,6 +117,12 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const [isCreatingVar, setIsCreatingVar] = useState(false);
     const [newVarName, setNewVarName] = useState('');
     const workspaceRef = useRef<Blockly.Workspace | null>(null);
+    const variablesRef = useRef(variables);
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    useEffect(() => {
+        variablesRef.current = variables;
+    }, [variables]);
 
     useEffect(() => {
         setMounted(true);
@@ -140,7 +146,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         }
     }, [selectedSquare, project]);
 
-    const handleSave = useCallback(async (xml: string, currentVars: any[] = variables, logicJson: any[] = []) => {
+    const handleSave = useCallback(async (xml: string, currentVars: any[] = variablesRef.current, logicJson: any[] = []) => {
         if (!project || !selectedSquare || isSavingRef.current) return;
 
         const currentData = { xml, variables: currentVars, logic: logicJson };
@@ -216,11 +222,11 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         workspaceRef.current = workspace;
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
         const logicJson = generateLogicJson(workspace);
-        const timer = setTimeout(() => {
-            handleSave(xml, variables, logicJson);
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+            handleSave(xml, variablesRef.current, logicJson);
         }, SAVE_DEBOUNCE_MS);
-        return () => clearTimeout(timer);
-    }, [handleSave, variables]);
+    }, [handleSave]);
 
     const createVariable = () => {
         if (!newVarName) return;
@@ -410,7 +416,15 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     </button>
                 ))}
                 <div className="mt-auto mb-4">
-                    <button onClick={() => handleSave(initialXml)} disabled={isSaving || hookIsSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving || hookIsSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
+                    <button onClick={() => {
+                        if (workspaceRef.current) {
+                            const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspaceRef.current));
+                            const logicJson = generateLogicJson(workspaceRef.current);
+                            handleSave(xml, variablesRef.current, logicJson);
+                        } else {
+                            handleSave(initialXml, variablesRef.current);
+                        }
+                    }} disabled={isSaving || hookIsSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving || hookIsSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
                         <Save size={20} className={isSaving || hookIsSaving ? 'animate-pulse' : ''} />
                     </button>
                 </div>

@@ -153,14 +153,84 @@ service cloud.firestore {
       }
     }
 
-    // ─── Migration Tracking ────────────────────────────────────────────
-    match /migrations/{userId} {
+    // ─── User Documents (warnings, profile) ───────────────────────────
+    match /users/{userId} {
       allow read, write: if isOwner(userId);
+    }
+
+    // ─── Top-level Projects (used by client SDK) ─────────────────────
+    match /projects/{projectId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Migration Tracking ────────────────────────────────────────────
+    match /user_migrations/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── Custom Pieces (top-level, client SDK) ────────────────────────
+    match /custom_pieces/{pieceId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Custom Pieces (top-level, client SDK) ────────────────────────
+    match /customPieces/{pieceId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Boards (top-level, client SDK) ───────────────────────────────
+    match /boards/{boardId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Piece Sets (top-level, client SDK) ───────────────────────────
+    match /pieceSets/{setId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
     }
 
     // ─── Features Timeline ─────────────────────────────────────────────
     match /features/{featureId} {
       allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // ─── Community Feedback ──────────────────────────────────────────
+    match /community_feedback/{feedbackId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.type in ['bug', 'feature', 'general']
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0;
+      allow update, delete: if false;
+    }
+
+    // ─── Legacy Collections (migration) ───────────────────────────────
+    match /legacy_boards/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+    match /legacy_pieceSets/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+    match /legacy_customPieces/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
     }
 
     // ─── Deny everything else by default ───────────────────────────────

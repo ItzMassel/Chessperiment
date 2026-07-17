@@ -6,8 +6,8 @@ export default async function HomeLayout({
     mixed
 }: {
     children: React.ReactNode;
-    statistics?: React.ReactNode;
-    mixed?: React.ReactNode
+    statistics: React.ReactNode;
+    mixed: React.ReactNode
 }) {
     const session = await auth();
 
