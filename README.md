@@ -28,20 +28,18 @@ A web-based custom chess variant sandbox platform. Create custom boards, design 
 ## Project Structure
 
 ```
-chess_pie_two/
-  frontend/
-    client/          -- Next.js 16 frontend
-      src/
-        app/         -- App Router pages
-        engine/      -- Custom chess engine (TypeScript)
-        components/  -- React components
-        context/     -- Socket, Auth, AI contexts
-        lib/         -- Utilities (socket, firebase, grid)
-        i18n/        -- Internationalization
-        messages/    -- Translation files (en.json, de.json)
-    server/          -- Express + Socket.IO backend
-      new_server.js  -- Main server entry
-      engine/        -- Server-side chess engine (mirrors client)
+client/          -- Next.js 16 frontend
+  src/
+    app/         -- App Router pages
+    engine/      -- Custom chess engine (TypeScript)
+    components/  -- React components
+    context/     -- Socket, Auth, AI contexts
+    lib/         -- Utilities (socket, firebase, grid)
+    i18n/        -- Internationalization
+    messages/    -- Translation files (en.json, de.json)
+server/          -- Express + Socket.IO backend
+  new_server.js  -- Main server entry
+  engine/        -- Server-side chess engine (mirrors client)
 ```
 
 ## Getting Started
@@ -60,17 +58,17 @@ Dev Chessperiment.bat
 ```
 
 This starts both servers in separate windows:
-- **Backend** on port 3002 (`chess_pie_two/frontend/server`)
-- **Frontend** on port 3000 (`chess_pie_two/frontend/client`)
+- **Backend** on port 3002 (`server`)
+- **Frontend** on port 3000 (`client`)
 
 #### Individual Scripts
 
-**Frontend** (from `chess_pie_two/frontend/client/`):
+**Frontend** (from `client/`):
 - `npm run dev` — Start Next.js dev server
 - `npm run build` — Production build
 - `npm run lint` — Run ESLint
 
-**Backend** (from `chess_pie_two/frontend/server/`):
+**Backend** (from `server/`):
 - `npm run dev` — Start with nodemon (auto-reload)
 - `npm start` — Start production server
 
@@ -81,4 +79,4 @@ docker run -d -p 6379:6379 redis
 
 ## License
 
-See [LICENSE.md](chess_pie_two/frontend/client/LICENSE.md).
+See [LICENSE.md](LICENSE.md).
