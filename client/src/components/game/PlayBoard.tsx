@@ -500,6 +500,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
         const newBoard = game.getBoard().clone();
         setBoard(newBoard);
+        boardRef.current = newBoard;
         setPendingHistory(null);
 
     }, [pendingHistory, game]); // historySnapshots[0] assumed stable or handled
@@ -638,7 +639,11 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         if (viewIndex !== historySnapshots.length - 1) return;
 
         const timer = setTimeout(() => {
-            const legalMoves = game.getLegalMoves(engineColor);
+            // Use refs to ensure we always have the latest game state
+            const g = gameRef.current;
+            if (!g) return;
+
+            const legalMoves = g.getLegalMoves(engineColor);
             if (legalMoves.length > 0) {
                 const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
                 executeMove(move.from, move.to);
@@ -725,7 +730,9 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
         const restoredGame = new Game(restoredBoard);
         setGame(restoredGame);
+        gameRef.current = restoredGame;
         setBoard(restoredBoard);
+        boardRef.current = restoredBoard;
         setViewIndex(index);
     };
 
@@ -782,6 +789,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
         const newBoard = game.getBoard().clone();
         setBoard(newBoard);
+        boardRef.current = newBoard;
         return success;
     };
 
