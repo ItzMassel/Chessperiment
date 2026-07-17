@@ -3,7 +3,7 @@
 An opensource web-based custom chess variant sandbox platform. Create custom boards, design unique pieces with a visual Blockly-based logic editor, define custom rules, and play online against friends or Stockfish AI.
 
 ## Contributing
-Feel free to contribute, you can take a look at the issues for inspiration. You should also [join the Discord!](https://discord.gg/ZNVHKZpnGh)
+Feel free to contribute, you can take a look at the [issues](https://github.com/ItzMassel/Chessperiment/issues?q=state%3Aopen%20label%3A%22good%20first%20issue%22) for inspiration. You should also [join the Discord!](https://discord.gg/ZNVHKZpnGh)
 
 ## Features
 
