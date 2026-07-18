@@ -64,9 +64,9 @@ export const MaintenanceOverlay: React.FC = () => {
                             transition={{ delay: 0.2 }}
                             className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight"
                         >
-                            Maintenance <br />
+                            Multiplayer <br />
                             <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-400 via-amber-200 to-amber-500">
-                                Mode Active
+                                Being Patched
                             </span>
                         </motion.h1>
 
@@ -76,7 +76,7 @@ export const MaintenanceOverlay: React.FC = () => {
                             transition={{ delay: 0.4 }}
                             className="text-stone-300 text-lg mb-10 leading-relaxed max-w-sm"
                         >
-                            The chess arena is currently undergoing scheduled improvements to enhance your gaming experience. We&apos;ll be back shortly!
+                            Online play is temporarily disabled while we fix the board sync. Local and computer games still work. We&apos;ll be back shortly!
                         </motion.p>
 
                         <motion.div

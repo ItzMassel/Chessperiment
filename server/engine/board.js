@@ -1,9 +1,9 @@
-import { Piece, Pawn, Rook, Knight, Bishop, Queen, King, CustomPiece } from './piece';
-import { BoardStateManager } from './state';
-import { toCoords, toSquare } from './utils';
-import { SquareGrid } from '../lib/grid/SquareGrid';
-import { HexGrid } from '../lib/grid/HexGrid';
-import { SquareLogicRunner } from './logic/SquareLogicRunner';
+import { Piece, Pawn, Rook, Knight, Bishop, Queen, King, CustomPiece } from './piece.js';
+import { BoardStateManager } from './state.js';
+import { toCoords, toSquare } from './utils.js';
+import { SquareGrid } from '../lib/grid/SquareGrid.js';
+import { HexGrid } from '../lib/grid/HexGrid.js';
+import { SquareLogicRunner } from './logic/SquareLogicRunner.js';
 export class BoardClass {
     constructor(initialPieces, activeSquares, width = 8, height = 8, gridType = 'square', squareLogic) {
         this.effectListeners = [];
@@ -327,6 +327,27 @@ export class BoardClass {
             }
         }
         return false;
+    }
+    getSquareState(square) {
+        if (!this.squareStates) this.squareStates = {};
+        if (!this.squareStates[square]) {
+            this.squareStates[square] = { disabled: false, tags: new Set() };
+        }
+        return this.squareStates[square];
+    }
+    setSquareState(square, state) {
+        if (!this.squareStates) this.squareStates = {};
+        this.squareStates[square] = state;
+    }
+    getSnapshot() {
+        return {
+            squares: this.getSquares(),
+            turn: this.getTurn(),
+            history: this.getHistory(),
+            width: this.width,
+            height: this.height,
+            gridType: this.gridType,
+        };
     }
     checkThreats() {
         const squares = this.getSquares();

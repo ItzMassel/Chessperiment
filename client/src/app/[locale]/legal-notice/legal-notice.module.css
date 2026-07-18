@@ -68,7 +68,7 @@
   border-bottom-color: var(--accent-hover);
 }
 
-address {
+.address {
   font-style: normal;
 }
 

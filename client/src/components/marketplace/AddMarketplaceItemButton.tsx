@@ -13,7 +13,7 @@ export function AddMarketplaceItemButton() {
 
     return (
         <Link
-            href="/marketplace/create"
+            href="/editor"
             className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-amber-400 hover:bg-amber-300 text-bg rounded-full shadow-xl shadow-amber-400/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
             title={t('createItem')}
         >

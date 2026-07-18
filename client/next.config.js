@@ -1,6 +1,11 @@
 const createNextIntlPlugin = require("next-intl/plugin");
 
 const nextConfig = {
+  serverExternalPackages: [
+    'firebase-admin',
+    'jsdom',
+    'blockly',
+  ],
   // Redirects: www → non-www
   trailingSlash: false,
   compress: true,
@@ -63,7 +68,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)", // Alle Seiten
+        source: "/((?!api).*)",
         headers: [
           {
             key: "Strict-Transport-Security",
@@ -80,6 +85,27 @@ const nextConfig = {
           {
             key: "Access-Control-Allow-Headers",
             value: "Content-Type, Authorization",
+          },
+        ],
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://chessperiment.app",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, DELETE, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true",
           },
         ],
       },

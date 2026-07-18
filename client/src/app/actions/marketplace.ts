@@ -7,6 +7,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getCreatorProfile } from "@/app/actions/creator";
 import { getProject, getBoard, getPieceSet, getSetPieces, saveProject, saveBoard, savePieceSet, saveCustomPiece } from "@/lib/firestore";
 import { MarketplaceItem, Review } from "@/lib/marketplace-types";
+import { createNotification } from "./notifications";
 
 // ==================== PUBLISHING ====================
 
@@ -112,6 +113,13 @@ export async function publishToMarketplace(
 
         // Don't store the full config - just store a reference via sourceId
         // When someone forks, we'll fetch the original from the source
+        const searchKeywords = [
+            ...(meta.title || title || '').toLowerCase().split(/\s+/),
+            ...(meta.description || description || '').toLowerCase().split(/\s+/),
+            creator.handle.toLowerCase(),
+            itemType,
+        ].filter(Boolean);
+
         const marketplaceItem: Omit<MarketplaceItem, 'id'> = {
             title: meta.title || title,
             description: meta.description || description || "No description provided.",
@@ -128,11 +136,26 @@ export async function publishToMarketplace(
             imageUrl: "",
             sourceType,
             sourceId,
-            config_data: null, // Don't store config - fetch from source when needed for forking
+            config_data: null,
             preview_config,
+            searchKeywords,
         };
 
         const res = await db.collection('marketplace').add(marketplaceItem);
+
+        // Notify followers about new publish
+        if (creator.followers?.length > 0) {
+            for (const followerId of creator.followers) {
+                await createNotification(
+                    followerId,
+                    'new_publish',
+                    `${creator.displayName || creator.handle} published "${title}"`,
+                    `/marketplace/${res.id}`,
+                    creator.handle,
+                    creator.photoUrl
+                );
+            }
+        }
 
         revalidatePath('/marketplace');
         revalidatePath(`/u/${creator.handle}`);
@@ -176,6 +199,10 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
     try {
         const itemRef = db.collection('marketplace').doc(marketplaceId);
 
+        // Get creator profile for display info
+        const creator = await getCreatorProfile(userId);
+        const displayName = creator?.displayName || creator?.handle || 'Anonymous';
+
         // Use a transaction to ensure atomic rating update
         await db.runTransaction(async (transaction) => {
             const itemDoc = await transaction.get(itemRef);
@@ -198,10 +225,6 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
             if (!existing.empty) {
                 throw new Error("ALREADY_REVIEWED");
             }
-
-            // Get creator profile for display info
-            const creator = await getCreatorProfile(userId);
-            const displayName = creator?.displayName || creator?.handle || 'Anonymous';
 
             const review: Omit<Review, 'id'> = {
                 userId,
@@ -227,6 +250,26 @@ export async function submitReview(marketplaceId: string, rating: number, text: 
                 reviewCount: FieldValue.increment(1),
             });
         });
+
+        // Notify the item creator about the new review
+        const itemData = (await db.collection('marketplace').doc(marketplaceId).get()).data();
+        if (itemData?.creator_handle) {
+            const handle = itemData.creator_handle.replace('@', '');
+            const creatorSnap = await db.collection('creators').where('handle', '==', handle).limit(1).get();
+            if (!creatorSnap.empty) {
+                const creatorDoc = creatorSnap.docs[0];
+                if (creatorDoc.id !== userId) {
+                    await createNotification(
+                        creatorDoc.id,
+                        'new_review',
+                        `${displayName} reviewed "${itemData.title || 'your item'}"`,
+                        `/marketplace/${marketplaceId}`,
+                        creator?.handle,
+                        creator?.photoUrl
+                    );
+                }
+            }
+        }
 
         revalidatePath(`/marketplace/${marketplaceId}`);
         return { success: true };
@@ -348,9 +391,9 @@ function deserializeProjectDoc(id: string, data: FirebaseFirestore.DocumentData)
         updatedAt: toISOSafe(data.updatedAt),
         customPieces: (data.customPieces || []).map((piece: any) => ({
             ...piece,
-            pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : (piece.pixelsWhite || []),
-            pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : (piece.pixelsBlack || []),
-            logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : (piece.logic || []),
+            pixelsWhite: typeof piece.pixelsWhite === 'string' && piece.pixelsWhite ? JSON.parse(piece.pixelsWhite) : (piece.pixelsWhite || []),
+            pixelsBlack: typeof piece.pixelsBlack === 'string' && piece.pixelsBlack ? JSON.parse(piece.pixelsBlack) : (piece.pixelsBlack || []),
+            logic: typeof piece.logic === 'string' && piece.logic ? JSON.parse(piece.logic) : (piece.logic || []),
             createdAt: toISOSafe(piece.createdAt),
             updatedAt: toISOSafe(piece.updatedAt),
         })),
@@ -359,7 +402,7 @@ function deserializeProjectDoc(id: string, data: FirebaseFirestore.DocumentData)
                 k,
                 {
                     ...v,
-                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : (v.logic || []),
+                    logic: typeof v.logic === 'string' && v.logic ? JSON.parse(v.logic) : (v.logic || []),
                     createdAt: toISOSafe(v.createdAt),
                     updatedAt: toISOSafe(v.updatedAt),
                 },
@@ -553,6 +596,26 @@ export async function forkMarketplaceItem(marketplaceId: string) {
                 rating: 0,
                 reviewCount: 0,
             }, { merge: true });
+        }
+
+        // Notify the item creator about the fork
+        if (item?.creator_handle) {
+            const handle = item.creator_handle.replace('@', '');
+            const creatorSnap = await db.collection('creators').where('handle', '==', handle).limit(1).get();
+            if (!creatorSnap.empty) {
+                const creatorDoc = creatorSnap.docs[0];
+                if (creatorDoc.id !== userId) {
+                    const currentCreator = await getCreatorProfile(userId);
+                    await createNotification(
+                        creatorDoc.id,
+                        'item_forked',
+                        `${currentCreator?.displayName || 'Someone'} forked "${item.title}"`,
+                        `/marketplace/${marketplaceId}`,
+                        currentCreator?.handle,
+                        currentCreator?.photoUrl
+                    );
+                }
+            }
         }
 
         revalidatePath(`/marketplace/${marketplaceId}`);

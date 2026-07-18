@@ -5,37 +5,55 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import type { Socket } from "socket.io-client";
 
-const SocketContext = createContext<Socket | null | undefined>(undefined);
+interface SocketContextValue {
+  socket: Socket | null;
+  isConnected: boolean;
+}
+
+const SocketContext = createContext<SocketContextValue | null>(null);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const [socket, setSocket] = useState<Socket | null>(() => {
-    if (typeof window !== 'undefined') {
-      return getSocket();
-    }
-    return null;
-  });
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (!socket && typeof window !== 'undefined') {
-      setSocket(getSocket());
-    }
+    if (typeof window === 'undefined') return;
+    const s = getSocket();
+    setSocket(s);
+
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    s.on("connect", onConnect);
+    s.on("disconnect", onDisconnect);
+
+    if (s.connected) setIsConnected(true);
 
     return () => {
-      socket?.disconnect();
+      s.off("connect", onConnect);
+      s.off("disconnect", onDisconnect);
     };
-  }, [socket]);
+  }, []);
 
   return (
-    <SocketContext.Provider value={socket}>
+    <SocketContext.Provider value={{ socket, isConnected }}>
       {children}
     </SocketContext.Provider>
   );
 }
 
 export function useSocket() {
-  const socket = useContext(SocketContext);
-  if (socket === undefined) {
+  const ctx = useContext(SocketContext);
+  if (ctx === null) {
     throw new Error("useSocket must be used inside SocketProvider");
   }
-  return socket;
+  return ctx.socket;
+}
+
+export function useSocketConnection() {
+  const ctx = useContext(SocketContext);
+  if (ctx === null) {
+    throw new Error("useSocketConnection must be used inside SocketProvider");
+  }
+  return ctx.isConnected;
 }

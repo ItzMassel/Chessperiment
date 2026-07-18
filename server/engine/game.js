@@ -13,18 +13,10 @@ export class EngineGame {
     // Clear effect executor for new move
     this.effectExecutor.clear();
 
-    if (this.validator.isLegal(from, to, promotion, this.effectExecutor)) {
-      // Process pre-move phase again just in case (isLegal already does it, but to be sure)
-      this.effectExecutor.processPhase("pre-move", this.board);
-
-      // Execute move on board
+    if (this.validator.isLegal(from, to, promotion)) {
       const moveSuccess = this.board.movePiece(from, to, promotion);
 
       if (moveSuccess) {
-        // Process on-move and post-move phases
-        this.effectExecutor.processPhase("on-move", this.board);
-        this.effectExecutor.processPhase("post-move", this.board);
-        this.effectExecutor.processPhase("end-of-turn", this.board);
         return true;
       }
     }

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getJob, subscribeToJob, SSEEvent } from '@/lib/ai/jobStore';
+import { validateJobSecret, subscribeToJob, SSEEvent } from '@/lib/ai/jobStore';
+import { requireAuth } from '@/lib/ai/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,10 +8,23 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'Authentication required' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const { jobId } = await params;
-  const job = getJob(jobId);
-  if (!job) {
-    return new Response('Job not found', { status: 404 });
+  const secret = request.nextUrl.searchParams.get('secret');
+  if (!secret || typeof secret !== 'string' || secret.length < 32) {
+    return new Response('Not found', { status: 404 });
+  }
+
+  const job = validateJobSecret(jobId, secret);
+  if (!job || job.userId !== userId) {
+    return new Response('Not found', { status: 404 });
   }
 
   const afterParam = request.nextUrl.searchParams.get('after');
@@ -29,7 +43,6 @@ export async function GET(
         } catch {
           /* controller already closed */
         }
-        // Close stream after terminal events
         if (event.type === 'done' || event.type === 'error') {
           unsubscribe?.();
           try { controller.close(); } catch { /* already closed */ }
@@ -38,7 +51,6 @@ export async function GET(
 
       unsubscribe = subscribeToJob(job, send, after);
 
-      // If job was already terminal before we subscribed, close now
       if (job.status === 'done' || job.status === 'error') {
         try { controller.close(); } catch { /* already closed */ }
       }

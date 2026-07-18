@@ -244,16 +244,16 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
             ...data,
             customPieces: (data.customPieces || []).map((piece: any) => ({
                 ...piece,
-                pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : piece.pixelsWhite,
-                pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
-                logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
+                pixelsWhite: typeof piece.pixelsWhite === 'string' && piece.pixelsWhite ? JSON.parse(piece.pixelsWhite) : piece.pixelsWhite,
+                pixelsBlack: typeof piece.pixelsBlack === 'string' && piece.pixelsBlack ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
+                logic: typeof piece.logic === 'string' && piece.logic ? JSON.parse(piece.logic) : piece.logic,
             })),
             squareLogic: data.squareLogic ? Object.fromEntries(
                 Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
                     k,
                     {
                         ...v,
-                        logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                        logic: typeof v.logic === 'string' && v.logic ? JSON.parse(v.logic) : v.logic,
                         createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
                         updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
                     }
@@ -292,16 +292,16 @@ export async function getProject(projectId: string, userId: string): Promise<Pro
 
             // Handle legacy fields if new ones are missing
             if (!pixelsWhite && !pixelsBlack && piece.pixels) {
-                const legacyPixels = typeof piece.pixels === 'string' ? JSON.parse(piece.pixels) : piece.pixels;
+                const legacyPixels = typeof piece.pixels === 'string' && piece.pixels ? JSON.parse(piece.pixels) : piece.pixels;
                 if (piece.color === 'black') pixelsBlack = legacyPixels;
                 else pixelsWhite = legacyPixels;
             }
 
             return {
                 ...piece,
-                pixelsWhite: typeof pixelsWhite === 'string' ? JSON.parse(pixelsWhite) : (pixelsWhite || Array(64).fill(null).map(() => Array(64).fill('transparent'))),
-                pixelsBlack: typeof pixelsBlack === 'string' ? JSON.parse(pixelsBlack) : (pixelsBlack || Array(64).fill(null).map(() => Array(64).fill('transparent'))),
-                logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
+                pixelsWhite: typeof pixelsWhite === 'string' && pixelsWhite ? JSON.parse(pixelsWhite) : (pixelsWhite || Array(64).fill(null).map(() => Array(64).fill('transparent'))),
+                pixelsBlack: typeof pixelsBlack === 'string' && pixelsBlack ? JSON.parse(pixelsBlack) : (pixelsBlack || Array(64).fill(null).map(() => Array(64).fill('transparent'))),
+                logic: typeof piece.logic === 'string' && piece.logic ? JSON.parse(piece.logic) : piece.logic,
             };
         }),
         squareLogic: data?.squareLogic ? Object.fromEntries(
@@ -309,7 +309,7 @@ export async function getProject(projectId: string, userId: string): Promise<Pro
                 k,
                 {
                     ...v,
-                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                    logic: typeof v.logic === 'string' && v.logic ? JSON.parse(v.logic) : v.logic,
                     createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
                     updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
                 }
@@ -452,7 +452,7 @@ export async function getLegacySetPieces(setId: string, userId: string): Promise
         let pixelsBlack = data.pixelsBlack ? JSON.parse(data.pixelsBlack) : null;
         
         if (!pixelsWhite && !pixelsBlack && data.pixels) {
-            const legacyPixels = typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels;
+            const legacyPixels = typeof data.pixels === 'string' && data.pixels ? JSON.parse(data.pixels) : data.pixels;
             if (data.color === 'black') pixelsBlack = legacyPixels;
             else pixelsWhite = legacyPixels;
         }
@@ -462,7 +462,7 @@ export async function getLegacySetPieces(setId: string, userId: string): Promise
             ...data,
             pixelsWhite: pixelsWhite || Array(64).fill(null).map(() => Array(64).fill('transparent')),
             pixelsBlack: pixelsBlack || Array(64).fill(null).map(() => Array(64).fill('transparent')),
-            logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
+            logic: typeof data.logic === 'string' && data.logic ? JSON.parse(data.logic) : data.logic,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as CustomPiece;

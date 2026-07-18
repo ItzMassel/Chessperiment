@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getJob, emitJobEvent } from '@/lib/ai/jobStore';
+import { validateJobSecret, emitJobEvent } from '@/lib/ai/jobStore';
+import { requireAuth } from '@/lib/ai/security';
 import { v4 as uuidv4 } from 'uuid';
 import { AIMessage } from '@/lib/ai/types';
 
@@ -7,10 +8,20 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
   const { jobId } = await params;
-  const job = getJob(jobId);
-  if (!job) {
-    return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+  const secret = request.nextUrl.searchParams.get('secret');
+  if (!secret || typeof secret !== 'string' || secret.length < 32) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const job = validateJobSecret(jobId, secret);
+  if (!job || job.userId !== userId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   if (!job.pendingClientResult) {
@@ -24,7 +35,6 @@ export async function POST(
     return NextResponse.json({ error: 'results array is required' }, { status: 400 });
   }
 
-  // Add tool result messages to chat history so they appear in the UI
   for (const result of results) {
     const toolMsg: AIMessage = {
       id: uuidv4(),
@@ -37,7 +47,6 @@ export async function POST(
     emitJobEvent(job, 'chat_message', toolMsg);
   }
 
-  // Unblock the job runner
   const { resolve } = job.pendingClientResult;
   job.pendingClientResult = null;
   resolve(results);

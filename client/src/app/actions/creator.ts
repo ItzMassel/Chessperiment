@@ -3,6 +3,7 @@ import 'server-only';
 import { auth } from "@/auth";
 import { db } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "./notifications";
 
 export interface CreatorProfile {
     userId: string;
@@ -149,7 +150,6 @@ export async function updateCreatorProfile(data: Partial<CreatorProfile>) {
     if (!db) return { success: false, error: "Database error" };
 
     try {
-         // Sanitize update data - only allow specific fields
          const updateData: Record<string, string> = {};
          if (data.displayName) updateData.displayName = data.displayName;
          if (data.bio !== undefined) updateData.bio = data.bio;
@@ -162,5 +162,116 @@ export async function updateCreatorProfile(data: Partial<CreatorProfile>) {
     } catch (error) {
         console.error("Error updating profile:", error);
         return { success: false, error: "Update failed" };
+    }
+}
+
+// ==================== FOLLOW SYSTEM ====================
+
+export async function followCreator(targetUserId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+    if (!db) return { success: false, error: "Database error" };
+    if (userId === targetUserId) return { success: false, error: "Cannot follow yourself" };
+
+    try {
+        const targetRef = db.collection('creators').doc(targetUserId);
+        const currentRef = db.collection('creators').doc(userId);
+
+        let targetHandle = '';
+        await db.runTransaction(async (transaction) => {
+            const targetDoc = await transaction.get(targetRef);
+            const currentDoc = await transaction.get(currentRef);
+
+            if (!targetDoc.exists) throw new Error("Creator not found");
+            if (!currentDoc.exists) throw new Error("Your creator profile not found");
+
+            const targetData = targetDoc.data()!;
+            const currentData = currentDoc.data()!;
+
+            targetHandle = targetData.handle || '';
+
+            const followers = targetData.followers || [];
+            const following = currentData.following || [];
+
+            if (followers.includes(userId)) throw new Error("ALREADY_FOLLOWING");
+
+            transaction.update(targetRef, {
+                followers: [...followers, userId]
+            });
+            transaction.update(currentRef, {
+                following: [...following, targetUserId]
+            });
+        });
+
+        await createNotification(
+            targetUserId,
+            'new_follower',
+            `${session?.user?.name || 'Someone'} started following you`,
+            undefined,
+            session?.user?.name || undefined,
+            session?.user?.image || undefined
+        );
+
+        revalidatePath(`/u/${targetHandle}`);
+        return { success: true };
+    } catch (error) {
+        if (error instanceof Error && error.message === "ALREADY_FOLLOWING") {
+            return { success: false, error: "Already following this creator" };
+        }
+        console.error("Error following creator:", error);
+        return { success: false, error: "Failed to follow creator" };
+    }
+}
+
+export async function unfollowCreator(targetUserId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+    if (!db) return { success: false, error: "Database error" };
+
+    try {
+        const targetRef = db.collection('creators').doc(targetUserId);
+        const currentRef = db.collection('creators').doc(userId);
+
+        await db.runTransaction(async (transaction) => {
+            const targetDoc = await transaction.get(targetRef);
+            const currentDoc = await transaction.get(currentRef);
+
+            if (!targetDoc.exists) throw new Error("Creator not found");
+            if (!currentDoc.exists) throw new Error("Your creator profile not found");
+
+            const targetData = targetDoc.data()!;
+            const currentData = currentDoc.data()!;
+
+            transaction.update(targetRef, {
+                followers: (targetData.followers || []).filter((id: string) => id !== userId)
+            });
+            transaction.update(currentRef, {
+                following: (currentData.following || []).filter((id: string) => id !== targetUserId)
+            });
+        });
+
+        revalidatePath(`/u/${(await targetRef.get()).data()?.handle}`);
+        return { success: true };
+    } catch (error) {
+        console.error("Error unfollowing creator:", error);
+        return { success: false, error: "Failed to unfollow creator" };
+    }
+}
+
+export async function isFollowing(targetUserId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId || !db) return false;
+
+    try {
+        const doc = await db.collection('creators').doc(userId).get();
+        if (!doc.exists) return false;
+        const data = doc.data()!;
+        return (data.following || []).includes(targetUserId);
+    } catch (error) {
+        console.error("Error checking follow status:", error);
+        return false;
     }
 }
