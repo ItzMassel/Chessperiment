@@ -262,6 +262,7 @@ function createPieceFromData(id: string, type: string, color: string, position: 
 }
 
 export default function PlayBoard({ project, projectId, roomId, mode, isMarketplace, initialBoardState }: PlayBoardProps) {
+    console.log("[CODE-VERSION] PlayBoard online-stripped v2 — pendingHistory removed, all gates stripped, no optimistic updates");
     const router = useRouter();
     const socket = useSocket();
     const isConnected = useSocketConnection();
@@ -293,6 +294,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const [isOnline, setIsOnline] = useState(mode !== 'local'); // Default to online unless explicitly local
     const [waitingForOpponent, setWaitingForOpponent] = useState(isOnline);
     const [pendingHistory, setPendingHistory] = useState<string[] | null>(null);
+    const [serverBoardState, setServerBoardState] = useState<any>(null);
 
     // History State
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
@@ -364,13 +366,20 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     // Initial Setup Effect
     useEffect(() => {
+        console.log("[INIT-EFFECT] Running. activeProject:", activeProject?.id, "initialBoardState:", !!initialBoardState, "hasSquares:", !!(initialBoardState?.squares));
         setIsMounted(true);
         if (!activeProject) {
-            console.log("[PlayBoard] No active project for initialization");
+            console.log("[INIT-EFFECT] No active project — returning");
+            return;
+        }
+        // Online mode: never fall back to placedPieces. Wait for server boardState.
+        const effectiveBoardState = serverBoardState || initialBoardState;
+        if (isOnline && !(effectiveBoardState && effectiveBoardState.squares)) {
+            console.log("[INIT-EFFECT] Online mode: no server boardState yet, skipping engine creation — waiting for socket event");
             return;
         }
         try {
-            console.log("[PlayBoard] Initializing board with project:", activeProject.id);
+            console.log("[INIT-EFFECT] Initializing board with project:", activeProject.id);
             // Reconstruct the board from project data
             const {
                 rows = 8,
@@ -385,9 +394,11 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             const actualHeight = activeProject.rows || 8;
 
             // If we have an initial board state from the server, use it. Otherwise use project defaults.
-            if (initialBoardState && initialBoardState.squares) {
-                console.log("[PlayBoard] Initializing from server boardState");
-                Object.entries(initialBoardState.squares).forEach(([sq, pData]: [string, any]) => {
+            const effectiveBoardState = serverBoardState || initialBoardState;
+            if (effectiveBoardState && effectiveBoardState.squares) {
+                const boardEntries = Object.entries(effectiveBoardState.squares).filter(([_, p]) => p);
+                console.log("[INIT] Using server boardState — source:", serverBoardState ? "rejoin_game" : "probe", "pieces:", boardEntries.length, "activeProject.id:", activeProject.id);
+                Object.entries(effectiveBoardState.squares).forEach(([sq, pData]: [string, any]) => {
                     if (!pData) return;
                     // For custom pieces, we still need the original definitions for assets/logic
                     const newPiece = createPieceFromData(pData.id, pData.type, pData.color, sq, customPieces);
@@ -397,8 +408,9 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                         initialSquares[sq] = newPiece;
                     }
                 });
+                console.log("[INIT] Created initialSquares entries:", Object.keys(initialSquares).length);
             } else {
-                console.log("[PlayBoard] Initializing from project placedPieces");
+                console.log("[INIT] Falling back to placedPieces — effectiveBoardState:", !!effectiveBoardState, "hasSquares:", !!(effectiveBoardState?.squares), "activeProject.id:", activeProject.id, "source:", serverBoardState ? "rejoin_game" : (initialBoardState ? "probe" : "none"));
                 Object.entries(placedPieces).forEach(([sq, pData]: [string, any]) => {
                     const normalizedSq = toAlgebraic(sq, actualHeight);
 
@@ -449,12 +461,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             console.error("[PlayBoard] Initialization error:", err);
             toast.error("Failed to load game");
         }
-    }, [activeProject]);
+    }, [activeProject, serverBoardState]);
 
     // Socket Connection
     useEffect(() => {
-        if (!isOnline || !roomId) return;
-        if (!socket || !isConnected) return;
+        if (!isOnline || !roomId) { console.log("[REGISTER-EFFECT] Skipped — isOnline:", isOnline, "roomId:", roomId); return; }
+        if (!socket || !isConnected) { console.log("[REGISTER-EFFECT] Skipped — socket:", !!socket, "isConnected:", isConnected); return; }
 
         const register = () => {
             let pId = localStorage.getItem("chess_player_id");
@@ -466,11 +478,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                 pId = Math.random().toString(36).substring(2, 15);
                 localStorage.setItem("chess_player_id", pId);
             }
-            console.log("[Socket] Registering player:", pId, "for room:", roomId);
+            console.log("[REGISTER] Player:", pId, "room:", roomId, "sessionUser:", session?.user?.id);
             socket.emit("register_player", { playerId: pId });
             socket.emit("join_room", { roomId, pId });
         };
 
+        console.log("[REGISTER-EFFECT] Running register(). deps — socket:", !!socket, "isOnline:", isOnline, "roomId:", roomId, "session:", !!session);
         register();
         socket.on("connect", register);
 
@@ -478,6 +491,17 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             socket.off("connect", register);
         };
     }, [socket, isOnline, roomId, session]);
+
+    // Diagnostic: log every board state change
+    useEffect(() => {
+        if (!board) return;
+        const squares = board.getSquares();
+        const entries = Object.entries(squares).filter(([_, p]) => p);
+        const sample = entries.slice(0, 6).map(([sq, p]: [string, any]) => `${sq}:${p?.color?.charAt(0)}${p?.type?.charAt(0)}`).join(' ');
+        console.log(`[BOARD-CHANGED] pieces=${entries.length} sample=${sample}`);
+        const stack = new Error().stack?.split('\n').slice(2, 7).map(s => s.trim()).join('\n    ');
+        console.log(`[BOARD-CHANGED] stack:\n    ${stack}`);
+    }, [board]);
 
     // Pending History Processing
     useEffect(() => {
@@ -523,10 +547,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         };
 
         const onJoinedRoom = (data: any) => {
-            console.log("[Socket] Joined room:", data);
+            console.log("[Socket] Joined room:", { hasBoardState: !!(data.boardState?.squares) });
             setMyColor(data.color);
             myColorRef.current = data.color;
             setWaitingForOpponent(true);
+            if (data.boardState && data.boardState.squares) {
+                console.log("[JOINED_ROOM] Captured server boardState");
+                setServerBoardState(data.boardState);
+            }
             if (data.customData) {
                 console.log("[Socket] Received custom data from joined room");
                 setActiveProject(data.customData);
@@ -534,28 +562,37 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         };
 
         const onStartGame = (data: any) => {
-            console.log("[Socket] Game started!");
+            console.log("[Socket] Game started!", { hasBoardState: !!(data.boardState?.squares) });
             setWaitingForOpponent(false);
             toast.success("Game Started!");
+            if (data.boardState && data.boardState.squares) {
+                console.log("[START_GAME] Captured server boardState");
+                setServerBoardState(data.boardState);
+            }
             if (data.customData) {
                 setActiveProject(data.customData);
             }
         };
 
         const onRejoinGame = (data: any) => {
-            console.log("[Socket] Rejoining game:", data);
+            console.log("[REJOIN] Received:", { color: data.color, status: data.status, historyLen: data.history?.length, hasCustomData: !!data.customData, hasBoardState: !!(data.boardState?.squares) });
             const colorMap: any = { 'white': 'white', 'black': 'black' };
             const resolvedColor = colorMap[data.color] || null;
             setMyColor(resolvedColor);
             myColorRef.current = resolvedColor;
 
             if (data.status === 'playing') setWaitingForOpponent(false);
+            if (data.boardState && data.boardState.squares) {
+                console.log("[REJOIN] Captured server boardState — engine will sync from this");
+                setServerBoardState(data.boardState);
+            }
             if (data.customData) {
-                console.log("[Socket] Received custom data from rejoin");
+                console.log("[REJOIN] Setting activeProject from rejoin customData");
                 setActiveProject(data.customData);
             }
             if (data.history && data.history.length > 0) {
-                setPendingHistory(data.history);
+                console.log("[REJOIN] Setting moveHistory directly (NO pendingHistory)");
+                setMoveHistory(data.history);
             }
         };
 
@@ -578,27 +615,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         const onMove = (data: any) => {
             const currentGame = gameRef.current;
             if (!currentGame) {
-                console.warn('[onMove] game not ready yet, ignoring move');
+                console.log('[ONMOVE] No engine yet, buffering via serverBoardState');
+                if (data.boardState && data.boardState.squares) setServerBoardState(data.boardState);
                 return;
             }
 
-            // Check if this is our own move that we already applied optimistically
-            const lastLocal = lastLocalMoveRef.current;
-            const isOwnMove = lastLocal && lastLocal.from === data.from && lastLocal.to === data.to;
-            if (isOwnMove) {
-                lastLocalMoveRef.current = null;
-                const moveDesc = data.san || `${data.from} -> ${data.to}`;
-                const snapshot = JSON.parse(JSON.stringify(currentGame.getBoard().getSquares()));
-                setHistorySnapshots(prev => [...prev, snapshot]);
-                setMoveHistory(prev => [...prev, moveDesc]);
-                setViewIndex(prev => prev + 1);
-                const newBoard = currentGame.getBoard().clone();
-                setBoard(newBoard);
-                boardRef.current = newBoard;
-                return;
-            }
+            lastLocalMoveRef.current = null;
+            console.log('[ONMOVE] Applying move:', { from: data.from, to: data.to });
 
-            // Remote move from opponent
             if (data.from && data.to) {
                 const success = currentGame.forceMove(data.from, data.to);
                 if (success) {
@@ -641,35 +665,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         socket.on("room_not_found", onRoomNotFound);
         socket.on("move", onMove);
         socket.on("error", (data: any) => {
-            console.warn("[Socket] Server error:", data.message, "pending local move:", !!lastLocalMoveRef.current);
+            console.warn("[Socket] Server error:", data.message);
             toast.error(data.message || "Invalid move");
-
-            // Revert optimistic move if we have one pending
-            if (lastLocalMoveRef.current) {
-                lastLocalMoveRef.current = null;
-                const currentGame = gameRef.current;
-                if (currentGame) {
-                    try {
-                        currentGame.getBoard().undo();
-                        const clonedBoard = currentGame.getBoard().clone();
-                        setBoard(clonedBoard);
-                        boardRef.current = clonedBoard;
-
-                        setHistorySnapshots(prev => {
-                            const next = prev.slice(0, -1);
-                            console.log("[Socket] Reverted history snapshots, was", prev.length, "now", next.length);
-                            return next;
-                        });
-                        setMoveHistory(prev => prev.slice(0, -1));
-                        setViewIndex(prev => {
-                            console.log("[Socket] Reverting viewIndex from", prev, "to", prev - 1);
-                            return prev - 1;
-                        });
-                    } catch (err) {
-                        console.error("[Socket] Failed to revert optimistic move:", err);
-                    }
-                }
-            }
         });
 
         return () => {
@@ -681,7 +678,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             socket.off("move", onMove);
             socket.off("error");
         };
-    }, [socket, isOnline, game, board, activeProject, roomId]);
+    }, [socket, isOnline, roomId]);
 
     // Engine Move Execution
     useEffect(() => {
@@ -719,9 +716,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         if (!selectedSquare || !game || !board) return new Set<string>();
         const piece = board.getSquares()[selectedSquare];
         if (!piece) return new Set<string>();
-        // Only highlight if it's the piece's turn (or validation is off)
-        if (validationEnabled && piece.color !== currentTurn) return new Set<string>();
-        if (isOnline && myColor && piece.color !== myColor) return new Set<string>();
+        if (isOnline) { } // Server decides validity
+        else if (validationEnabled && piece.color !== currentTurn) return new Set<string>();
         const legalMoves = game.getLegalMoves(piece.color);
         const movesFromSelected = legalMoves.filter(m => m.from === selectedSquare);
         return new Set(movesFromSelected.map(m => m.to));
@@ -812,11 +808,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         if (viewIndex !== historySnapshots.length - 1) return;
 
         const piece = squares[e.active.id as Square];
-        // Check turn and ownership (bypass if validation disabled)
-        if (piece && (!validationEnabled || piece.color === currentTurn)) {
-            // Online check (still enforce online ownership if enabled)
-            if (isOnline && myColor && piece.color !== myColor) return;
-
+        if (isOnline) {
+            if (piece) {
+                setActivePiece(piece);
+                setSelectedSquare(e.active.id as Square);
+            }
+        } else if (piece && (!validationEnabled || piece.color === currentTurn)) {
             setActivePiece(piece);
             setSelectedSquare(e.active.id as Square);
         }
@@ -824,6 +821,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     const executeMove = (from: Square, to: Square) => {
         if (!game || !board || !squares || gameOver) return false;
+
+        if (isOnline) {
+            if (socket) {
+                const moveDesc = `${from} -> ${to}`;
+                socket.emit("move", { from, to, san: moveDesc, fen: "CUSTOM_FEN_PLACEHOLDER" });
+            }
+            return true;
+        }
 
         let success = false;
         if (validationEnabled) {
@@ -838,14 +843,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             const sound = new Audio('/sounds/move-self.mp3');
             sound.play().catch(() => { });
 
-            // Update History
             const snapshot = JSON.parse(JSON.stringify(game.getBoard().getSquares()));
             setHistorySnapshots(prev => [...prev, snapshot]);
             setMoveHistory(prev => [...prev, moveDesc]);
             setViewIndex(prev => prev + 1);
 
-            // Check for checkmate/stalemate in local play
-            if (!isOnline) {
+            {
                 const status = game.getGameStatus();
                 if (status === 'checkmate') {
                     const loser = game.getTurn();
@@ -861,17 +864,6 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     new Audio('/sounds/game-end.mp3').play().catch(() => { });
                 }
             }
-
-            // Emit to server if online
-            if (isOnline && socket) {
-                lastLocalMoveRef.current = { from, to }; // Track for dedup in onMove
-                socket.emit("move", {
-                    from,
-                    to,
-                    san: moveDesc,
-                    fen: "CUSTOM_FEN_PLACEHOLDER"
-                });
-            }
         } else {
             console.warn(`[Engine] Move rejected or prevented: ${from} -> ${to}`);
         }
@@ -886,6 +878,21 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
 
+        if (isOnline) {
+            if (selectedSquare) {
+                if (selectedSquare === pos) {
+                    setSelectedSquare(null);
+                } else {
+                    executeMove(selectedSquare, pos);
+                    setSelectedSquare(null);
+                }
+            } else {
+                const piece = squares[pos];
+                if (piece) setSelectedSquare(pos);
+            }
+            return;
+        }
+
         if (selectedSquare) {
             if (selectedSquare === pos) {
                 setSelectedSquare(null);
@@ -894,10 +901,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                 if (moveSuccess) {
                     setSelectedSquare(null);
                 } else {
-                    // Check if clicked another piece (bypass turn check if validation disabled)
                     const pieceOnTarget = squares[pos];
                     if (pieceOnTarget && (!validationEnabled || pieceOnTarget.color === currentTurn)) {
-                        if (isOnline && myColor && pieceOnTarget.color !== myColor) return;
                         setSelectedSquare(pos);
                     } else {
                         setSelectedSquare(null);
@@ -907,7 +912,6 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         } else {
             const piece = squares[pos];
             if (piece && (!validationEnabled || piece.color === currentTurn)) {
-                if (isOnline && myColor && piece.color !== myColor) return;
                 setSelectedSquare(pos);
             }
         }
@@ -1178,14 +1182,14 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                                             const pos = `${file}${rank}` as Square;
                                             const isWhite = (rIdx + fIdx) % 2 === 0;
 
-                                            if (!board.isActive(pos)) {
+                                            if (!board || !board.isActive(pos)) {
                                                 return <div key={pos} className="aspect-square bg-transparent" />;
                                             }
 
                                             // Determine if it's my turn to allow interaction
                                             const piece = squares[pos];
                                             const pieceOwner = piece?.color === currentTurn;
-                                            const canInteract = !waitingForOpponent && (!isOnline || (myColor && piece?.color === myColor && currentTurn === (myColor === 'white' ? 'white' : 'black')));
+                                            const canInteract = isOnline ? !waitingForOpponent : (!waitingForOpponent && (!validationEnabled || piece?.color === currentTurn));
 
                                             return (
                                                 <BoardSquare

@@ -110,10 +110,10 @@ const DraggablePiece = memo(function DraggablePiece({
   const isMyPiece = myColor ? piece.color === myColor : true;
 
   const canDrag =
-    amIAtTurn &&
-    isMyPiece &&
     gameStatus === "playing" &&
-    (!isViewingHistory || gameMode === 'computer');
+    (gameMode === 'online'
+      ? !isViewingHistory
+      : amIAtTurn && isMyPiece && (!isViewingHistory || gameMode === 'computer'));
 
   const style: React.CSSProperties = {
     fontSize: size,
@@ -276,15 +276,22 @@ export default function Board({
   initialRoomId,
   gameModeVar,
   mode,
+  initialFen,
+  initialColor,
 }: {
   initialRoomId?: string;
   gameModeVar?: "online" | "computer" | "local";
   mode?: "create" | "join" | "computer";
+  initialFen?: string | null;
+  initialColor?: string | null;
 }) {
   const t = useTranslations("Multiplayer");
   const router = useRouter();
   const params = useParams();
-  const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
+  const [boardPieces, setBoardPieces] = useState<PieceType[]>(() => {
+    if (initialFen) return parseFen(initialFen);
+    return pieces;
+  });
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
       distance: 0,
@@ -304,8 +311,16 @@ export default function Board({
   const [blockSize, setBlockSize] = useState(80);
   const [selectedPos, setSelectedPos] = useState<string | null>(null);
   const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "ended" | "">("");
-  const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-  const [currentTurn, setCurrentTurn] = useState<'w' | 'b'>('w');
+  const [myColor, setMyColor] = useState<"white" | "black" | null>(() => {
+    if (initialColor === "white") return "white";
+    if (initialColor === "black") return "black";
+    return null;
+  });
+  const [currentTurn, setCurrentTurn] = useState<'w' | 'b'>(() => {
+    const parts = initialFen?.split(' ');
+    if (parts && (parts[1] === 'w' || parts[1] === 'b')) return parts[1];
+    return 'w';
+  });
   const [redMarkedSquares, setRedMarkedSquares] = useState<Set<string>>(new Set());
   const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
   const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
@@ -509,6 +524,10 @@ export default function Board({
       setGameStatus("waiting");
     }
   }, [initialRoomId, gameStatus, gameMode, currentRoom, startComputerGame]);
+
+  useEffect(() => {
+    console.log('[STATE] gameStatus:', gameStatus, 'gameMode:', gameMode, 'myColor:', myColor, 'currentTurn:', currentTurn);
+  }, [gameStatus, gameMode, myColor, currentTurn]);
 
   useEffect(() => {
     if (!socket || (gameMode !== "online" && gameMode !== "computer")) return;
@@ -1076,6 +1095,7 @@ export default function Board({
     const { active, over } = e;
     if (over && active.id !== over.id) {
       const from = active.id as string, to = over.id as string;
+      console.log('[DRAG] handleDragEnd fired', { from, to, gameStatus, gameMode, isViewingHistory, myColor });
       const p = getPieceAt(from);
       const toRank = parseInt(to.match(/\d+/)?.[0] || "0", 10);
       const curBoardHeight = customBoard ? customBoard.height : 8;
@@ -1099,8 +1119,12 @@ export default function Board({
 
     if (!selectedPos) {
       const p = getEffectivePieceAt(pos);
-      if (p && (p.color === 'white' ? 'w' : 'b') === effectiveTurn) {
-        if (!myColor || p.color === myColor) setSelectedPos(pos);
+      if (gameMode === 'online') {
+        if (p) setSelectedPos(pos);
+      } else {
+        if (p && (p.color === 'white' ? 'w' : 'b') === effectiveTurn) {
+          if (!myColor || p.color === myColor) setSelectedPos(pos);
+        }
       }
     } else {
       if (selectedPos === pos) setSelectedPos(null);
@@ -1111,6 +1135,8 @@ export default function Board({
         const curBoardHeight = customBoard ? customBoard.height : 8;
         if (p.type === 'Pawn' && (toRank === curBoardHeight || toRank === 1)) {
           setPromotionMove({ from: selectedPos, to: pos }); setShowPromotionDialog(true);
+        } else if (gameMode === 'online') {
+          executeMove(selectedPos, pos);
         } else {
           const target = getEffectivePieceAt(pos);
           if (target && target.color === p.color) setSelectedPos(pos);
@@ -1232,7 +1258,7 @@ export default function Board({
       const isMoveTo = isViewingHistory ? historyMove?.to === pos : lastMoveTo === pos;
 
       const amIAtTurn = gameStatus === "playing" && (
-        (!isViewingHistory && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')) ||
+        (!isViewingHistory && (gameMode === 'online' || (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local'))) ||
         (isViewingHistory && gameMode === 'computer' && (myColor ? activeTurn === (myColor === "white" ? "w" : "b") : false))
       );
 
