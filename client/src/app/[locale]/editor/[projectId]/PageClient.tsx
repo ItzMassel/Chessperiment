@@ -10,6 +10,7 @@ import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink 
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
+import { toast } from 'sonner';
 
 import type { Socket } from 'socket.io-client';
 
@@ -42,9 +43,6 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
-
-    // Connection retry state
-    const [isConnecting, setIsConnecting] = useState(false);
 
     // Sync edited fields when project loads
     useEffect(() => {
@@ -97,10 +95,14 @@ export default function PageClient({ projectId }: PageClientProps) {
     const handlePlayOnline = () => {
         console.log('🎮 Play Online clicked');
 
-        if (!socket || !isConnected) return;
+        if (!socket || !isConnected) {
+            toast.error("Connecting to server... please wait and try again.");
+            return;
+        }
 
         if (!project) {
             console.error('❌ No project loaded');
+            toast.error("Project still loading, please wait.");
             return;
         }
 
@@ -281,10 +283,10 @@ export default function PageClient({ projectId }: PageClientProps) {
                             {/* Play Online - Primary */}
                             <button
                                 onClick={handlePlayOnline}
-                                disabled={!socket || !project || isConnecting}
+                                disabled={!socket || !isConnected || !project}
                                 className="flex-1 group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                {isConnecting ? (
+                                {!socket || !isConnected ? (
                                     <>
                                         <Loader2 size={24} className="animate-spin" />
                                         <span>Connecting...</span>

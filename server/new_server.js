@@ -998,7 +998,8 @@ io.on("connection", (socket) => {
           console.warn(
             `[Custom Move Rejected] Invalid move: ${data.from}->${data.to}`,
           );
-          socket.emit("error", { message: "Invalid move" });
+          const engineReason = game.gameEngine?.getBoard()?.lastRejectionReason;
+          socket.emit("error", { message: engineReason || "Invalid move" });
         }
         return;
       }
