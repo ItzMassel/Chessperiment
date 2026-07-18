@@ -827,26 +827,9 @@
             }
         },
         "Editor": {
-            "title": "Projekt-Editor | individuelles Chessperiment",
-            "description": "Verwalte deine individuellen Schachprojekte. Erstelle einzigartige Schlachtfelder, designe Figurensätze und organisiere deine Kreationen.",
+            "title": "Schach-Editor — Designe individuelle Bretter, Figuren & Schachvarianten online | Chessperiment",
+            "description": "Kostenloser Online-Schach-Editor für die Erstellung eigener Schachvarianten. Gestalte einzigartige Bretter mit unregelmäßigen Formen und Hexgittern, programmiere Märchenschachfiguren mit visuellen Logikblöcken und spiele online. Kein Programmieren nötig.",
             "h1": "Dein Projekt-Arbeitsplatz"
-        },
-        "PieceEditor": {
-            "title": "Visueller Schachfiguren-Editor — Definiere Leaper, Rider & Märchenschachfiguren-Logik",
-            "description": "Definiere benutzerdefinierte Schachfiguren-Bewegungen mit visuellen Logikblöcken — kein Programmieren nötig. Keine Vorlagen — echte Anpassbarkeit. Erstelle Leaper, Rider und komplexe Märchenschachfiguren mit konditionalen Auslösern, zustandsbasierten Schlagregeln und mehrstufigen Zugsequenzen."
-        },
-        "SquareEditor": {
-            "title": "Feld-Regel-Editor — Feldspezifische Logik für Schachvarianten",
-            "description": "Weise einzelnen Brettfeldern einzigartige Regeln zu — erstelle Teleport-Felder, Territoriumszonen, Umwandlungsbereiche oder Bewegungseinschränkungen. Ermöglicht fortgeschrittene Schachvarianten einschließlich Fraktalschach."
-        },
-        "BoardEditor": {
-            "title": "Schachbrett-Editor - Designe individuelle Bretter",
-            "description": "Erstelle deine eigenen Schachbrett-Layouts. Passe Abmessungen, Farben und Startpositionen an. Exportiere oder spiele direkt.",
-            "h1": "Individueller Schachbrett-Editor",
-            "seoContent": {
-                "heading": "Erstelle und teile individuelle Schachbretter",
-                "text": "Mit dem Chessperiment Brett-Editor designst du Schachbretter jeder Dimension — von kompakten 4x4 bis zu ausgedehnten 14x14 Gittern oder jeder beliebigen Größe. Erstelle vollständige hexagonale Bretter für Hex-Schachvarianten. Schalte einzelne Felder um, um nicht-rechteckige Formen zu bauen: Ringe, Kreuze, Karten mit internen Hindernissen oder jede beliebige Topologie. Weise feldspezifische Regelüberschreibungen zu, um Territoriumszonen, Teleport-Felder oder eingeschränkte Bewegungsbereiche zu erstellen. Das sind keine Vorlagen — das ist echte Anpassbarkeit. Ob du eine klassische Märchenschachvariante baust, ein Verbindungsspiel im Stil von Hex oder Y prototypisierst oder ein völlig neues abstraktes Strategiespiel von Grund auf entwirfst — der Brett-Editor gibt dir volle geometrische Kontrolle ohne Programmierkenntnisse."
-            }
         },
         "Announcements": {
             "title": "Chessperiment Neuigkeiten & Ankündigungen",

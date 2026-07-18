@@ -1236,3 +1236,63 @@ The Niche Visibility Playbook does not work by generating a hundred thin pages a
 The decisive advantage is **systematic niche validation, GEO-aware authority building, and kill-switch discipline** — applied consistently across every niche you enter. This transforms a project from something looking for distribution into a category-defining platform that generates compounding inbound demand across traditional SERPs, AI answer engines, community recommendations, and word of mouth.
 
 Those who win in 2026 will treat SEO and GEO not as marketing channels, but as product infrastructure — built in parallel with the product itself, measured with the same rigour as product metrics, and iterated with the same speed as product development.
+
+---
+
+# Next Steps — Chessperiment Execution Plan
+
+Based on the SEO data analysis (GSC export, last 3 months) and the audit, here are the concrete remaining actions.
+
+## Phase 1: Quick Wins (Week 1)
+
+| Action | Target Query (Impressions) | Effort | Impact |
+|--------|---------------------------|--------|--------|
+| Restore missing `"Game"` section in en.json | — | 5min | ✅ Done |
+| Fix editor sub-page metadata (piece-editor, board-editor, square-editor) — add OG/Twitter/alternates | "fairy chess board editor" (52), "custom chess piece maker" (36) | 30min | High |
+| Add 404 page metadata | — | 10min | Low |
+| Add catch-all route metadata | — | 10min | Low |
+| Add `/library` to sitemap if route exists | — | 5min | Medium |
+| Link CONTRIBUTING.md from README.md | "chess projects" (4), "chess editor github" | 5min | Medium |
+
+## Phase 2: Content & Entity (Week 2-3)
+
+### Contributor-Facing
+- Create a GitHub-optimized `/docs` or `/developers` route with API docs, architecture overview, and contribution guide
+- Optimize GitHub repo description: "Free, open-source chess variant sandbox. Custom boards, Blockly piece editor, Stockfish AI, online multiplayer."
+- Add GitHub topics: `chess-variants`, `fairy-chess`, `game-engine`, `blockly`, `stockfish`, `nextjs`, `typescript`
+- Submit to **chess-related open-source directories** and **awesome-chess** lists
+- Create a `FUNDING.yml` for GitHub sponsors
+
+### User-Facing
+- Create a dedicated landing page for "fairy chess" keywords (targets 74 combined impressions for fairy chess terms)
+- Add `BlogPosting` schema to news/announcements pages
+- Add interaction stat counters to JSON-LD (replace hardcoded 0s)
+
+## Phase 3: Citation Chain & GEO (Week 4+)
+
+### Community Citations
+- Get mentioned on: `chessvariants.tk` (wiki), `lichess.org/forum`, `/r/chessvariants`, `/r/fairychess`, `chess.stackexchange.com`
+- Create a "State of Custom Chess Variants 2026" report — original survey data → linkable asset → GEO citation source
+- Publish YouTube tutorials on custom piece logic → generate embedded views + backlinks
+
+### GEO Optimization
+- Add `llms-full.txt` link to the layout metadata alongside `llms.txt`
+- Create structured data for all AI bot crawlers (already done in robots.ts — maintain this)
+- Submit to AI training data sources: Common Crawl, Wikipedia (if notable), academic citations
+- Monitor `chessperiment` mentions in Perplexity, ChatGPT, Gemini responses monthly
+
+## KPI Targets
+
+| Metric | Current | Target (3 months) | Tool |
+|--------|---------|-------------------|------|
+| "Chess editor" position | 9.76 | Top 5 | GSC |
+| "Chess board editor" position | 11.17 | Top 5 | GSC |
+| Editor page CTR | 3.11% | >8% | GSC |
+| Editor page monthly clicks | 110 | 300+ | GSC |
+| GitHub stars | — | Monitor growth | GitHub |
+| AI prompt mentions | Unknown | 3+ / 20 prompts | Manual / Profound |
+
+## Never Do
+- Fake reviews, PBNs, spam links, doorway pages, CTR manipulation
+- G2/Capterra/GetApp profiles (not applicable — free product)
+- Paid ads for acquisition (not applicable — free product)

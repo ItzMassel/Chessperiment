@@ -5,20 +5,20 @@ import { generateHreflangs } from '@/lib/hreflang';
 const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chessperiment.app');
 
 export const metadata: Metadata = {
-    title: 'chessperiment User Profiles',
-    description: 'View and manage chessperiment user profiles.',
+    title: 'Chessperiment User Profiles',
+    description: 'View and manage Chessperiment user profiles.',
     openGraph: {
-        title: 'chessperiment User Profiles',
-        description: 'View and manage chessperiment user profiles.',
+        title: 'Chessperiment User Profiles',
+        description: 'View and manage Chessperiment user profiles.',
         url: 'https://chessperiment.app/en/profile',
-        siteName: 'chessperiment',
+        siteName: 'Chessperiment',
         images: ['/images/seo/og-home.png'],
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'chessperiment User Profiles',
-        description: 'View and manage chessperiment user profiles.',
+        title: 'Chessperiment User Profiles',
+        description: 'View and manage Chessperiment user profiles.',
         images: ['/images/seo/og-home.png'],
     },
     alternates: {

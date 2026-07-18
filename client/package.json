@@ -1,6 +1,7 @@
 {
   "name": "chessperiment",
   "version": "0.1.0",
+  "description": "Free, open-source web-based custom chess variant sandbox platform. Create custom boards, design pieces with Blockly, play online.",
   "private": true,
   "scripts": {
     "dev": "next dev",

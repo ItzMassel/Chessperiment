@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             title: t('title'),
             description: t('description'),
             url: 'https://chessperiment.app/en/login',
-            siteName: 'chessperiment',
+            siteName: 'Chessperiment',
             images: ['/images/seo/og-home.png'],
             type: 'website',
         },

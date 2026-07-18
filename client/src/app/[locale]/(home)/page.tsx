@@ -72,7 +72,12 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           "@type": "ImageObject",
           "url": `${siteUrl}/icon.png`
         },
-        "sameAs": []
+        "sameAs": [
+          "https://github.com/ItzMassel/Chessperiment",
+          "https://discord.gg/2XrGZw9PMP",
+          "https://twitter.com/chessperiment",
+          "https://youtube.com/@chessperiment"
+        ]
       },
       {
         "@type": "SoftwareApplication",

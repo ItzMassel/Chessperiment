@@ -11,9 +11,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/game',
     '/announcements',
     '/editor',
+    '/features',
+    '/features/analyze',
     '/legal-notice',
     '/privacy-policy',
     '/about',
+    '/compare',
     '/feedback',
   ];
 

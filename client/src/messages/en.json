@@ -812,14 +812,14 @@
             "builtBy": "Built with great attention to detail for chess enthusiasts."
         },
         "Home": {
-            "title": "Chessperiment — AI-Powered Chess Variant Creator & Abstract Strategy Game Engine",
-            "description": "Describe your game idea — the AI creates the variant instantly for you. You bring the creativity, AI handles the implementation. No templates, real customization. Define pieces with visual logic blocks, build hexagonal boards, create leapers, riders, and fairy chess pieces. Free, browser-based, no coding required.",
-            "h1": "Chessperiment — AI-Powered Chess Variant Creator and Abstract Strategy Game Engine",
-            "p": "Chessperiment is a free, browser-based sandbox for designing custom chess variants and abstract strategy games. Simply describe your game idea — our AI creates the full variant instantly for you. You have the creative vision, the AI skips the boring setup step. The result is a complete Chessperiment project you can adjust however you like in the editor. Create pieces with a Scratch-style visual logic editor — define leaper and rider movement patterns, add conditional triggers, and program complex fairy chess piece behaviors without any coding knowledge. Design hexagonal or custom-shaped boards and test instantly with friends via room codes. Stockfish analysis is built in and works with your own rules."
-        },
+            "title": "Chessperiment — Free Online Chess Variant Creator & Custom Board Editor",
+            "description": "Create your own chess variants online for free. Design custom pieces with visual logic blocks, build hexagonal or irregular boards, define unique rules, and play against Stockfish AI or friends. No coding required.",
+            "h1": "Chessperiment — Free Online Chess Variant Creator & Custom Board Editor",
+            "p": "Chessperiment is a free, browser-based sandbox for designing custom chess variants and abstract strategy games. Simply describe your game idea — our AI creates the full variant instantly for you. You bring the creativity, the AI handles the implementation. No templates, real customization. Define pieces with visual logic blocks, build hexagonal boards, create leapers, riders, and fairy chess pieces. Free, browser-based, no coding required."
+         },
         "Game": {
-            "title": "Play Chess Variants Online - Multiplayer Chess Games",
-            "description": "Play innovative chess variants online with friends. Multiplayer chess with custom boards and pieces. Free to play, no download required.",
+            "title": "Play Chess Variants Online — Multiplayer Custom Chess | Chessperiment",
+            "description": "Play custom chess variants online with friends or against Stockfish AI. Multiplayer chess with unique boards, custom piece sets, and variant rules. Free, no download required.",
             "h1": "Play Custom Chess Variants Online",
             "seoContent": {
                 "heading": "Experience the Next Generation of Chess Variants",
@@ -827,26 +827,9 @@
             }
         },
         "Editor": {
-            "title": "Project Editor | Custom Chessperiment",
-            "description": "Manage your custom chess projects. Create unique battlefields, design piece sets, and organize your creations.",
+            "title": "Chess Editor — Design Custom Boards, Pieces & Chess Variants Online | Chessperiment",
+            "description": "Free online chess editor for creating custom chess variants. Design unique boards with irregular shapes and hex grids, program fairy chess pieces with visual logic blocks, and play online. No coding required.",
             "h1": "Your Project Workspace"
-        },
-        "PieceEditor": {
-            "title": "Visual Chess Piece Editor — Define Leaper, Rider & Fairy Chess Piece Logic",
-            "description": "Define custom chess piece movements with visual logic blocks — no coding required. No templates — real customization. Create leapers, riders, and complex fairy chess pieces with conditional triggers, state-based capture rules, and multi-step move sequences."
-        },
-        "SquareEditor": {
-            "title": "Square Rule Editor — Square-Specific Logic for Chess Variants",
-            "description": "Assign unique rules to individual board squares — create teleport squares, territory zones, promotion areas, or movement restrictions. Enables advanced chess variants including Fractal Chess."
-        },
-        "BoardEditor": {
-            "title": "Chess Board Editor - Design Custom Boards",
-            "description": "Create your own chess board layouts. Customize dimensions, colors, and starting positions. Export or play directly.",
-            "h1": "Custom Chess Board Editor",
-            "seoContent": {
-                "heading": "Create and share custom chess boards",
-                "text": "With the Chessperiment board editor, design chess boards of any dimension — from compact 4x4 to expansive 14x14 grids or any custom size. Create full hexagonal boards for hex chess variants. Toggle individual squares to build non-rectangular shapes: rings, crosses, maps with internal obstacles, or any topology. Assign square-specific rule overrides to create territory zones, teleport squares, or restricted movement areas. These are not templates — this is real customization. Whether you're building a classic fairy chess variant, prototyping a Hex- or Y-style connection game, or designing an entirely new abstract strategy game from scratch — the board editor gives you full geometric control with no coding required."
-            }
         },
         "Announcements": {
             "title": "Chessperiment News & Announcements",

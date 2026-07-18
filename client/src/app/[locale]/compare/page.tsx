@@ -8,6 +8,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     return {
         title: "Chessperiment vs ChessCraft vs Chess Remix — Best Chess Variant Creator Comparison",
         description: "Compare the top chess variant creation tools: Chessperiment, ChessCraft, Chess Remix, PyChess, and Tabletop Simulator. Not presets — actual customizability. Free browser-based comparison for board game designers and chess variant enthusiasts.",
+        openGraph: {
+            title: "Chessperiment vs ChessCraft vs Chess Remix — Best Chess Variant Creator Comparison",
+            description: "Compare the top chess variant creation tools. Chessperiment, ChessCraft, Chess Remix, PyChess, and Tabletop Simulator side by side.",
+            url: `${siteUrl}/${locale}/compare`,
+            siteName: 'Chessperiment',
+            images: [{ url: '/images/seo/og-home.png', width: 1200, height: 630 }],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: "Chessperiment vs ChessCraft vs Chess Remix — Best Chess Variant Creator Comparison",
+            description: "Compare the top chess variant creation tools side by side.",
+            images: ['/images/seo/twitter-image.png'],
+        },
         alternates: {
             canonical: `${siteUrl}/${locale}/compare`,
             languages: {

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             title: t('title'),
             description: t('description'),
             url: `https://chessperiment.app/${locale}/game`,
-            siteName: 'chessperiment',
+            siteName: 'Chessperiment',
             images: [{ url: '/images/seo/og-game.png', width: 1200, height: 630 }],
             type: 'website',
         },
@@ -43,7 +43,7 @@ export default async function Game({ params }: { params: Promise<{ locale: strin
     const jsonLd_gameIndex = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "chessperiment Games",
+        "name": "Chessperiment Games",
         "url": `https://chessperiment.app/${locale}/game`,
         "applicationCategory": "GameApplication",
         "operatingSystem": "Web",

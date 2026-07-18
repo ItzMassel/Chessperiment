@@ -1,11 +1,13 @@
 export default function JsonLd() {
     const siteInfo = {
-        name: "chessperiment",
+        name: "Chessperiment",
         url: "https://chessperiment.app",
         logo: "https://chessperiment.app/logo.png",
         description: "The ultimate platform for custom chess. Describe your idea — AI builds the variant for you. Create, share, and play unique chess variants.",
         contactEmail: "contact.chessperiment@gmail.com",
         socialLinks: [
+            "https://github.com/ItzMassel/Chessperiment",
+            "https://discord.gg/2XrGZw9PMP",
             "https://twitter.com/chessperiment",
             "https://instagram.com/chessperiment",
             "https://youtube.com/@chessperiment"
@@ -65,7 +67,7 @@ export default function JsonLd() {
                 "creator": {
                     "@id": `${siteInfo.url}/#organization`
                 },
-                "description": "chessperiment is a creation-first game platform. Describe any game idea and the AI builds the variant for you — boards, pieces, and rules — instantly. Then fine-tune it yourself, play it, and share it with others.",
+                "description": "Chessperiment is a creation-first game platform. Describe any game idea and the AI builds the variant for you — boards, pieces, and rules — instantly. Then fine-tune it yourself, play it, and share it with others.",
                 "audience": {
                     "@type": "Audience",
                     "audienceType": "All ages"

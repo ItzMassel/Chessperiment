@@ -1,5 +1,15 @@
+import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+
+export const metadata: Metadata = {
+    title: '404 — Page Not Found | Chessperiment',
+    description: 'The page you are looking for does not exist. Create custom chess variants, design pieces and boards with Chessperiment.',
+    robots: {
+        index: false,
+        follow: true,
+    },
+};
 
 export default function NotFound() {
     const t = useTranslations('NotFound');

@@ -22,8 +22,28 @@ export function SEOFooter() {
         { q: 'whatIsMarketplace', a: 'whatIsMarketplaceAnswer' },
     ];
 
+    const faqSchema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqs.map(faq => ({
+            "@type": "Question",
+            "name": t(faq.q),
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": t(faq.a)
+            }
+        }))
+    };
+
     return (
-        <footer className="w-full max-w-7xl mx-auto px-4 py-16 mt-20 border-t border-stone-200 dark:border-stone-800">
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(faqSchema).replace(/</g, '\\u003c')
+                }}
+            />
+            <footer className="w-full max-w-7xl mx-auto px-4 py-16 mt-20 border-t border-stone-200 dark:border-stone-800">
             <div className="grid md:grid-cols-2 gap-12">
                 <div>
                     <h2 className="text-2xl font-bold mb-6 text-stone-900 dark:text-stone-100">{t('title')}</h2>
@@ -98,5 +118,6 @@ export function SEOFooter() {
                 </div>
             </div>
         </footer>
+        </>
     );
 }

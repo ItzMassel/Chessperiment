@@ -6,7 +6,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     const { locale } = params;
     const t = await getTranslations({ locale, namespace: 'Editor' });
     return {
-        title: `${t('newProject')} | Chess Pie`,
+        title: `${t('newProject')} | Chessperiment`,
     };
 }
 
