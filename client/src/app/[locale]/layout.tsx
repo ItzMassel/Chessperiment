@@ -119,6 +119,36 @@ export default async function RootLayout({
   const requestUrl = headersList.get("x-invoke-path") || "/";
   const pathname = requestUrl.startsWith("/") ? requestUrl : new URL(requestUrl, "http://example.com").pathname;
 
+  const isMaintenanceMode =
+    process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true' ||
+    process.env.NEXT_PUBLIC_MAINTENANCE_MODE === '1';
+
+  if (isMaintenanceMode) {
+    return (
+      <html lang={locale} className={`${lexend.className}`} suppressHydrationWarning>
+        <head>
+          <meta name="darkreader-lock" />
+          <title>Chessperiment — Maintenance</title>
+        </head>
+        <body className="bg-bg dark:bg-stone-950 min-h-screen flex flex-col items-center justify-center p-8 text-center">
+          <div className="max-w-md">
+            <h1 className="text-4xl font-bold mb-4 text-text">Chessperiment</h1>
+            <p className="text-lg text-text/70 mb-2">
+              {locale === 'de'
+                ? 'Wir sind in Kürze wieder für euch da!'
+                : 'We&rsquo;ll be back shortly!'}
+            </p>
+            <p className="text-base text-text/50">
+              {locale === 'de'
+                ? 'Die Seite wird gerade gewartet. In ein paar Stunden geht es weiter.'
+                : 'The site is currently undergoing maintenance. It will be back in a few hours.'}
+            </p>
+          </div>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html
       lang={locale}
