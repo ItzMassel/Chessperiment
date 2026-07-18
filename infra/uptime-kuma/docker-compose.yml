@@ -1,0 +1,41 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - uptime-kuma-data:/app/data
+    expose:
+      - 3001
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "node", "server/server.js", "--health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy-uptime
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - web
+    depends_on:
+      - uptime-kuma
+
+volumes:
+  uptime-kuma-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  web:
+    driver: bridge

@@ -66,6 +66,12 @@ migrations/
 *.sublime-project
 *.sublime-workspace
 
+# ====================
+# Docker / Infra
+# ====================
+infra/**/data/
+infra/**/config/
+
 # Secrets
 frontend/secrets.json
 frontend/client/public/inscription.html
