@@ -6,7 +6,7 @@ import {
     saveBoard, getUserBoards, toggleBoardStar, deleteBoard, getBoard, SavedBoard, 
     CustomPiece, saveCustomPiece, getUserCustomPieces, getCustomPiece, deleteCustomPiece,
     PieceSet, savePieceSet, getUserPieceSets, getPieceSet, getSetPieces, deletePieceSet, togglePieceSetStar
-} from "@/lib/firestore";
+} from "@/db";
 import { revalidatePath } from "next/cache";
 
 export async function saveBoardAction(boardData: Omit<SavedBoard, "userId" | "createdAt" | "updatedAt" | "isStarred">) {

@@ -7,8 +7,7 @@ import { Loader2, UserCheck, AtSign, Edit2, Save, X, Image as ImageIcon, FileTex
 import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { storage } from '@/lib/firebase-client';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { supabase, isConfigured } from '@/lib/supabase-client';
 
 export default function CreatorProfileSection() {
     const { user } = useAuth();
@@ -125,16 +124,15 @@ export default function CreatorProfileSection() {
     };
 
     async function handlePhotoUpload(file: File) {
-        if (!user) return;
+        if (!user || !isConfigured || !supabase) return;
         setUploadingPhoto(true);
         try {
             const ext = file.name.split('.').pop();
-            const path = `profile-photos/${user.uid || user.id}/${Date.now()}.${ext}`;
-            if (!storage) return;
-            const storageRef = ref(storage as any, path);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
-            setEditForm(prev => ({ ...prev, photoUrl: url }));
+            const path = `${user.uid || user.id}/${Date.now()}.${ext}`;
+            const { error } = await supabase.storage.from('avatars').upload(path, file);
+            if (error) throw error;
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+            setEditForm(prev => ({ ...prev, photoUrl: publicUrl }));
             toast.success('Photo uploaded!');
         } catch (error) {
             console.error('Upload error:', error);

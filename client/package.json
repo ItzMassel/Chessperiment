@@ -10,7 +10,9 @@
     "marketplace:cleanup": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/cleanup-marketplace.ts', {stdio:'inherit',env:{...process.env}})\"",
     "marketplace:cleanup:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/cleanup-marketplace.ts --apply', {stdio:'inherit',env:{...process.env}})\"",
     "variants:publish": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts', {stdio:'inherit',env:{...process.env}})\"",
-    "variants:publish:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts --apply', {stdio:'inherit',env:{...process.env}})\""
+    "variants:publish:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts --apply', {stdio:'inherit',env:{...process.env}})\"",
+    "firestore:to:supabase": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/firestore-to-supabase.ts', {stdio:'inherit',env:{...process.env}})\"",
+    "firestore:to:supabase:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/firestore-to-supabase.ts --apply', {stdio:'inherit',env:{...process.env}})\""
   },
   "dependencies": {
     "@auth/firebase-adapter": "^2.11.1",
@@ -25,6 +27,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sanity/image-url": "^1.2.0",
+    "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^2.4.6",
     "@vercel/analytics": "^1.6.1",
@@ -37,6 +40,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "drizzle-orm": "^0.45.2",
     "firebase": "^12.8.0",
     "firebase-admin": "^12.7.0",
     "framer-motion": "^12.23.26",
@@ -49,6 +53,7 @@
     "next-intl": "^4.5.5",
     "next-themes": "^0.4.6",
     "openai": "^6.37.0",
+    "postgres": "^3.4.9",
     "radix-ui": "^1.4.3",
     "react": "^19.2.3",
     "react-blockly": "^9.0.0",
@@ -79,6 +84,7 @@
     "@types/node": "^20.19.30",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "^16.1.4",
     "lightningcss": "^1.30.2",
