@@ -85,6 +85,24 @@ function saveActiveJobId(projectId: string, jobId: string | null) {
   } catch { /* ignore */ }
 }
 
+function loadActiveJobSecret(projectId: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem(getSessionKey(projectId, 'secret'));
+  } catch { return null; }
+}
+
+function saveActiveJobSecret(projectId: string, secret: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (secret) {
+      sessionStorage.setItem(getSessionKey(projectId, 'secret'), secret);
+    } else {
+      sessionStorage.removeItem(getSessionKey(projectId, 'secret'));
+    }
+  } catch { /* ignore */ }
+}
+
 function detectCurrentPage(pathname: string): string {
   if (pathname.includes('/board-editor')) return 'board-editor';
   if (pathname.includes('/logic')) return 'piece-logic';
@@ -279,13 +297,13 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
   }, [projectId, router]);
 
   /** Connect to a job's SSE stream. Returns a cleanup function. */
-  const connectToJobStream = useCallback((jobId: string, after: number) => {
+  const connectToJobStream = useCallback((jobId: string, secret: string, after: number) => {
     if (activeEventSource.current) {
       activeEventSource.current.close();
       activeEventSource.current = null;
     }
 
-    const es = new EventSource(`/api/ai/job/${jobId}/stream?after=${after}`);
+    const es = new EventSource(`/api/ai/job/${jobId}/stream?after=${after}&secret=${encodeURIComponent(secret)}`);
     activeEventSource.current = es;
 
     es.addEventListener('chat_message', (e) => {
@@ -297,14 +315,13 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       const { tool_calls } = JSON.parse((e as MessageEvent).data);
       try {
         const results = await executeToolCalls(tool_calls, toolHandlers.current, handleNavigate);
-        await fetch(`/api/ai/job/${jobId}/tool-result`, {
+        await fetch(`/api/ai/job/${jobId}/tool-result?secret=${encodeURIComponent(secret)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ results }),
         });
       } catch (err) {
-        // Send error results so the job can continue
-        await fetch(`/api/ai/job/${jobId}/tool-result`, {
+        await fetch(`/api/ai/job/${jobId}/tool-result?secret=${encodeURIComponent(secret)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -321,11 +338,11 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       es.close();
       activeEventSource.current = null;
       saveActiveJobId(projectId, null);
+      saveActiveJobSecret(projectId, null);
       setIsLoading(false);
     });
 
     es.addEventListener('error', (e) => {
-      // SSE 'error' fires for both job errors and network drops
       try {
         const data = JSON.parse((e as MessageEvent).data);
         if (data.message) {
@@ -340,6 +357,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       es.close();
       activeEventSource.current = null;
       saveActiveJobId(projectId, null);
+      saveActiveJobSecret(projectId, null);
       setIsLoading(false);
     });
 
@@ -349,14 +367,18 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
   /** Reconnect to a job that was in progress before a page reload. */
   const reconnectToJob = useCallback(async (jobId: string) => {
     try {
-      const res = await fetch(`/api/ai/job/${jobId}`);
-      if (!res.ok) { saveActiveJobId(projectId, null); return; }
+      const secret = loadActiveJobSecret(projectId);
+      if (!secret) { saveActiveJobId(projectId, null); return; }
+
+      const res = await fetch(`/api/ai/job/${jobId}?secret=${encodeURIComponent(secret)}`);
+      if (!res.ok) { saveActiveJobId(projectId, null); saveActiveJobSecret(projectId, null); return; }
 
       const job = await res.json();
 
       if (job.status === 'done' || job.status === 'error') {
         setMessages(job.chatMessages);
         saveActiveJobId(projectId, null);
+        saveActiveJobSecret(projectId, null);
         return;
       }
 
@@ -372,13 +394,13 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
             toolHandlers.current,
             handleNavigate
           );
-          await fetch(`/api/ai/job/${jobId}/tool-result`, {
+          await fetch(`/api/ai/job/${jobId}/tool-result?secret=${encodeURIComponent(secret)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ results }),
           });
         } catch (err) {
-          await fetch(`/api/ai/job/${jobId}/tool-result`, {
+          await fetch(`/api/ai/job/${jobId}/tool-result?secret=${encodeURIComponent(secret)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -392,9 +414,10 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       }
 
       // Connect from current event count (we already have all chatMessages)
-      connectToJobStream(jobId, job.eventCount);
+      connectToJobStream(jobId, secret, job.eventCount);
     } catch {
       saveActiveJobId(projectId, null);
+      saveActiveJobSecret(projectId, null);
     }
   }, [projectId, connectToJobStream, handleNavigate]);
 
@@ -443,7 +466,6 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
           messages: apiMessages,
           chatMessages: newMessages,
           projectId,
-          userId: (project as any)?.userId || '',
           currentPage,
         }),
       });
@@ -453,11 +475,12 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
         throw new Error(err.error || `API error: ${res.status}`);
       }
 
-      const { jobId } = await res.json();
+      const { jobId, secret } = await res.json();
       saveActiveJobId(projectId, jobId);
+      saveActiveJobSecret(projectId, secret);
 
       // Connect to SSE from the start (after=0 — no prior events for this fresh job)
-      connectToJobStream(jobId, 0);
+      connectToJobStream(jobId, secret, 0);
     } catch (error) {
       setMessages(prev => [...prev, {
         id: uuidv4(),
@@ -467,7 +490,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       }]);
       setIsLoading(false);
     }
-  }, [isLoading, currentPage, projectId, project, connectToJobStream]);
+  }, [isLoading, currentPage, projectId, connectToJobStream]);
 
   return (
     <AIAssistantContext.Provider value={{

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AIMessage } from './types';
+import * as crypto from 'crypto';
 
 export interface SSEEvent {
   index: number;
@@ -9,7 +10,7 @@ export interface SSEEvent {
 
 export interface ApiMessage {
   role: 'user' | 'assistant' | 'tool' | 'system';
-  content: string;
+  content: string | null;
   reasoning_content?: string;
   tool_calls?: any[];
   tool_call_id?: string;
@@ -24,6 +25,7 @@ export type JobStatus = 'pending' | 'running' | 'waiting_for_client' | 'done' | 
 
 export interface Job {
   id: string;
+  secret: string;
   status: JobStatus;
   apiMessages: ApiMessage[];
   chatMessages: AIMessage[];
@@ -54,8 +56,10 @@ export function createJob(params: {
   initialChatMessages: AIMessage[];
 }): Job {
   const id = uuidv4();
+  const secret = crypto.randomBytes(32).toString('hex');
   const job: Job = {
     id,
+    secret,
     status: 'pending',
     apiMessages: params.initialApiMessages,
     chatMessages: params.initialChatMessages,
@@ -78,6 +82,20 @@ export function getJob(id: string): Job | undefined {
   return jobs.get(id);
 }
 
+export function validateJobSecret(id: string, secret: string): Job | null {
+  const job = jobs.get(id);
+  if (!job) return null;
+  if (job.secret !== secret) return null;
+  return job;
+}
+
+export function validateJobOwnership(id: string, userId: string): Job | null {
+  const job = jobs.get(id);
+  if (!job) return null;
+  if (job.userId !== userId) return null;
+  return job;
+}
+
 export function emitJobEvent(job: Job, type: string, data: Record<string, any>) {
   const event: SSEEvent = { index: job.events.length, type, data };
   job.events.push(event);
@@ -91,7 +109,6 @@ export function subscribeToJob(
   fn: (event: SSEEvent) => void,
   after = 0
 ): () => void {
-  // Replay buffered events the client hasn't seen
   for (let i = after; i < job.events.length; i++) {
     try { fn(job.events[i]); } catch { /* stream closed */ }
   }
@@ -104,7 +121,6 @@ export function subscribeToJob(
   return () => job.subscribers.delete(fn);
 }
 
-// Periodically evict old completed jobs
 setInterval(() => {
   const cutoff = Date.now() - 2 * 60 * 60 * 1000;
   for (const [id, job] of jobs) {

@@ -119,6 +119,44 @@ export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | '
     }
 }
 
+// For larger datasets (>10k items), consider replacing this with Algolia or Meilisearch.
+// Firestore's array-contains approach works for small-to-medium datasets but doesn't support
+// fuzzy matching, stemming, or relevance ranking. Algolia would provide full-text search,
+// typo tolerance, and faceted filtering at scale.
+export async function searchMarketplaceItems(query: string, type?: 'board' | 'pieces' | 'game'): Promise<MarketplaceItem[]> {
+    try {
+        if (!db || !query.trim()) return [];
+        const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
+        if (keywords.length === 0) return [];
+
+        let ref: FirebaseFirestore.Query = db.collection('marketplace');
+
+        if (type) {
+            ref = ref.where('type', '==', type);
+        }
+
+        ref = ref.where('searchKeywords', 'array-contains', keywords[0]).limit(50);
+
+        const snapshot = await ref.get();
+        if (snapshot.empty) return [];
+
+        let items = snapshot.docs.map(mapDoc);
+
+        // Client-side filter for additional keywords
+        if (keywords.length > 1) {
+            items = items.filter(item => {
+                const kw = (item as any).searchKeywords || [];
+                return keywords.every(k => kw.includes(k));
+            });
+        }
+
+        return items;
+    } catch (error) {
+        console.error("Error searching marketplace items:", error);
+        return [];
+    }
+}
+
 export async function getCreatorMarketplaceItems(handle: string): Promise<MarketplaceItem[]> {
     try {
         if (!db) return [];

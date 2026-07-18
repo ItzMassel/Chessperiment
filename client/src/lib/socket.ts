@@ -23,9 +23,13 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3002";
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment.app/chessperiment-server";
     socket = io(SOCKET_URL, {
-      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 20000,
     });
     // Register player immediately on connection
     socket.on("connect", () => {
@@ -36,12 +40,18 @@ export function getSocket() {
     });
 
     socket.on("connect_error", (error) => {
-      // Silently ignore socket errors — backend may not be running
-      // console.error('❌ Socket connection error:', error.message);
+      console.error('❌ Socket connection error:', error.message);
     });
 
     socket.on("disconnect", (reason) => {
       console.warn('⚠️ Socket disconnected:', reason);
+      if (socket) {
+        if (reason === "io server disconnect") {
+          socket.connect();
+        } else if (reason === "transport close") {
+          socket.connect();
+        }
+      }
     });
   }
   return socket;

@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyCreatorProfile, registerCreatorHandle, updateCreatorProfile, CreatorProfile } from '@/app/actions/creator';
-import { Loader2, UserCheck, AtSign, Edit2, Save, X, Image as ImageIcon, FileText } from 'lucide-react';
+import { Loader2, UserCheck, AtSign, Edit2, Save, X, Image as ImageIcon, FileText, Upload } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { storage } from '@/lib/firebase-client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function CreatorProfileSection() {
     const { user } = useAuth();
@@ -26,6 +28,8 @@ export default function CreatorProfileSection() {
 
     const router = useRouter();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const photoInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user) {
@@ -119,6 +123,26 @@ export default function CreatorProfileSection() {
             setIsSaving(false);
         }
     };
+
+    async function handlePhotoUpload(file: File) {
+        if (!user) return;
+        setUploadingPhoto(true);
+        try {
+            const ext = file.name.split('.').pop();
+            const path = `profile-photos/${user.uid || user.id}/${Date.now()}.${ext}`;
+            if (!storage) return;
+            const storageRef = ref(storage as any, path);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            setEditForm(prev => ({ ...prev, photoUrl: url }));
+            toast.success('Photo uploaded!');
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Failed to upload photo');
+        } finally {
+            setUploadingPhoto(false);
+        }
+    }
 
     if (loading) return null;
 
@@ -239,7 +263,7 @@ export default function CreatorProfileSection() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Profile Picture URL</label>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Profile Picture</label>
                                     <div className="flex gap-2">
                                         <div className="relative grow">
                                             <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -251,9 +275,29 @@ export default function CreatorProfileSection() {
                                                 placeholder="https://example.com/avatar.jpg"
                                             />
                                         </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => photoInputRef.current?.click()}
+                                            disabled={uploadingPhoto}
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0"
+                                        >
+                                            {uploadingPhoto ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                                            {uploadingPhoto ? 'Uploading…' : 'Upload'}
+                                        </button>
+                                        <input
+                                            ref={photoInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) handlePhotoUpload(file);
+                                                e.target.value = '';
+                                            }}
+                                        />
                                     </div>
                                     <p className="text-xs text-gray-400 mt-1">
-                                        Enter a direct link to an image (e.g. from Imgur, GitHub).
+                                        Upload a photo or enter a direct link to an image.
                                     </p>
                                 </div>
                             </div>

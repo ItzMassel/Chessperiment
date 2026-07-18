@@ -112,8 +112,43 @@ service cloud.firestore {
       // Users can only update their own profile, and cannot change handle or userId
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['handle', 'userId'])
-        && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['displayName', 'bio', 'photoUrl']);
+        && (
+          // Case 1: Profile metadata edits
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['displayName', 'bio', 'photoUrl'])
+          ||
+          // Case 2: Follow/unfollow (add/remove self to/from followers array)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
+            && (
+              (
+                request.resource.data.followers.size() == resource.data.followers.size() + 1
+                && request.resource.data.followers.hasAll(resource.data.followers)
+              )
+              ||
+              (
+                request.resource.data.followers.size() == resource.data.followers.size() - 1
+                && resource.data.followers.hasAll(request.resource.data.followers)
+              )
+            )
+          )
+          ||
+          // Case 3: Update own following array (when following/unfollowing someone)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['following'])
+            && (
+              (
+                request.resource.data.following.size() == resource.data.following.size() + 1
+                && request.resource.data.following.hasAll(resource.data.following)
+              )
+              ||
+              (
+                request.resource.data.following.size() == resource.data.following.size() - 1
+                && resource.data.following.hasAll(request.resource.data.following)
+              )
+            )
+          )
+        );
 
       // Users can only delete their own profile
       allow delete: if isOwner(userId);
@@ -153,14 +188,95 @@ service cloud.firestore {
       }
     }
 
-    // ─── Migration Tracking ────────────────────────────────────────────
-    match /migrations/{userId} {
+    // ─── User Documents (warnings, profile) ───────────────────────────
+    match /users/{userId} {
       allow read, write: if isOwner(userId);
+    }
+
+    // ─── Top-level Projects (used by client SDK) ─────────────────────
+    match /projects/{projectId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Migration Tracking ────────────────────────────────────────────
+    match /user_migrations/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── Custom Pieces (top-level, client SDK) ────────────────────────
+    match /custom_pieces/{pieceId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Custom Pieces (top-level, client SDK) ────────────────────────
+    match /customPieces/{pieceId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Boards (top-level, client SDK) ───────────────────────────────
+    match /boards/{boardId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Piece Sets (top-level, client SDK) ───────────────────────────
+    match /pieceSets/{setId} {
+      allow read, write: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
     }
 
     // ─── Features Timeline ─────────────────────────────────────────────
     match /features/{featureId} {
       allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // ─── Community Feedback ──────────────────────────────────────────
+    match /community_feedback/{feedbackId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.type in ['bug', 'feature', 'general']
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0;
+      allow update, delete: if false;
+    }
+
+    // ─── Legacy Collections (migration) ───────────────────────────────
+    match /legacy_boards/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+    match /legacy_pieceSets/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+    match /legacy_customPieces/{docId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Notifications ──────────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
     }
 
     // ─── Deny everything else by default ───────────────────────────────

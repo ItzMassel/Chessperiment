@@ -134,19 +134,67 @@ class Game {
   initializeEngine() {
     try {
       const data = this.customData;
-      // New BoardClass takes a config object
-      const board = new BoardClass({
-        width: data.cols || 8,
-        height: data.rows || 8,
-        topology: data.gridType || "square",
-        activeSquares: data.activeSquares || [],
-        pieces: data.placedPieces || {},
-        squareLogic: data.squareLogic || {},
-      });
+      const placedPieces = data.placedPieces || {};
+      const customPieces = data.customPieces || [];
+      const boardHeight = data.rows || 8;
+
+      // Convert coordinate-format positions to algebraic notation (e.g. "4,1" → "e7")
+      const toAlgebraic = (coord) => {
+        if (typeof coord !== 'string' || !coord.includes(',')) return coord;
+        const [x, y] = coord.split(',').map(Number);
+        const file = String.fromCharCode(97 + x);
+        const rank = boardHeight - y;
+        return `${file}${rank}`;
+      };
+
+      // Build lookup for custom piece definitions (match by id, type, or name)
+      const customDefMap = new Map();
+      for (const cp of customPieces) {
+        if (cp.id) customDefMap.set(cp.id, cp);
+        if (cp.type) customDefMap.set(cp.type, cp);
+        if (cp.name && cp.name !== cp.type) customDefMap.set(cp.name, cp);
+      }
+
+      // Deserialize placedPieces into proper Piece instances with normalized positions
+      const initialSquares = {};
+      for (const [sq, pData] of Object.entries(placedPieces)) {
+        const normalizedSq = toAlgebraic(sq);
+        const pieceId = `${normalizedSq}_${pData.color}_${pData.type}`;
+        const customDef = customDefMap.get(pData.type) || customDefMap.get(pData.id);
+
+        const rules = customDef ? (customDef.rules || customDef.moves || []) : [];
+        const logic = customDef ? (customDef.logic || []) : [];
+        const name = customDef ? (customDef.name || pData.type) : pData.type;
+
+        const piece = Piece.create(pieceId, pData.type, pData.color, normalizedSq, rules, logic, name);
+        if (piece) {
+          initialSquares[normalizedSq] = piece;
+        }
+      }
+
+      // Normalize active squares from coordinate to algebraic notation
+      const rawActiveSquares = data.activeSquares || [];
+      const normalizedActiveSquares = rawActiveSquares.map(sq => toAlgebraic(sq));
+
+      // Normalize square logic keys from coordinate to algebraic notation
+      const rawSquareLogic = data.squareLogic || {};
+      const normalizedSquareLogic = {};
+      for (const [sqId, def] of Object.entries(rawSquareLogic)) {
+        normalizedSquareLogic[toAlgebraic(sqId)] = def;
+      }
+
+      const board = new BoardClass(
+        Object.keys(initialSquares).length > 0 ? initialSquares : undefined,
+        normalizedActiveSquares.length > 0 ? normalizedActiveSquares : undefined,
+        data.cols || 8,
+        boardHeight,
+        data.gridType || "square",
+        Object.keys(normalizedSquareLogic).length > 0 ? normalizedSquareLogic : {}
+      );
 
       this.engine = board;
       this.gameEngine = new EngineGame(board);
-      console.log(`[Engine] Initialized custom board for room ${this.roomId}`);
+      console.log(`[Engine] Initialized custom board for room ${this.roomId} with ${Object.keys(initialSquares).length} pieces`);
     } catch (err) {
       console.error(
         `[Engine] Failed to initialize for room ${this.roomId}:`,
@@ -790,6 +838,22 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Single-shot room probe (used by BoardRouter to decide standard vs custom rendering)
+  socket.on("probe_room", async (data, callback) => {
+    const playerId = socketToPlayer.get(socket.id);
+    if (!playerId || !data?.roomId) { if (callback) callback(null); return; }
+    const game = await getGame(data.roomId.trim().toUpperCase());
+    if (!game) { if (callback) callback(null); return; }
+    const color = game.getColorForPlayer(playerId);
+    if (callback) callback({
+      isCustom: !!game.isCustom,
+      customData: game.customData || null,
+      fen: game.board_fen,
+      color: color ? (color === "w" ? "white" : "black") : "",
+      boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
+    });
+  });
+
   socket.on("move", async (data) => {
     let playerId = socketToPlayer.get(socket.id);
     if (!playerId && data.pId) {
@@ -806,9 +870,18 @@ io.on("connection", (socket) => {
     try {
       // --- CUSTOM GAME LOGIC ---
       if (game.isCustom) {
+        console.log(`[Custom Move] Room ${roomId}, Player ${playerId}, Color ${color}, Move ${data.from}->${data.to}`);
+
         if (!game.gameEngine) {
-          console.error(`[Custom Move] No engine for room ${roomId}`);
-          game.initializeEngine(); // Try to recovery
+          console.error(`[Custom Move] No engine for room ${roomId} — reinitializing`);
+          game.initializeEngine();
+        }
+
+        if (game.gameEngine) {
+          const boardTurn = game.gameEngine.getBoard().getTurn();
+          console.log(`[Custom Move] Engine turn: ${boardTurn}, game.turn: ${game.turn}`);
+        } else {
+          console.error(`[Custom Move] STILL no engine after reinit!`);
         }
 
         const expectedTurn =
@@ -818,6 +891,7 @@ io.on("connection", (socket) => {
               ? "w"
               : "b"
             : "w");
+        console.log(`[Custom Move] Expected turn: ${expectedTurn}, Player color: ${color}`);
         if (color !== expectedTurn) {
           console.warn(
             `[Custom Move Rejected] Wrong turn. Expected ${expectedTurn}, Got ${color}`,
@@ -826,12 +900,23 @@ io.on("connection", (socket) => {
           return;
         }
 
+        if (!game.gameEngine) {
+          console.error(`[Custom Move] No gameEngine, accepting move blindly`);
+          socket.emit("error", { message: "Server not ready" });
+          return;
+        }
+
+        console.log(`[Custom Move] Checking board.getPiece(${data.from}):`, game.gameEngine.getBoard().getPiece(data.from) ? 'found' : 'NOT FOUND');
+        console.log(`[Custom Move] Active squares count:`, game.gameEngine.getBoard().stateManager.activeSquares?.size || 'all');
+        console.log(`[Custom Move] isActive(${data.to}):`, game.gameEngine.getBoard().isActive(data.to));
+        console.log(`[Custom Move] getPiece at ${data.from} color:`, game.gameEngine.getBoard().getPiece(data.from)?.color);
+        console.log(`[Custom Move] getPiece at ${data.from} type:`, game.gameEngine.getBoard().getPiece(data.from)?.type);
+
         let success = false;
         if (game.gameEngine) {
-          // For custom games, we validate the move using the engine
-          success = game.gameEngine.makeMove(data.from, data.to);
+          success = game.gameEngine.makeMove(data.from, data.to, data.promotion);
+          console.log(`[Custom Move] makeMove result: ${success}`);
         } else {
-          // Fallback to trust if engine failed to init
           success = true;
         }
 
@@ -843,7 +928,7 @@ io.on("connection", (socket) => {
           // Update game state
           if (data.fen) game.board_fen = data.fen;
           if (data.san) game.history.push(data.san);
-          else game.history.push(`${data.from} -> ${data.to}`);
+          else game.history.push(`CUSTOM:${data.from}-${data.to}`);
 
           // Update turn from engine if possible
           if (game.gameEngine) {
@@ -910,7 +995,7 @@ io.on("connection", (socket) => {
       }
       const piece = chess.get(data.from);
       const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
-      const boardHeight = 8; // Default for chess.js, but prepared for future expansion
+      const boardHeight = game.customData?.rows || 8;
       const isPawnPromotion =
         piece &&
         piece.type === "p" &&
@@ -949,6 +1034,7 @@ io.on("connection", (socket) => {
           san: moveResult.san,
           fen: game.board_fen,
           gameStatus: game.status,
+          turn: chess.turn(),
         });
         if (game.status === "ended" && status) {
           io.to(roomId).emit("game_ended", {
@@ -1117,6 +1203,15 @@ setInterval(
   },
   10 * 60 * 1000,
 ); // Run every 10 minutes
+
+// Periodic game state sync to all clients (every 5 seconds)
+setInterval(() => {
+    for (const [roomId, game] of games.entries()) {
+        if (game.status === "playing" || game.status === "ended") {
+            io.to(roomId).emit("receive_fen", { board_fen: game.board_fen });
+        }
+    }
+}, 5000);
 
 // DeepSeek chat proxy endpoint
 app.use(express.json());

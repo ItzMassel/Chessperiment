@@ -33,4 +33,26 @@ export class Game {
     getLegalMoves(color?: 'white' | 'black'): { from: Square, to: Square }[] {
         return this.validator.getLegalMoves(color || this.getTurn());
     }
+
+    getGameStatus(): 'checkmate' | 'stalemate' | 'check' | 'normal' {
+        const turn = this.board.getTurn();
+        const legalMoves = this.getLegalMoves(turn);
+        if (legalMoves.length > 0) {
+            return this.validator.isInCheck(turn) ? 'check' : 'normal';
+        }
+        return this.validator.isInCheck(turn) ? 'checkmate' : 'stalemate';
+    }
+
+    isCheckmate(): boolean {
+        return this.getGameStatus() === 'checkmate';
+    }
+
+    isStalemate(): boolean {
+        return this.getGameStatus() === 'stalemate';
+    }
+
+    isGameOver(): boolean {
+        const status = this.getGameStatus();
+        return status === 'checkmate' || status === 'stalemate';
+    }
 }

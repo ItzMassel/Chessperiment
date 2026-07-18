@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { db, isConfigured } from '@/lib/firebase-client';
+import { db, isConfigured, auth } from '@/lib/firebase-client';
 import { useAuth } from '@/context/AuthContext';
 import { AlertTriangle } from 'lucide-react';
 
@@ -13,11 +13,12 @@ export function WarningSplashModal() {
 
     // Subscribe to the user's pendingWarning field in Firestore
     useEffect(() => {
-        if (loading || !user?.uid || !db || !isConfigured) return;
+        const firebaseUid = auth?.currentUser?.uid;
+        if (loading || !firebaseUid || !db || !isConfigured) return;
 
         const init = async () => {
             const { doc, onSnapshot } = await import('firebase/firestore');
-            const userRef = doc(db as any, 'users', user.uid);
+            const userRef = doc(db as any, 'users', firebaseUid);
             const unsub = onSnapshot(userRef, (snap: any) => {
                 const data = snap.data();
                 if (data?.pendingWarning?.message) {
@@ -32,7 +33,7 @@ export function WarningSplashModal() {
 
         const unsubPromise = init();
         return () => { unsubPromise.then(unsub => unsub?.()); };
-    }, [user?.uid, loading]);
+    }, [loading, user?.uid]);
 
     // Countdown timer when warning is shown
     useEffect(() => {
@@ -58,10 +59,11 @@ export function WarningSplashModal() {
     }, [warning]);
 
     const handleAcknowledge = async () => {
-        if (!user?.uid || secondsLeft > 0 || !db) return;
+        const firebaseUid = auth?.currentUser?.uid;
+        if (!firebaseUid || secondsLeft > 0 || !db) return;
         try {
             const { doc, updateDoc, deleteField } = await import('firebase/firestore');
-            const userRef = doc(db as any, 'users', user.uid);
+            const userRef = doc(db as any, 'users', firebaseUid);
             await updateDoc(userRef, { pendingWarning: deleteField() });
         } catch (err) {
             console.error('Failed to acknowledge warning:', err);

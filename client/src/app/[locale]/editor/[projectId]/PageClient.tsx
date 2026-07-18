@@ -9,7 +9,9 @@ import { useProject } from '@/hooks/useProject';
 import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
-import { useSocket } from '@/context/SocketContext';
+import { useSocket, useSocketConnection } from '@/context/SocketContext';
+
+import type { Socket } from 'socket.io-client';
 
 interface PageClientProps {
     projectId: string;
@@ -20,6 +22,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const socket = useSocket();
+    const isConnected = useSocketConnection();
 
     const {
         project,
@@ -39,6 +42,9 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
+
+    // Connection retry state
+    const [isConnecting, setIsConnecting] = useState(false);
 
     // Sync edited fields when project loads
     useEffect(() => {
@@ -90,33 +96,28 @@ export default function PageClient({ projectId }: PageClientProps) {
 
     const handlePlayOnline = () => {
         console.log('🎮 Play Online clicked');
-        if (!socket || !socket.connected) {
-            console.error('❌ Socket not connected');
-            alert('Connection error. Please refresh the page and try again.');
-            return;
-        }
+
+        if (!socket || !isConnected) return;
 
         if (!project) {
             console.error('❌ No project loaded');
-            alert('Project not loaded. Please try again.');
             return;
         }
 
-        // Serialize project
-        const serializedProject = {
-            ...project,
-            createdAt: project.createdAt instanceof Date ? project.createdAt.toISOString() : project.createdAt,
-            updatedAt: project.updatedAt instanceof Date ? project.updatedAt.toISOString() : project.updatedAt,
-            customPieces: project.customPieces.map(pc => ({
-                ...pc,
-                createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
-                updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
-            }))
-        };
-
-        console.log('📤 Emitting create_room event');
-        socket.emit("create_room", { customData: serializedProject });
+        emitCreateRoom(socket, serializedProject!);
     };
+
+    // Serialize project
+    const serializedProject = project ? {
+        ...project,
+        createdAt: project.createdAt instanceof Date ? project.createdAt.toISOString() : project.createdAt,
+        updatedAt: project.updatedAt instanceof Date ? project.updatedAt.toISOString() : project.updatedAt,
+        customPieces: project.customPieces.map(pc => ({
+            ...pc,
+            createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
+            updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
+        }))
+    } : null;
 
     const handleCopyRoomCode = async () => {
         try {
@@ -280,11 +281,20 @@ export default function PageClient({ projectId }: PageClientProps) {
                             {/* Play Online - Primary */}
                             <button
                                 onClick={handlePlayOnline}
-                                disabled={!socket || !project}
+                                disabled={!socket || !project || isConnecting}
                                 className="flex-1 group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                <Globe size={24} />
-                                <span>Play with Friends</span>
+                                {isConnecting ? (
+                                    <>
+                                        <Loader2 size={24} className="animate-spin" />
+                                        <span>Connecting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Globe size={24} />
+                                        <span>Play with Friends</span>
+                                    </>
+                                )}
                             </button>
 
                             {/* Play Local - Secondary */}
@@ -387,4 +397,9 @@ export default function PageClient({ projectId }: PageClientProps) {
 
         </div>
     );
+}
+
+function emitCreateRoom(socket: Socket, serializedData: Record<string, unknown>) {
+    console.log('📤 Emitting create_room event');
+    socket.emit("create_room", { customData: serializedData });
 }

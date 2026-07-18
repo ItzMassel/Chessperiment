@@ -368,7 +368,7 @@
                 "generalTitle": "General Movement",
                 "generalDesc": "On a hexagonal grid, pieces move along 3 main axes (6 directions) instead of 2.",
                 "pawn": "Pawn",
-                "pawnDesc": "Zieht 1 Hex vorwärts. Schlägt auf die 2 diagonal vorwärts liegenden Hexfelder (gleiche Farbe).",
+                "pawnDesc": "Moves 1 hex forward. Captures on the 2 forward diagonal hexes (same color).",
                 "rook": "Rook",
                 "rookDesc": "Moves any distance in 6 orthogonal directions (through hex sides).",
                 "bishop": "Bishop",

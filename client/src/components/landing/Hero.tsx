@@ -54,9 +54,7 @@ const Hero: React.FC = () => {
                     <div className="flex flex-col text-left">
                         <div className="flex gap-0.5 h-4">
                         </div>
-                        <span className="text-sm font-bold text-gray-500 dark:text-stone-400 uppercase tracking-wide">
-                            600+ Creators Trusted
-                        </span>
+                        
                     </div>
                 </div>
             </div>

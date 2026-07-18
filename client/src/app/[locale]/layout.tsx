@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "../globals.css";
+import "@/app/globals.css"
 import { lexend } from "@/lib/fonts";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -15,9 +15,10 @@ import { Providers } from "../providers";
 import { SEOFooter } from "@/components/SEOFooter";
 import { ReferralSurvey } from "@/components/ReferralSurvey";
 import { WarningSplashModal } from "@/components/WarningSplashModal";
-
+import { OpenSourceAnnouncement } from "@/components/OpenSourceAnnouncement";
+import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
-import { BotIdClient } from "botid/client";
+
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -105,10 +106,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-
-
-import Script from "next/script";
-
 export default async function RootLayout({
   children,
   params,
@@ -129,15 +126,18 @@ export default async function RootLayout({
       suppressHydrationWarning={true}
     >
       <head>
-        <script
+        <meta name="darkreader-lock" />
+        <Script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(generateBreadcrumbs(pathname)) }}
         />
+        <Script
+          defer
+          src="https://api.kiprotect.com/v1/privacy-managers/0f7e53d052356593f21b86221d9b4966/klaro.js"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
-        {/* BotID Protection for API routes */}
-        <BotIdClient protect={[{ path: '/api/auth/*', method: 'POST' }]} />
-
         <SessionWrapper>
           <NextIntlClientProvider messages={messages}>
             <AuthProvider>
@@ -151,6 +151,7 @@ export default async function RootLayout({
 
                   <UserPanel />
                   <ThemeToggle />
+                  <OpenSourceAnnouncement />
                   <ReferralSurvey />
                   <WarningSplashModal />
                   <HeaderWrapper />

@@ -28,7 +28,8 @@ import {
 } from "@dnd-kit/core";
 import Toast from "./Toast";
 import "./Board.css";
-import { useSocket } from "@/context/SocketContext";
+import { useSocket, useSocketConnection } from "@/context/SocketContext";
+
 import filter from "leo-profanity";
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
@@ -269,15 +270,15 @@ const SquareTile = memo(function SquareTile({
   );
 });
 
+const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 export default function Board({
   initialRoomId,
   gameModeVar,
-  initialFen,
   mode,
 }: {
   initialRoomId?: string;
   gameModeVar?: "online" | "computer" | "local";
-  initialFen?: string;
   mode?: "create" | "join" | "computer";
 }) {
   const t = useTranslations("Multiplayer");
@@ -297,6 +298,7 @@ export default function Board({
   });
   const sensors = useSensors(pointerSensor, touchSensor);
   const socket = useSocket();
+  const isConnected = useSocketConnection();
 
   const [boardStyle, setBoardStyle] = useState("v3");
   const [blockSize, setBlockSize] = useState(80);
@@ -316,7 +318,7 @@ export default function Board({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [activePiece, setActivePiece] = useState<any>(null);
-  const previousStateRef = useRef<{ boardPieces: PieceType[], currentTurn: 'w' | 'b', lastMoveFrom: string | null, lastMoveTo: string | null } | null>(null);
+  const moveSentRef = useRef(false);
 
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [promotionMove, setPromotionMove] = useState<{ from: string; to: string; } | null>(null);
@@ -520,9 +522,8 @@ export default function Board({
         setCurrentTurn(data.turn as 'w' | 'b');
       }
 
-      // Determine if sound should play (don't play if it matches our optimistic move)
-      const isNewMove = data.from !== previousStateRef.current?.lastMoveFrom ||
-        data.to !== previousStateRef.current?.lastMoveTo;
+      const isOwnEcho = moveSentRef.current;
+      moveSentRef.current = false;
 
       setLastMoveFrom(data.from);
       setLastMoveTo(data.to);
@@ -538,14 +539,13 @@ export default function Board({
       if (data.gameStatus) setGameStatus(data.gameStatus);
       setIsViewingHistory(false);
 
-      if (isNewMove && !previousStateRef.current) {
+      if (!isOwnEcho) {
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
 
-      // Update Custom Board if applicable (use refs to avoid stale closure)
       const currentCustomBoard = customBoardRef.current;
       const currentIsCustom = isCustomGameRef.current;
-      if ((currentIsCustom || data.isCustom) && currentCustomBoard && isNewMove) {
+      if ((currentIsCustom || data.isCustom) && currentCustomBoard) {
         try {
           currentCustomBoard.movePiece(data.from as any, data.to as any, data.promotion);
           const cloned = currentCustomBoard.clone();
@@ -554,11 +554,6 @@ export default function Board({
         } catch (e) {
           console.error("Failed to update custom board on move:", e);
         }
-      }
-
-      // After processing the move, clear the optimistic state if it matched
-      if (!isNewMove) {
-        previousStateRef.current = null;
       }
     };
 
@@ -599,18 +594,20 @@ export default function Board({
         setMoveHistory(data.history);
         setHistoryIndex(data.history.length - 1);
 
-        // Reconstruct history FENs and Moves
         try {
-          // Use initialFen if available, otherwise default to starting position
-          const tempChess = new Chess(initialFen || undefined);
+          const tempChess = new Chess(DEFAULT_FEN);
           const fens: string[] = [];
           const moves: { from: string; to: string; san: string }[] = [];
 
           for (const san of data.history) {
-            const move = tempChess.move(san);
-            if (move) {
-              fens.push(tempChess.fen());
-              moves.push({ from: move.from, to: move.to, san: move.san });
+            try {
+              const move = tempChess.move(san);
+              if (move) {
+                fens.push(tempChess.fen());
+                moves.push({ from: move.from, to: move.to, san: move.san });
+              }
+            } catch (e) {
+              console.warn("[History] Skipping invalid move entry:", san, e);
             }
           }
 
@@ -705,15 +702,7 @@ export default function Board({
       setGameInfo(`${t("error")}${data.message}`);
       setToastMessage(`${t("error")}${data.message}`);
       setShowToast(true);
-
-      // Implicitly revert optimistic move on error
-      if (previousStateRef.current) {
-        setBoardPieces(previousStateRef.current.boardPieces);
-        setCurrentTurn(previousStateRef.current.currentTurn);
-        setLastMoveFrom(previousStateRef.current.lastMoveFrom);
-        setLastMoveTo(previousStateRef.current.lastMoveTo);
-        previousStateRef.current = null;
-      }
+      moveSentRef.current = false;
     });
     socket.on("room_not_found", (data: any) => {
       setGameInfo(`${t("reasons.room_not_found")}`);
@@ -726,7 +715,7 @@ export default function Board({
       setShowToast(true);
       setGameStatus("ended");
     });
-    socket.on("receive_fen", (d: any) => updateBoardState(d.board_fen));
+    socket.on("receive_fen", (d: any) => { if (d?.board_fen) updateBoardState(d.board_fen); });
     socket.on("promotion_needed", (d: any) => {
       setPromotionMove({ from: d.from, to: d.to });
       setShowPromotionDialog(true);
@@ -777,35 +766,26 @@ export default function Board({
   }, [socket, gameMode, updateBoardState, t]);
 
   useEffect(() => {
-    if (sessionStatus === "loading" || !socket) return;
+    if (!socket) return;
     const register = () => {
       let pId = localStorage.getItem("chess_player_id");
-
       if (!pId && session?.user?.id) {
         pId = session.user.id;
         localStorage.setItem("chess_player_id", pId);
       }
-
       if (!pId) {
         pId = Math.random().toString(36).substring(2, 15);
         localStorage.setItem("chess_player_id", pId);
       }
-
       socket.emit("register_player", { playerId: pId });
-
-      // Handle room joining: multiplayer games only
       const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
       if (initialRoomId && !isComputerMode) {
         if (mode === 'create') {
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
-          socket.emit("join_room", {
-            roomId: initialRoomId,
-            pId
-          });
+          socket.emit("join_room", { roomId: initialRoomId, pId });
         }
       } else if (isComputerMode) {
-        // Ensure we are white even if we came from a route that might suggest otherwise
         setMyColor("white");
       }
     };
@@ -813,10 +793,6 @@ export default function Board({
     socket.on("connect", register);
     return () => { socket.off("connect", register); };
   }, [session?.user?.id, sessionStatus, socket, initialRoomId, gameMode, gameModeVar]);
-
-  useEffect(() => {
-    if (initialFen) updateBoardState(initialFen);
-  }, [initialFen, updateBoardState]);
 
   const handleRematchRequest = useCallback(() => {
     if (socket) {
@@ -900,14 +876,14 @@ export default function Board({
       return { displayPieces: pieces, sharedPiecesMap: sharedMap };
     }
 
-    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? DEFAULT_FEN : null);
     return { displayPieces: activeFEN ? parseFen(activeFEN) : boardPieces, sharedPiecesMap: {} };
-  }, [isViewingHistory, historyIndex, historyFens, initialFen, boardPieces, isCustomGame, customBoard, customData]);
+  }, [isViewingHistory, historyIndex, historyFens, boardPieces, isCustomGame, customBoard, customData]);
 
   const activeTurn = useMemo(() => {
-    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? DEFAULT_FEN : null);
     return activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
-  }, [isViewingHistory, historyIndex, historyFens, initialFen, currentTurn]);
+  }, [isViewingHistory, historyIndex, historyFens, currentTurn]);
 
   const getPieceAt = useCallback((pos: string) => displayPieces.find(p => p.position === pos), [displayPieces]);
 
@@ -916,16 +892,17 @@ export default function Board({
     const promoMap: any = { 'Queen': 'q', 'Rook': 'r', 'Bishop': 'b', 'Knight': 'n' };
     const code = promoMap[type] || type.toLowerCase();
 
-    console.log(`[Board] Executing promotion: ${type} (${code}) for move: ${promotionMove.from}->${promotionMove.to}`);
-
-    if (gameMode === "online" || gameMode === "computer") {
-      // Optimistic Visual Update for Promotion
+    if (gameMode === "online") {
+      if (socket) {
+        moveSentRef.current = true;
+        socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code });
+      }
+    } else if (gameMode === "computer") {
       const mover = boardPieces.find(p => p.position === promotionMove.from);
       if (mover) {
-        // Update local chess instance optimistically
         try {
           chess.move({ from: promotionMove.from, to: promotionMove.to, promotion: code });
-        } catch (e) { console.error("Optimistic chess update failed", e); }
+        } catch (e) { }
 
         const newPieces = boardPieces
           .filter(p => p.position !== promotionMove.to && p.position !== promotionMove.from)
@@ -938,21 +915,11 @@ export default function Board({
           type: promoTypeMap[code] || 'Queen'
         } as PieceType);
 
-        // Store state for possible revert on error
-        previousStateRef.current = {
-          boardPieces: [...boardPieces],
-          currentTurn,
-          lastMoveFrom,
-          lastMoveTo
-        };
-
         setBoardPieces(newPieces);
         setLastMoveFrom(promotionMove.from);
         setLastMoveTo(promotionMove.to);
         setCurrentTurn(prev => prev === 'w' ? 'b' : 'w');
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
-
-        // Update fen override for optimistic state? No, requestMove uses chess.fen() which we just updated.
       }
 
       if (socket) {
@@ -965,57 +932,45 @@ export default function Board({
   };
 
   const executeMove = (from: string, to: string, promotion?: string) => {
-    // 1. Send move to server if in online or computer mode
-    if (gameMode === "online" || gameMode === "computer") {
-      // Optimistic Visual Update
+    if (gameMode === "online") {
+      if (socket) {
+        moveSentRef.current = true;
+        const moveData: any = { from, to, promotion };
+        if (isViewingHistory && historyIndex >= -1) {
+          moveData.historyIndex = historyIndex;
+        }
+        socket.emit("move", moveData);
+      }
+      if (isViewingHistory) setIsViewingHistory(false);
+      return true;
+    }
+
+    if (gameMode === "computer") {
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
-        // If viewing history, we need to rewind first
         if (isCustomGame && customBoard) {
-          // Updating local custom board optimistically
           try {
             customBoard.movePiece(from as any, to as any, promotion);
             const cloned = customBoard.clone();
             setCustomBoard(cloned);
             customBoardRef.current = cloned;
             new Audio("/sounds/move-self.mp3").play().catch(() => { });
-            // We should also update history logs if needed
           } catch (e) {
             console.error("Optimistic custom board update failed", e);
           }
         } else if (isViewingHistory && historyIndex >= -1) {
-          // Load the historical position
-          let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-          if (historyIndex >= 0) {
-            fenToLoad = historyFens[historyIndex];
-          }
-          try {
-            chess.load(fenToLoad);
-          } catch (e) {
-            console.error("Failed to load historical position", e);
-          }
+          let fenToLoad = historyIndex >= 0 ? historyFens[historyIndex] : DEFAULT_FEN;
+          try { chess.load(fenToLoad); } catch (e) { }
         }
 
-        // Update local chess instance optimistically
         if (!isCustomGame) {
-          try {
-            chess.move({ from, to, promotion: promotion || 'q' });
-          } catch (e) { console.error("Optimistic chess update failed", e); }
+          try { chess.move({ from, to, promotion: promotion || 'q' }); } catch (e) { }
         }
 
         const newPieces = boardPieces
           .filter(p => p.position !== to && p.position !== from)
           .map(p => ({ ...p }));
-
         newPieces.push({ ...mover, position: to } as PieceType);
-
-        // Store state for possible revert on error
-        previousStateRef.current = {
-          boardPieces: [...boardPieces],
-          currentTurn,
-          lastMoveFrom,
-          lastMoveTo
-        };
 
         setBoardPieces(newPieces);
         setLastMoveFrom(from);
@@ -1024,7 +979,6 @@ export default function Board({
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
 
-      // Send move to server with historyIndex if viewing history
       if (socket) {
         const moveData: any = { from, to, promotion };
         if (isViewingHistory && historyIndex >= -1) {
@@ -1033,24 +987,15 @@ export default function Board({
         socket.emit("move", moveData);
       }
 
-      // Exit history view mode
-      if (isViewingHistory) {
-        setIsViewingHistory(false);
-      }
-
-      // If online or computer mode, we stop here and wait for server "move" event
-      if (gameMode === "online" || gameMode === "computer") return true;
+      if (isViewingHistory) setIsViewingHistory(false);
+      return true;
     }
 
     // 2. Handle local updates for Local mode only
     if (gameMode === 'local') {
       try {
-        // Handle history rewrite if viewing history
         if (isViewingHistory) {
-          let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-          if (historyIndex >= 0) {
-            fenToLoad = historyFens[historyIndex];
-          }
+          const fenToLoad = historyIndex >= 0 ? historyFens[historyIndex] : DEFAULT_FEN;
           chess.load(fenToLoad);
 
           const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
@@ -1173,7 +1118,7 @@ export default function Board({
         }
       }
     }
-  }, [gameStatus, isViewingHistory, selectedPos, displayPieces, activeTurn, myColor, executeMove, gameMode, historyIndex, historyFens, initialFen]);
+  }, [gameStatus, isViewingHistory, selectedPos, displayPieces, activeTurn, myColor, executeMove, gameMode, historyIndex, historyFens]);
 
   const navigateHistory = (dir: "prev" | "next" | "start" | "end") => {
     if (moveHistory.length === 0) return;
@@ -1320,14 +1265,14 @@ export default function Board({
               <div className="text-center p-6 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto mx-4">
                 <h1 className="text-3xl lg:text-6xl font-black mb-6 lg:mb-8 text-stone-900 dark:text-white uppercase tracking-tighter italic">Chess PIE</h1>
                 <button
-                  onClick={() => { if (socket) { setIsSearching(true); socket.emit("find_match"); } }}
+                  onClick={() => { if (!isConnected) return; if (socket) { setIsSearching(true); socket.emit("find_match"); } }}
                   className="w-full py-4 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-lg lg:text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t("quickPlay")}
                 </button>
                 <div className="mt-6 lg:mt-8 flex flex-col gap-3 lg:gap-4">
-                  <button onClick={() => { if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("createPrivateRoom")}</button>
-                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("vsStockfish")}</button>
+                  <button onClick={() => { if (!isConnected) return; if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("createPrivateRoom")}</button>
+                  <button onClick={() => { if (!isConnected) return; startComputerGame(); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("vsStockfish")}</button>
                 </div>
               </div>
             ) : isSearching ? (

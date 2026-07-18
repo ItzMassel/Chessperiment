@@ -1,5 +1,5 @@
-import { toCoords, toSquare } from './utils';
-import { LogicRunner } from './logic/LogicRunner';
+import { toCoords, toSquare } from './utils.js';
+import { LogicRunner } from './logic/LogicRunner.js';
 export class Piece {
     constructor(id, type, color, position, name) {
         this.hasMoved = false;
@@ -10,8 +10,8 @@ export class Piece {
         this.name = name || type;
     }
     static create(id, type, color, position, rules = [], logic = [], name) {
-        const actualRules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
-        const actualLogic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+        const actualRules = typeof rules === 'string' && rules ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        const actualLogic = typeof logic === 'string' && logic ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
         if (actualRules.length > 0 || actualLogic.length > 0) {
             return new CustomPiece(id, type, color, position, actualRules, actualLogic, name);
         }
@@ -62,8 +62,8 @@ export class CustomPiece extends Piece {
         super(id, type, color, position, name);
         this.variables = {};
         this.isCustom = true;
-        this.rules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
-        this.logic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+        this.rules = typeof rules === 'string' && rules ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        this.logic = typeof logic === 'string' && logic ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
     }
     executeLogic(triggerType, context, board) {
         LogicRunner.execute(this, triggerType, context, board);

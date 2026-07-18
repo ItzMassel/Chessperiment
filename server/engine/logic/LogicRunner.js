@@ -1,5 +1,5 @@
-import { Piece } from '../piece';
-import { toCoords, toSquare } from '../utils';
+import { Piece } from '../piece.js';
+import { toCoords, toSquare } from '../utils.js';
 export class LogicRunner {
     static execute(piece, triggerType, context, board) {
         if (!piece.logic || !Array.isArray(piece.logic))

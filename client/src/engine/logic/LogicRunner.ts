@@ -341,7 +341,16 @@ export class LogicRunner {
                 if (varObj.variableOnly || key === 'varName') {
                     resolved[key] = varName;
                 } else {
-                    resolved[key] = piece.variables[varName] !== undefined ? piece.variables[varName] : 0;
+                    // Handle built-in coordinate variables
+                    if (varName === 'x') {
+                        const [col] = toCoords(piece.position);
+                        resolved[key] = col;
+                    } else if (varName === 'y') {
+                        const [, row] = toCoords(piece.position);
+                        resolved[key] = row;
+                    } else {
+                        resolved[key] = piece.variables[varName] !== undefined ? piece.variables[varName] : 0;
+                    }
                 }
             } else {
                 resolved[key] = val;

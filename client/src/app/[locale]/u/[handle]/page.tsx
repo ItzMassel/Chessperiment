@@ -3,6 +3,7 @@ import { getCreatorProfileByHandle } from '@/app/actions/creator';
 import { getCreatorMarketplaceItems } from '@/lib/marketplace-data';
 import { User, Calendar } from 'lucide-react';
 import { MarketplaceItemCard } from '@/components/marketplace/MarketplaceItemCard';
+import { FollowButton } from './FollowButton';
 
 interface PageProps {
     params: Promise<{
@@ -37,11 +38,15 @@ export default async function CreatorPage({ params }: PageProps) {
             <div className="max-w-7xl mx-auto">
                 {/* Profile Header */}
                 <div className="bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-3xl p-8 mb-12 flex flex-col md:flex-row items-center gap-8 shadow-sm">
-                    <div className="w-32 h-32 bg-amber-500/10 rounded-full flex items-center justify-center border-4 border-white dark:border-stone-800 shadow-xl">
-                        <User size={64} className="text-amber-500" />
+                    <div className="w-32 h-32 bg-amber-500/10 rounded-full flex items-center justify-center border-4 border-white dark:border-stone-800 shadow-xl overflow-hidden">
+                        {profile.photoUrl ? (
+                            <img src={profile.photoUrl} alt={profile.displayName} className="w-full h-full object-cover" />
+                        ) : (
+                            <User size={64} className="text-amber-500" />
+                        )}
                     </div>
 
-                    <div className="text-center md:text-left">
+                    <div className="text-center md:text-left flex-1">
                         <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-1">
                             {profile.displayName || profile.handle}
                         </h1>
@@ -56,14 +61,12 @@ export default async function CreatorPage({ params }: PageProps) {
                             </span>
                             <span>•</span>
                             <span>{items.length} Creations</span>
-                            {(profile.followers?.length || 0) > 0 && (
-                                <>
-                                    <span>•</span>
-                                    <span>{profile.followers.length} Followers</span>
-                                </>
-                            )}
+                            <span>•</span>
+                            <span>{profile.followers?.length || 0} Followers</span>
                         </div>
                     </div>
+
+                    <FollowButton targetUserId={profile.userId} />
                 </div>
 
                 {/* Items Grid */}
@@ -74,12 +77,6 @@ export default async function CreatorPage({ params }: PageProps) {
 
                     {items.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {/* We can reuse MarketplaceGrid logic or render items directly */}
-                            {/* Since MarketplaceGrid fetches its own data, we might need a variant or just pass items if it supported it. */}
-                            {/* Checking MarketplaceGrid: it fetches internally. */}
-                            {/* So I should probably extract the Grid part or make MarketplaceGrid accept initialItems. */}
-                            {/* For now, let's just duplicate the grid rendering part or import MarketplaceItemCard. */}
-
                             <ClientGrid items={serializedItems} />
                         </div>
                     ) : (
@@ -92,8 +89,6 @@ export default async function CreatorPage({ params }: PageProps) {
         </main>
     );
 }
-
-// Inline Client Grid to render cards
 
 function ClientGrid({ items }: { items: any[] }) {
     return (

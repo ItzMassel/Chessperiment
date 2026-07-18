@@ -24,8 +24,8 @@ export abstract class Piece {
     abstract clone(): Piece;
 
     static create(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string): Piece {
-        const actualRules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
-        const actualLogic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+        const actualRules = typeof rules === 'string' && rules ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        const actualLogic = typeof logic === 'string' && logic ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
 
         if (actualRules.length > 0 || actualLogic.length > 0) {
             return new CustomPiece(id, type, color, position, actualRules, actualLogic, name);
@@ -77,8 +77,8 @@ export class CustomPiece extends Piece {
 
     constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string, shape?: { anchor: [number, number], extensions: [number, number][] }) {
         super(id, type, color, position, name);
-        this.rules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
-        this.logic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+        this.rules = typeof rules === 'string' && rules ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        this.logic = typeof logic === 'string' && logic ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
         this.shape = shape || { anchor: [0, 0], extensions: [] };
     }
     
