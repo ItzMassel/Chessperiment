@@ -105,7 +105,6 @@ const io = new Server(server, {
     origin: "https://chessperiment.app",
     methods: ["GET", "POST"],
   },
-  path: "/chessperiment-server/socket.io",
   maxHttpBufferSize: 1e8, // 100 MB for custom assets
 });
 class Game {
