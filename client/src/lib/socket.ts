@@ -54,6 +54,21 @@ export function getSocket() {
         }
       }
     });
+
+    // Handle Chrome tab throttling: when the user switches back to this tab,
+    // the WebSocket transport may be stale or disconnected. Force a fresh
+    // connection so the server re-joins the socket to the game room.
+    if (typeof document !== 'undefined') {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && socket) {
+          if (!socket.connected) {
+            socket.connect();
+          } else {
+            socket.disconnect().connect();
+          }
+        }
+      });
+    }
   }
   return socket;
 }
