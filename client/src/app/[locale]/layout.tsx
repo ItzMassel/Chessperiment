@@ -18,6 +18,8 @@ import { WarningSplashModal } from "@/components/WarningSplashModal";
 import { OpenSourceAnnouncement } from "@/components/OpenSourceAnnouncement";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
+import fs from "fs";
+import path from "path";
 
 
 export function generateStaticParams() {
@@ -119,6 +121,12 @@ export default async function RootLayout({
   const requestUrl = headersList.get("x-invoke-path") || "/";
   const pathname = requestUrl.startsWith("/") ? requestUrl : new URL(requestUrl, "http://example.com").pathname;
 
+  let klaroConfig = null;
+  try {
+    const configPath = path.join(process.cwd(), "klaro-config.json");
+    klaroConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  } catch {}
+
   const isMaintenanceMode =
     process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true' ||
     process.env.NEXT_PUBLIC_MAINTENANCE_MODE === '1';
@@ -161,12 +169,20 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(generateBreadcrumbs(pathname)) }}
         />
-        <Script
-          defer
-          src="https://api.kiprotect.com/v1/privacy-managers/0f7e53d052356593f21b86221d9b4966/klaro.js"
-          strategy="afterInteractive"
-        />
-        <Script defer src="https://cloud.umami.is/script.js" data-website-id="94eb72c7-682e-423f-be42-9708f375cbe8"/>
+        {klaroConfig && (
+          <>
+            <script
+              defer
+              dangerouslySetInnerHTML={{
+                __html: `window.klaroConfig = ${JSON.stringify(klaroConfig)};`
+              }}
+            />
+            <script
+              defer
+              src="https://cdn.kiprotect.com/klaro/latest/klaro.js"
+            ></script>
+          </>
+        )}
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
         <SessionWrapper>
