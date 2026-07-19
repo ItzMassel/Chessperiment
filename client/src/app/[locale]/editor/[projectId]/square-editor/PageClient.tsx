@@ -402,7 +402,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
 
     return (
         <SmallScreenNotice>
-        <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans">
+        <div className="flex h-screen w-full bg-[#0f1115] text-white overflow-hidden font-sans">
             <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30">
                 <button onClick={() => router.push(`/editor/${projectId}`)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-95 duration-200">
                     <ChevronLeft size={20} />
