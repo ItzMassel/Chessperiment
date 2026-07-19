@@ -328,7 +328,7 @@ export default function CreatorProfileSection() {
                     </ul>
                 </div>
 
-                <div className="bg-white dark:bg-stone-950 p-4 rounded-xl border border-stone-200 dark:border-stone-800 shadow-xl w-full md:w-auto min-w-[320px]">
+                <div className="bg-white dark:bg-stone-950 p-4 rounded-xl border border-stone-200 dark:border-stone-800 shadow-xl w-full md:w-auto md:min-w-[320px]">
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Choose your Handle</label>
                     <div className="flex items-center gap-3">
                         <div className="relative flex-1">

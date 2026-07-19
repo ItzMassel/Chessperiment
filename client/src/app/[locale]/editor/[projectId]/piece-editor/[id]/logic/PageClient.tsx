@@ -20,6 +20,7 @@ import { useProject } from '@/hooks/useProject';
 import { CustomPiece } from '@/types/firestore';
 import { Project } from '@/types/Project';
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
+import SmallScreenNotice from '@/components/editor/SmallScreenNotice';
 
 // Constants
 const BLOCK_HEIGHT = 60;
@@ -741,6 +742,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
     }
 
     return (
+        <SmallScreenNotice>
         <DndContext
             sensors={sensors}
             autoScroll={false}
@@ -903,6 +905,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
             `}</style>
         </DndContext >
+        </SmallScreenNotice>
     );
 }
 

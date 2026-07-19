@@ -76,7 +76,7 @@ export default function AIAssistantPanel() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed left-0 top-24 h-[calc(100vh-6rem)] w-[380px] z-40 bg-stone-950 border-r border-white/10 flex flex-col shadow-2xl shadow-black/50"
+            className="fixed inset-0 z-50 lg:left-0 lg:top-24 lg:h-[calc(100vh-6rem)] lg:w-[380px] lg:z-40 bg-stone-950 lg:border-r border-white/10 flex flex-col shadow-2xl shadow-black/50"
           >
             {/* Header */}
             <div className="relative px-5 py-4 border-b border-white/5 bg-linear-to-b from-white/3 to-transparent backdrop-blur-xl">
