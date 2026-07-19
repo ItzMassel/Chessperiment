@@ -179,6 +179,8 @@ export default async function RootLayout({
             />
             <script
               defer
+              id="klaro"
+              data-klaro-config="klaroConfig"
               src="https://cdn.kiprotect.com/klaro/latest/klaro.js"
             ></script>
           </>

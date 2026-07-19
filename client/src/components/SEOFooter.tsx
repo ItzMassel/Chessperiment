@@ -69,6 +69,14 @@ export function SEOFooter() {
                                         {t('feedback')}
                                     </Link>
                                 </li>
+                                <li>
+                                    <button
+                                        onClick={() => window.klaro?.show()}
+                                        className="text-stone-500 hover:text-accent transition-colors text-sm text-left cursor-pointer"
+                                    >
+                                        {t('cookieSettings')}
+                                    </button>
+                                </li>
                             </ul>
                         </div>
                         <div>
