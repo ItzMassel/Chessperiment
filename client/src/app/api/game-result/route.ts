@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { saveGameResult } from "@/lib/firestore"
+import { saveGameResult } from "@/db"
 
 export async function POST(request: NextRequest) {
     try {

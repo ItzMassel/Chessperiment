@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { getUserStats } from "@/lib/firestore"
+import { getUserStats } from "@/db"
 
 export async function GET(request: NextRequest) {
     try {

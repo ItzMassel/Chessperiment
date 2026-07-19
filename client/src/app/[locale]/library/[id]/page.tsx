@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import BoardDetailClient from "@/components/editor/BoardDetailClient";
 import PieceDetailClient from "@/components/editor/PieceDetailClient";
 import SetDetailClient from "@/components/editor/SetDetailClient";
-import { CustomPiece as CustomPieceType, PieceSet } from "@/lib/firestore";
+import { CustomPiece as CustomPieceType, PieceSet } from "@/types/firestore";
 
 export default async function LibraryDetailPage({ params }: { params: Promise<{ locale: string, id: string }> }) {
     const { locale, id } = await params;

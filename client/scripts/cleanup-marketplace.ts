@@ -1,7 +1,7 @@
 /**
  * Marketplace Cleanup Script
  *
- * Scans all documents in the `marketplace` collection and:
+ * Scans all documents in the `marketplace_items` table and:
  *   1. Deletes items missing required fields (title, type, creator_handle)
  *   2. Repairs items with fixable issues (missing numeric defaults)
  *   3. Prints a summary of everything it found and did
@@ -11,10 +11,10 @@
  *   npx tsx scripts/cleanup-marketplace.ts --apply      # actually write changes
  */
 
-import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-// Env vars are loaded via Node's --env-file flag in the npm script
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { marketplaceItems, marketplaceReviews } from '../src/db/schema';
+import { eq, isNull, or, sql } from 'drizzle-orm';
 
 const REQUIRED_FIELDS = ["title", "type", "creator_handle"] as const;
 const VALID_TYPES = ["game", "board", "pieces"];
@@ -28,43 +28,19 @@ const NUMERIC_DEFAULTS: Record<string, number> = {
   forkCount: 0,
 };
 
-// ─── Firebase init ───────────────────────────────────────────────────────────
-
-function initFirebase() {
-  if (getApps().length > 0) return getApp();
-
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  if (!privateKey) {
-    console.error("FIREBASE_PRIVATE_KEY is not set. Check your .env.local file.");
-    process.exit(1);
-  }
-
-  const formattedKey = privateKey
-    .trim()
-    .replace(/^["']|["']$/g, "")
-    .replace(/\\n/g, "\n");
-
-  return initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: formattedKey,
-    }),
-  });
-}
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 interface CleanupResult {
   id: string;
   action: "deleted" | "repaired" | "ok";
   issues: string[];
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
-
 async function main() {
   const dryRun = !process.argv.includes("--apply");
+  const connectionString = process.env.SUPABASE_DB_URL;
+  if (!connectionString) {
+    console.error("SUPABASE_DB_URL is not set. Check your .env.local file.");
+    process.exit(1);
+  }
 
   if (dryRun) {
     console.log("╔══════════════════════════════════════════════╗");
@@ -77,32 +53,31 @@ async function main() {
     console.log("╚══════════════════════════════════════════════╝\n");
   }
 
-  const app = initFirebase();
-  const db = getFirestore(app);
+  const client = postgres(connectionString, { prepare: false });
+  const db = drizzle(client);
 
-  const snapshot = await db.collection("marketplace").get();
-  console.log(`Found ${snapshot.size} marketplace item(s).\n`);
+  const items = await db.select().from(marketplaceItems);
+  console.log(`Found ${items.length} marketplace item(s).\n`);
 
-  if (snapshot.empty) {
+  if (items.length === 0) {
     console.log("Nothing to clean up.");
     return;
   }
 
   const results: CleanupResult[] = [];
 
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
-    const result: CleanupResult = { id: doc.id, action: "ok", issues: [] };
+  for (const item of items) {
+    const result: CleanupResult = { id: item.id, action: "ok", issues: [] };
+    const data = item;
 
-    // ── Check required fields ──────────────────────────────────────────────
     const missingRequired: string[] = [];
     for (const field of REQUIRED_FIELDS) {
-      if (!data[field] || (typeof data[field] === "string" && !data[field].trim())) {
+      const val = (data as any)[field];
+      if (!val || (typeof val === "string" && !val.trim())) {
         missingRequired.push(field);
       }
     }
 
-    // Check for invalid type value
     if (data.type && !VALID_TYPES.includes(data.type)) {
       missingRequired.push(`type (invalid value: "${data.type}")`);
     }
@@ -112,62 +87,68 @@ async function main() {
       result.issues.push(`Missing/invalid required fields: ${missingRequired.join(", ")}`);
 
       if (!dryRun) {
-        // Delete reviews subcollection first
-        const reviews = await doc.ref.collection("reviews").get();
-        const batch = db.batch();
-        for (const review of reviews.docs) {
-          batch.delete(review.ref);
-        }
-        batch.delete(doc.ref);
-        await batch.commit();
+        await db.delete(marketplaceReviews).where(eq(marketplaceReviews.marketplaceItemId, item.id));
+        await db.delete(marketplaceItems).where(eq(marketplaceItems.id, item.id));
       }
 
       results.push(result);
       continue;
     }
 
-    // ── Check & repair numeric fields ──────────────────────────────────────
-    const repairs: Record<string, number> = {};
+    // Check & repair numeric fields
+    const repairs: Record<string, any> = {};
+    const fieldMap: Record<string, string> = {
+      rating: 'rating',
+      reviewCount: 'review_count',
+      stars_total: 'stars_total',
+      stars_count: 'stars_count',
+      views: 'views',
+      forkCount: 'fork_count',
+    };
+
     for (const [field, defaultValue] of Object.entries(NUMERIC_DEFAULTS)) {
-      const val = data[field];
+      const colName = fieldMap[field];
+      const val = (data as any)[colName];
       if (val === undefined || val === null || typeof val !== "number" || isNaN(val)) {
-        repairs[field] = defaultValue;
+        repairs[colName] = defaultValue;
         result.issues.push(`${field}: ${JSON.stringify(val)} -> ${defaultValue}`);
       }
     }
 
-    // Check rating consistency: if stars_count > 0, recalculate rating
-    const starsTotal = repairs.stars_total ?? data.stars_total ?? 0;
-    const starsCount = repairs.stars_count ?? data.stars_count ?? 0;
+    const starsTotal = repairs.stars_total ?? (data as any).stars_total ?? 0;
+    const starsCount = repairs.stars_count ?? (data as any).stars_count ?? 0;
     if (starsCount > 0) {
       const expectedRating = parseFloat((starsTotal / starsCount).toFixed(1));
-      const currentRating = repairs.rating ?? data.rating ?? 0;
+      const currentRating = repairs.rating ?? (data as any).rating ?? 0;
       if (Math.abs(currentRating - expectedRating) > 0.01) {
         repairs.rating = expectedRating;
         result.issues.push(`rating recalculated: ${currentRating} -> ${expectedRating}`);
       }
     }
 
-    // Check reviewCount vs actual reviews subcollection count
-    const reviewsSnap = await doc.ref.collection("reviews").get();
-    const actualReviewCount = reviewsSnap.size;
-    const storedReviewCount = repairs.reviewCount ?? data.reviewCount ?? 0;
+    const actualReviewCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(marketplaceReviews)
+      .where(eq(marketplaceReviews.marketplaceItemId, item.id))
+      .then(r => Number(r[0]?.count || 0));
+
+    const storedReviewCount = repairs.review_count ?? (data as any).review_count ?? 0;
     if (storedReviewCount !== actualReviewCount) {
-      repairs.reviewCount = actualReviewCount;
+      repairs.review_count = actualReviewCount;
       result.issues.push(`reviewCount mismatch: stored=${storedReviewCount}, actual=${actualReviewCount}`);
     }
 
     if (Object.keys(repairs).length > 0) {
       result.action = "repaired";
       if (!dryRun) {
-        await doc.ref.update(repairs);
+        await db.update(marketplaceItems)
+          .set(repairs as any)
+          .where(eq(marketplaceItems.id, item.id));
       }
     }
 
     results.push(result);
   }
-
-  // ── Summary ────────────────────────────────────────────────────────────────
 
   const deleted = results.filter((r) => r.action === "deleted");
   const repaired = results.filter((r) => r.action === "repaired");

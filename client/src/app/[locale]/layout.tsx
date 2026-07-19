@@ -166,6 +166,7 @@ export default async function RootLayout({
           src="https://api.kiprotect.com/v1/privacy-managers/0f7e53d052356593f21b86221d9b4966/klaro.js"
           strategy="afterInteractive"
         />
+        <Script defer src="https://cloud.umami.is/script.js" data-website-id="94eb72c7-682e-423f-be42-9708f375cbe8"/>
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
         <SessionWrapper>

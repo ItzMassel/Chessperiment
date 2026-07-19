@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db as adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
 
-// Simple in-memory rate limiter: max 5 submissions per IP per hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -45,17 +42,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
-    if (!adminDb) {
+    try {
+        const { db } = await import('@/db');
+        const { communityFeedback } = await import('@/db/schema');
+        await db.insert(communityFeedback).values({
+            type: type!,
+            message: message.trim(),
+            email: email.trim(),
+            status: 'new',
+            createdAt: new Date(),
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Error saving community feedback:", error);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
-
-    await adminDb.collection("community_feedback").add({
-        type,
-        message: message.trim(),
-        email: email.trim(),
-        status: "new",
-        createdAt: FieldValue.serverTimestamp(),
-    });
-
-    return NextResponse.json({ success: true });
 }

@@ -1,4 +1,5 @@
 import { Job } from './jobStore';
+import { getProject, saveProject } from '@/db';
 
 const SERVER_TOOL_NAMES = new Set([
   'get_project_state',
@@ -10,7 +11,6 @@ const SERVER_TOOL_NAMES = new Set([
   'get_current_context',
 ]);
 
-/** Guest projects live in localStorage — server can't access them, so all tools stay client-side. */
 export function isServerTool(name: string, isGuest: boolean): boolean {
   if (isGuest) return false;
   return SERVER_TOOL_NAMES.has(name);
@@ -21,8 +21,6 @@ export async function executeServerTool(
   args: Record<string, any>,
   job: Job
 ): Promise<string> {
-  const { getProject, saveProject } = await import('@/lib/firestore');
-
   switch (name) {
     case 'get_project_state': {
       const project = await getProject(job.projectId, job.userId);
