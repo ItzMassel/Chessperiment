@@ -975,6 +975,18 @@
         "placeholderName": "Projektname",
         "placeholderDescription": "Füge eine Beschreibung hinzu...",
         "save": "Speichern",
+        "cancel": "Abbrechen",
+        "exportButton": "Variante exportieren"
+    },
+    "ExportVariant": {
+        "title": "Variante exportieren",
+        "description": "Exportiere diese Variante als Bild, Bild mit Figurenbeschreibungen oder als JSON-Datei zum späteren Importieren.",
+        "imageOnlyTitle": "Brett als Bild",
+        "imageOnlyDesc": "PNG-Bild des Brettes mit Figuren",
+        "imageWithInfoTitle": "Bild mit Beschreibungen",
+        "imageWithInfoDesc": "PNG-Bild mit Brett und Details zu benutzerdefinierten Figuren",
+        "fileTitle": "Importierbare Datei",
+        "fileDesc": "JSON-Datei zum Importieren auf einem anderen Konto",
         "cancel": "Abbrechen"
     },
     "Features": {

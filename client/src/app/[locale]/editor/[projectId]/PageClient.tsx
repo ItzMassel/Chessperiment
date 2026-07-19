@@ -6,9 +6,10 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { useProject } from '@/hooks/useProject';
-import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink, Download } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
+import ExportVariantModal from '@/components/editor/ExportVariantModal';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
 import { toast } from 'sonner';
 
@@ -43,6 +44,9 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
+
+    // Export modal state
+    const [showExportModal, setShowExportModal] = useState(false);
 
     // Sync edited fields when project loads
     useEffect(() => {
@@ -307,6 +311,15 @@ export default function PageClient({ projectId }: PageClientProps) {
                                 <Gamepad2 size={24} />
                                 <span>Play Local</span>
                             </button>
+
+                            {/* Export - Tertiary */}
+                            <button
+                                onClick={() => setShowExportModal(true)}
+                                className="inline-flex items-center justify-center gap-3 px-6 py-5 bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400 rounded-xl font-bold text-lg hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] transition-all border border-stone-200 dark:border-stone-700"
+                                title={t('exportButton')}
+                            >
+                                <Download size={22} />
+                            </button>
                         </div>
 
                         <div className="w-full h-[600px] relative z-10">
@@ -319,6 +332,14 @@ export default function PageClient({ projectId }: PageClientProps) {
 
             {/* Editor Sidebar */}
             <ProjectEditorSidebar projectId={projectId} />
+
+            {/* Export Modal */}
+            {showExportModal && project && (
+                <ExportVariantModal
+                    project={project}
+                    onClose={() => setShowExportModal(false)}
+                />
+            )}
 
             {/* Room Code Modal */}
             {showRoomModal && (
