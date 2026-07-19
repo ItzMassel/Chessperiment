@@ -2,6 +2,7 @@ import { Project } from '@/types/Project';
 import { getPieceImage } from '@/lib/gameData';
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';
+import { Coordinate } from '@/lib/grid/GridType';
 
 const BOARD_SQUARE_SIZE = 80;
 const PADDING = 40;
@@ -105,8 +106,25 @@ export async function renderBoardToCanvas(project: Project): Promise<HTMLCanvasE
 
     const isHex = gridType === 'hex';
     const hexOffset = isHex ? Math.max(rows, cols) * 0.75 * BOARD_SQUARE_SIZE : 0;
-    const canvasW = isHex ? cols * BOARD_SQUARE_SIZE + BOARD_SQUARE_SIZE : cols * BOARD_SQUARE_SIZE;
-    const canvasH = isHex ? rows * BOARD_SQUARE_SIZE + BOARD_SQUARE_SIZE : rows * BOARD_SQUARE_SIZE;
+
+    const tileData: { coord: Coordinate; cx: number; cy: number }[] = [];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (const coord of tiles) {
+        const pos = grid.getPixelPosition(coord, BOARD_SQUARE_SIZE);
+        const cx = pos.x + hexOffset + BOARD_SQUARE_SIZE / 2;
+        const cy = pos.y + hexOffset + BOARD_SQUARE_SIZE / 2;
+        tileData.push({ coord, cx, cy });
+        minX = Math.min(minX, cx - BOARD_SQUARE_SIZE / 2);
+        minY = Math.min(minY, cy - BOARD_SQUARE_SIZE / 2);
+        maxX = Math.max(maxX, cx + BOARD_SQUARE_SIZE / 2);
+        maxY = Math.max(maxY, cy + BOARD_SQUARE_SIZE / 2);
+    }
+
+    const canvasW = maxX - minX + PADDING * 2;
+    const canvasH = maxY - minY + PADDING * 2;
+    const offsetX = PADDING - minX;
+    const offsetY = PADDING - minY;
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(canvasW);
@@ -116,39 +134,38 @@ export async function renderBoardToCanvas(project: Project): Promise<HTMLCanvasE
     ctx.fillStyle = '#f0f0f0';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (const coord of tiles) {
+    for (const { coord, cx, cy } of tileData) {
         const key = grid.coordToString(coord);
-        const pos = grid.getPixelPosition(coord, BOARD_SQUARE_SIZE);
         const isActive = activeSet.has(key);
         const piece = placedPieces[key];
+
+        const renderX = cx + offsetX;
+        const renderY = cy + offsetY;
 
         const isDark = gridType === 'square'
             ? ((coord.x || 0) + (coord.y || 0)) % 2 === 1
             : ((coord.q || 0) + (coord.r || 0)) % 2 === 0;
 
-        const cx = pos.x + hexOffset + BOARD_SQUARE_SIZE / 2;
-        const cy = pos.y + hexOffset + BOARD_SQUARE_SIZE / 2;
-
         ctx.save();
         if (isHex) {
-            drawHexPath(ctx, cx, cy, BOARD_SQUARE_SIZE / 2);
+            drawHexPath(ctx, renderX, renderY, BOARD_SQUARE_SIZE / 2);
             ctx.clip();
         }
 
         ctx.fillStyle = isActive
             ? (isDark ? '#769656' : '#ffffff')
             : 'rgba(0,0,0,0.05)';
-        ctx.fillRect(cx - BOARD_SQUARE_SIZE / 2, cy - BOARD_SQUARE_SIZE / 2, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE);
+        ctx.fillRect(renderX - BOARD_SQUARE_SIZE / 2, renderY - BOARD_SQUARE_SIZE / 2, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE);
 
         if (isActive && !isDark) {
             ctx.strokeStyle = 'rgba(0,0,0,0.1)';
             ctx.lineWidth = 1;
-            ctx.strokeRect(cx - BOARD_SQUARE_SIZE / 2, cy - BOARD_SQUARE_SIZE / 2, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE);
+            ctx.strokeRect(renderX - BOARD_SQUARE_SIZE / 2, renderY - BOARD_SQUARE_SIZE / 2, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE);
         }
         ctx.restore();
 
         if (piece && isActive) {
-            await drawPieceOnCanvas(ctx, piece, cx, cy, BOARD_SQUARE_SIZE, customPieces);
+            await drawPieceOnCanvas(ctx, piece, renderX, renderY, BOARD_SQUARE_SIZE, customPieces);
         }
     }
 
