@@ -160,8 +160,9 @@ export class BoardClass {
             this.saveSnapshot();
             let destinationPiece = this.getPiece(to);
             const sharedAtDest = this.getSharedPieces(to);
-            if (destinationPiece && destinationPiece.color === piece.color) {
+                if (destinationPiece && destinationPiece.color === piece.color) {
                 console.warn(`[Engine] Move rejected: Cannot capture own pieces (${piece.color} at ${from} vs ${destinationPiece.color} at ${to})`);
+                this.lastRejectionReason = `Cannot capture your own piece`;
                 this.snapshots.pop();
                 return false;
             }
@@ -268,6 +269,7 @@ export class BoardClass {
                     return true;
                 }
                 console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (preventAction: ${preventAction})`);
+                this.lastRejectionReason = `Blocked by piece logic (${preventAction})`;
                 this.snapshots.pop();
                 return false;
             }

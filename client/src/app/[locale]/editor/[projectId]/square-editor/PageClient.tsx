@@ -12,6 +12,7 @@ import * as Blockly from 'blockly';
 import './blocklyDefinitions'; // Registration happens here
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 import { trackEvent } from '@/lib/track';
+import SmallScreenNotice from '@/components/editor/SmallScreenNotice';
 
 const SAVE_DEBOUNCE_MS = 2000;
 
@@ -400,7 +401,8 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     if (!project) return null;
 
     return (
-        <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans">
+        <SmallScreenNotice>
+        <div className="flex h-screen w-full bg-[#0f1115] text-white overflow-hidden font-sans">
             <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30">
                 <button onClick={() => router.push(`/editor/${projectId}`)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-95 duration-200">
                     <ChevronLeft size={20} />
@@ -586,5 +588,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
             `}</style>
         </div>
+        </SmallScreenNotice>
     );
 }

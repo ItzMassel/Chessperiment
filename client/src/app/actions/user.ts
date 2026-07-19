@@ -2,7 +2,7 @@
 import 'server-only';
 
 import { auth } from "@/auth";
-import { deleteUserAccount, updateUserName } from "@/lib/firestore";
+import { deleteUserAccount, updateUserName } from "@/db";
 import { revalidatePath } from "next/cache";
 
 export async function deleteUserAccountAction() {

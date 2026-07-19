@@ -95,7 +95,6 @@ async function initRedis() {
     })();
   });
 }
-
 await initRedis();
 
 const app = express();
@@ -103,7 +102,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://chessperiment.app",
     methods: ["GET", "POST"],
   },
   maxHttpBufferSize: 1e8, // 100 MB for custom assets
@@ -653,6 +652,29 @@ io.on("connection", (socket) => {
     }
 
     await removeFromQueue(playerId);
+
+    // Guard against overwriting an existing game that this player is already in.
+    // This can happen if the client re-emits create_room on socket reconnect.
+    if (data && data.roomId) {
+      const existingKey = data.roomId.trim().toUpperCase();
+      const existingGame = games.get(existingKey);
+      if (existingGame) {
+        const existingColor = existingGame.getColorForPlayer(playerId);
+        if (existingColor) {
+          console.log(`[Create Room] Player ${playerId} already in room ${existingKey} — resending state.`);
+          socket.join(existingKey);
+          socket.emit("room_created", {
+            roomId: existingGame.roomId,
+            color: existingColor === "w" ? "white" : "black",
+            isCustom: existingGame.isCustom,
+            customData: existingGame.customData || null,
+            boardState: existingGame.isCustom && existingGame.engine ? existingGame.engine.getSnapshot() : null,
+          });
+          return;
+        }
+      }
+    }
+
     const game = new Game(playerId);
 
     // Use client-provided roomId if present — this makes shareable room codes work
@@ -686,6 +708,7 @@ io.on("connection", (socket) => {
       color: "white",
       isCustom: game.isCustom,
       customData: game.customData || null,
+      boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
     });
     console.log("📤 room_created event emitted");
   });
@@ -787,12 +810,54 @@ io.on("connection", (socket) => {
         customData: game.customData,
         isCustom: game.isCustom,
         turn: game.turn,
+        boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
       });
       return;
     }
+
+    // Check if either slot holder is disconnected — if so, allow reclaim
     if (game.players.white && game.players.black) {
+      const whiteSocket = playerToSocket.get(game.players.white);
+      const blackSocket = playerToSocket.get(game.players.black);
       console.log(
-        `[Join Room] Room ${roomId} is full. Player ${playerId} joining as spectator.`,
+        `[Join Room] Room ${roomId} full. White ${game.players.white} socket=${!!whiteSocket}, Black ${game.players.black} socket=${!!blackSocket}`,
+      );
+
+      if (!whiteSocket || !blackSocket) {
+        const reassignColor = !whiteSocket ? "w" : "b";
+        const oldPlayerId = reassignColor === "w" ? game.players.white : game.players.black;
+        console.log(
+          `[Join Room] Reassigning ${reassignColor === "w" ? "white" : "black"} slot from ${oldPlayerId} to ${playerId} (disconnected reconnect)`,
+        );
+        if (reassignColor === "w") game.players.white = playerId;
+        else game.players.black = playerId;
+        await saveGame(game);
+        await savePlayerRoom(playerId, roomId);
+        socket.join(roomId);
+        socket.emit("joined_room", {
+          roomId,
+          color: reassignColor === "w" ? "white" : "black",
+          customData: game.customData,
+          isCustom: game.isCustom,
+          boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
+        });
+        if (game.players.white && game.players.black) {
+          game.status = "playing";
+          await saveGame(game);
+          io.to(roomId).emit("start_game", {
+            roomId,
+            fen: game.board_fen,
+            status: "playing",
+            customData: game.customData,
+            isCustom: game.isCustom,
+            boardState: game.isCustom && game.engine ? game.engine.getSnapshot() : null,
+          });
+        }
+        return;
+      }
+
+      console.log(
+        `[Join Room] Room ${roomId} is full and both players are connected. Player ${playerId} joining as spectator.`,
       );
       socket.join(roomId);
       socket.emit("rejoin_game", {
@@ -955,7 +1020,8 @@ io.on("connection", (socket) => {
           console.warn(
             `[Custom Move Rejected] Invalid move: ${data.from}->${data.to}`,
           );
-          socket.emit("error", { message: "Invalid move" });
+          const engineReason = game.gameEngine?.getBoard()?.lastRejectionReason;
+          socket.emit("error", { message: engineReason || "Invalid move" });
         }
         return;
       }

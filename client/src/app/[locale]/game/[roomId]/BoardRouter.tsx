@@ -72,6 +72,8 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
     const [resolved, setResolved] = useState<'loading' | 'custom' | 'standard'>('loading');
     const [customData, setCustomData] = useState<any>(null);
     const [boardState, setBoardState] = useState<any>(null);
+    const [initialFen, setInitialFen] = useState<string | null>(null);
+    const [initialColor, setInitialColor] = useState<string | null>(null);
 
     const localProject = useMemo(() => ({
         ...DEFAULT_STANDARD_PROJECT,
@@ -90,6 +92,8 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
                 setBoardState(response.boardState);
                 setResolved('custom');
             } else {
+                setInitialFen(response?.fen || null);
+                setInitialColor(response?.color || null);
                 setResolved('standard');
             }
         });
@@ -114,5 +118,5 @@ export default function BoardRouter({ roomId, mode }: BoardRouterProps) {
         return <PlayBoard roomId={roomId} project={customData} initialBoardState={boardState} mode="online" />;
     }
 
-    return <Board initialRoomId={roomId} gameModeVar={mode === 'computer' ? 'computer' : 'online'} mode={mode as any} />;
+    return <Board initialRoomId={roomId} gameModeVar={mode === 'computer' ? 'computer' : 'online'} mode={mode as any} initialFen={initialFen} initialColor={initialColor} />;
 }

@@ -8,8 +8,8 @@ export default async function GameLayout({
 }: {
     children: React.ReactNode;
 }) {
-    // TEMPORARY: Multiplayer is being patched. Set NEXT_PUBLIC_MAINTENANCE_MODE=true to disable.
-    const isMaintenanceMode = true;
+    const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true' ||
+        process.env.NEXT_PUBLIC_MAINTENANCE_MODE === '1';
 
     return (
         <>

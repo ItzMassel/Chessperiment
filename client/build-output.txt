@@ -1,0 +1,25 @@
+﻿Ôû▓ Next.js 16.2.10 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 55s
+  Running TypeScript ...
+node.exe : Failed to type check.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to type check.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+./src/app/actions/library.ts:6:71
+Type error: '"@/db"' has no exported member named 'SavedBoard'. Did you mean 'saveBoard'?
+
+  [90m4 |[0m ...[32mth"[0m;
+  [90m5 |[0m ...
+[31m[1m>[0m [90m6 |[0m ...ds, toggleBoardStar, deleteBoard, getBoard, [33mSavedBoard[0m, 
+  [90m  |[0m                                                [31m[1m^[0m
+  [90m7 |[0m ...mPiece, getUserCustomPieces, getCustomPiece, deleteCustomPiece,
+  [90m8 |[0m ..., getUserPieceSets, getPieceSet, getSetPieces, deletePieceSet, togglePieceSetStar
+  [90m9 |[0m ...
+Next.js build worker exited with code: 1 and signal: null

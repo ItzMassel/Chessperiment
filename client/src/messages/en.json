@@ -809,6 +809,7 @@
             "legalNotice": "Legal Notice",
             "features": "Features",
             "feedback": "Feedback",
+            "cookieSettings": "Cookie Settings",
             "builtBy": "Built with great attention to detail for chess enthusiasts."
         },
         "Home": {
@@ -975,6 +976,18 @@
         "placeholderName": "Project Name",
         "placeholderDescription": "Add a description...",
         "save": "Save",
+        "cancel": "Cancel",
+        "exportButton": "Export Variant"
+    },
+    "ExportVariant": {
+        "title": "Export Variant",
+        "description": "Export this variant as an image, image with piece descriptions, or as a JSON file for later import.",
+        "imageOnlyTitle": "Board Image",
+        "imageOnlyDesc": "PNG image of the board with pieces",
+        "imageWithInfoTitle": "Image with Descriptions",
+        "imageWithInfoDesc": "PNG image with board and custom piece details",
+        "fileTitle": "Importable File",
+        "fileDesc": "JSON file to import on another account",
         "cancel": "Cancel"
     },
     "Features": {
