@@ -5,6 +5,7 @@ import { useRouter, usePathname } from '@/i18n/navigation';
 import { useProject } from '@/hooks/useProject';
 import { AIMessage, ToolHandler, ToolHandlerRegistry } from '@/lib/ai/types';
 import { executeToolCalls } from '@/lib/ai/toolExecutor';
+import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AIAssistantContextType {
@@ -12,6 +13,8 @@ interface AIAssistantContextType {
   isOpen: boolean;
   isLoading: boolean;
   currentPage: string;
+  isAuthenticated: boolean;
+  authLoading: boolean;
   togglePanel: () => void;
   sendMessage: (content: string) => Promise<void>;
   registerToolHandler: (name: string, handler: ToolHandler) => void;
@@ -121,6 +124,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
   const router = useRouter();
   const pathname = usePathname();
   const { project, saveProject } = useProject(projectId);
+  const { user, loading: authLoading } = useAuth();
 
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -434,6 +438,18 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
 
+    if (authLoading) return;
+
+    if (!user) {
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: 'assistant',
+        content: `Error: Authentication required`,
+        timestamp: Date.now(),
+      }]);
+      return;
+    }
+
     if (activeEventSource.current) {
       activeEventSource.current.close();
       activeEventSource.current = null;
@@ -490,7 +506,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       }]);
       setIsLoading(false);
     }
-  }, [isLoading, currentPage, projectId, connectToJobStream]);
+  }, [isLoading, currentPage, projectId, connectToJobStream, user, authLoading]);
 
   return (
     <AIAssistantContext.Provider value={{
@@ -498,6 +514,8 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       isOpen,
       isLoading,
       currentPage,
+      isAuthenticated: !!user,
+      authLoading,
       togglePanel,
       sendMessage,
       registerToolHandler,
