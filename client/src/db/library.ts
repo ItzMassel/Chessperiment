@@ -3,6 +3,8 @@ import { db } from './index';
 import { boards, pieceSets, customPieces } from './schema';
 import type { SavedBoard, PieceSet, CustomPiece } from '@/types/firestore';
 
+export type { SavedBoard, PieceSet, CustomPiece };
+
 // ==================== BOARDS ====================
 
 function parseCustomDate(val: any): Date {
@@ -49,7 +51,7 @@ export async function getUserBoards(userId: string): Promise<SavedBoard[]> {
   const rows = await db.select()
     .from(boards)
     .where(eq(boards.userId, userId));
-  return rows.map(r => ({ id: r.id, ...r } as unknown as SavedBoard));
+  return rows.map(r => r as unknown as SavedBoard);
 }
 
 export async function getBoard(boardId: string, userId: string): Promise<SavedBoard | null> {
@@ -58,7 +60,7 @@ export async function getBoard(boardId: string, userId: string): Promise<SavedBo
     .where(and(eq(boards.id, boardId), eq(boards.userId, userId)))
     .limit(1);
   if (!row) return null;
-  return { id: row.id, ...row } as unknown as SavedBoard;
+  return row as unknown as SavedBoard;
 }
 
 export async function deleteBoard(boardId: string, userId: string): Promise<void> {

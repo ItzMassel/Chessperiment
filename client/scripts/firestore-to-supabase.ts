@@ -16,6 +16,7 @@ import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
 import {
   projects, marketplaceItems, marketplaceReviews, marketplaceReports,
   creatorProfiles, notifications, userStats, gameHistory,
@@ -86,12 +87,7 @@ async function migrateProjects(firestoreDb: FirebaseFirestore.Firestore, pgDb: R
       const d = doc.data();
       if (dryRun) continue;
 
-      // Check if already exists
-      const existing = await pgDb.select({ id: projects.id }).from(projects).where(projects.id as any, doc.id).limit(1);
-      if (existing.length > 0) { result.skipped++; continue; }
-
       await pgDb.insert(projects).values({
-        id: doc.id,
         userId: d.userId || '',
         name: d.name || 'Untitled Project',
         description: d.description || '',
@@ -145,14 +141,7 @@ async function migrateMarketplace(firestoreDb: FirebaseFirestore.Firestore, pgDb
       const d = doc.data();
       if (dryRun) continue;
 
-      const existing = await pgDb.select({ id: marketplaceItems.id }).from(marketplaceItems).where(marketplaceItems.id as any, doc.id).limit(1);
-      if (existing.length > 0) { result.skipped++; continue; }
-
-      const id = doc.id;
-      // Handle non-UUID Firestore IDs by using the doc ID as-is
-      // Drizzle with postgres.js requires UUID format; if the ID isn't a UUID,
-      // we'll cast accordingly or use the text field approach
-      const insertData: any = {
+      await pgDb.insert(marketplaceItems).values({
         title: d.title || 'Untitled',
         description: d.description || '',
         creatorHandle: d.creator_handle || '@unknown',
@@ -172,14 +161,7 @@ async function migrateMarketplace(firestoreDb: FirebaseFirestore.Firestore, pgDb
         imageUrl: d.imageUrl || '',
         searchKeywords: d.searchKeywords || [],
         previewConfig: d.preview_config || null,
-      };
-
-      try {
-        await pgDb.insert(marketplaceItems).values({ id, ...insertData }).onConflictDoNothing();
-      } catch {
-        // If the ID is not a valid UUID, insert without specifying ID
-        await pgDb.insert(marketplaceItems).values(insertData).onConflictDoNothing();
-      }
+      }).onConflictDoNothing();
       result.inserted++;
     } catch (e) {
       console.error(`  ✗ Error migrating marketplace item ${doc.id}:`, e);

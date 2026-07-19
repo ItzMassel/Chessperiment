@@ -100,7 +100,7 @@ export async function searchMarketplaceItems(searchQuery: string, type?: string)
   let items = rows.map(rowToMarketplaceItem);
 
   if (keywords.length > 1) {
-    items = items.filter(item => {
+    items = items.filter((item: any) => {
       const kw = item.searchKeywords || [];
       return keywords.every(k => kw.includes(k));
     });

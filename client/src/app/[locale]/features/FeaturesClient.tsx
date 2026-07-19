@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { db, isConfigured } from "@/lib/firebase-client";
 import { Bug, Lightbulb, MessageCircle, Send, CheckCircle, Check } from "lucide-react";
 import * as motion from "framer-motion/client";
 
@@ -16,6 +15,17 @@ interface Feature {
 }
 
 type FeedbackType = "bug" | "feature" | "general" | null;
+
+const defaultFeatures: Feature[] = [
+    { id: "1", date: "2026-01-15", title: "Custom piece logic engine", description: "Define move rules with a visual editor", done: true, order: 1 },
+    { id: "2", date: "2026-02-01", title: "Non-grid board support", description: "Create boards with irregular square layouts", done: true, order: 2 },
+    { id: "3", date: "2026-03-10", title: "Multiplayer online play", description: "Play custom variants with friends in real-time", done: true, order: 3 },
+    { id: "4", date: "2026-04-20", title: "Marketplace for community variants", description: "Share and discover community-created boards and piece sets", done: true, order: 4 },
+    { id: "5", date: "2026-05-15", title: "AI opponent for custom variants", description: "Play against AI that understands custom rules", done: true, order: 5 },
+    { id: "6", date: "2026-06-01", title: "Supabase migration", description: "Migrate from Firestore to Supabase for better scalability", done: true, order: 6 },
+    { id: "7", date: "2026-07-01", title: "Enhanced creator tools", description: "Advanced analytics and promotion tools for creators", done: false, order: 7 },
+    { id: "8", date: "2026-08-01", title: "Tournament system", description: "Organize and participate in chess variant tournaments", done: false, order: 8 },
+];
 
 function formatDate(dateStr: string): string {
     const [year, month, day] = dateStr.split("-").map(Number);
@@ -35,7 +45,6 @@ function isPast(dateStr: string): boolean {
     return dateStr < new Date().toISOString().slice(0, 10);
 }
 
-// Group features by date, sorted by order within each group
 function groupByDate(features: Feature[]): Map<string, Feature[]> {
     const map = new Map<string, Feature[]>();
     for (const f of features) {
@@ -50,10 +59,8 @@ function groupByDate(features: Feature[]): Map<string, Feature[]> {
 
 export default function FeaturesClient() {
     const t = useTranslations("Features");
-    const [features, setFeatures] = useState<Feature[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [features] = useState<Feature[]>(defaultFeatures);
 
-    // Feedback form state
     const [feedbackType, setFeedbackType] = useState<FeedbackType>(null);
     const [message, setMessage] = useState("");
     const [email, setEmail] = useState("");
@@ -61,43 +68,8 @@ export default function FeaturesClient() {
     const [submitted, setSubmitted] = useState(false);
     const [feedbackError, setFeedbackError] = useState("");
 
-    useEffect(() => {
-        const load = async () => {
-            if (!isConfigured || !db) {
-                setLoading(false);
-                return;
-            }
-            try {
-                const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
-                const q = query(
-                    collection(db as any, "features"),
-                    orderBy("date", "asc")
-                );
-                const snap = await getDocs(q);
-                setFeatures(
-                    snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Feature, "id">) }))
-                );
-            } catch (e) {
-                console.error("Failed to load features", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-    }, []);
-
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const todayRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!loading && todayRef.current && scrollContainerRef.current) {
-            const container = scrollContainerRef.current;
-            const todayEl = todayRef.current;
-            const containerRect = container.getBoundingClientRect();
-            const todayRect = todayEl.getBoundingClientRect();
-            container.scrollTop += todayRect.top - containerRect.top;
-        }
-    }, [loading]);
 
     const grouped = groupByDate(features);
     const sortedDates = Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
@@ -177,31 +149,13 @@ export default function FeaturesClient() {
                     </p>
                 </motion.div>
 
-                {/* Timeline */}
-                {loading ? (
-                    <div className="space-y-6">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex gap-4 animate-pulse">
-                                <div className="flex flex-col items-center">
-                                    <div className="w-3 h-3 rounded-full bg-stone-300 dark:bg-stone-700 mt-1" />
-                                    <div className="w-px flex-1 bg-stone-200 dark:bg-stone-800 mt-2" />
-                                </div>
-                                <div className="pb-8 flex-1">
-                                    <div className="h-3 w-28 bg-stone-200 dark:bg-stone-800 rounded mb-3" />
-                                    <div className="h-5 w-48 bg-stone-200 dark:bg-stone-800 rounded mb-2" />
-                                    <div className="h-3 w-full bg-stone-200 dark:bg-stone-800 rounded" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : sortedDates.length === 0 ? (
+                {sortedDates.length === 0 ? (
                     <p className="text-stone-400 dark:text-stone-500 text-sm py-8">{t("empty")}</p>
                 ) : (
                     <div
                         ref={scrollContainerRef}
                         className="relative overflow-y-auto max-h-[calc(100vh-16rem)] pr-1"
                     >
-                        {/* Vertical line */}
                         <div className="absolute left-[5px] top-2 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
 
                         <div className="space-y-0">
@@ -220,7 +174,6 @@ export default function FeaturesClient() {
                                         transition={{ duration: 0.3, delay: dateIndex * 0.05 }}
                                         className="flex gap-4"
                                     >
-                                        {/* Dot */}
                                         <div className="flex flex-col items-center shrink-0 mt-1.5">
                                             {allDone ? (
                                                 <div className="w-3 h-3 rounded-full bg-amber-500 flex items-center justify-center z-10">
@@ -231,7 +184,6 @@ export default function FeaturesClient() {
                                             )}
                                         </div>
 
-                                        {/* Content */}
                                         <div className={`pb-8 flex-1 ${past && !today ? "opacity-50" : ""}`}>
                                             <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${today ? "text-amber-500 dark:text-amber-400" : past ? "text-stone-400 dark:text-stone-600" : "text-stone-500 dark:text-stone-400"}`}>
                                                 {today ? `${t("today")} · ${formatDate(date)}` : formatDate(date)}

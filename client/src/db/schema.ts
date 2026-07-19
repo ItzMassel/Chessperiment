@@ -190,3 +190,13 @@ export const analyticsButtonClicks = pgTable('analytics_button_clicks', {
   event: text('event').primaryKey(),
   count: integer('count').default(0).notNull(),
 });
+
+export const pixelPieces = pgTable('pixel_pieces', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  pieceType: text('piece_type').notNull(),
+  color: text('color').notNull(),
+  pixels: jsonb('pixels').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
