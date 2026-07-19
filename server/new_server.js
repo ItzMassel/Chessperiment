@@ -652,6 +652,29 @@ io.on("connection", (socket) => {
     }
 
     await removeFromQueue(playerId);
+
+    // Guard against overwriting an existing game that this player is already in.
+    // This can happen if the client re-emits create_room on socket reconnect.
+    if (data && data.roomId) {
+      const existingKey = data.roomId.trim().toUpperCase();
+      const existingGame = games.get(existingKey);
+      if (existingGame) {
+        const existingColor = existingGame.getColorForPlayer(playerId);
+        if (existingColor) {
+          console.log(`[Create Room] Player ${playerId} already in room ${existingKey} — resending state.`);
+          socket.join(existingKey);
+          socket.emit("room_created", {
+            roomId: existingGame.roomId,
+            color: existingColor === "w" ? "white" : "black",
+            isCustom: existingGame.isCustom,
+            customData: existingGame.customData || null,
+            boardState: existingGame.isCustom && existingGame.engine ? existingGame.engine.getSnapshot() : null,
+          });
+          return;
+        }
+      }
+    }
+
     const game = new Game(playerId);
 
     // Use client-provided roomId if present — this makes shareable room codes work

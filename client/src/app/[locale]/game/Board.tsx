@@ -91,6 +91,7 @@ const DraggablePiece = memo(function DraggablePiece({
   gameStatus,
   myColor,
   gameMode,
+  isConnected,
 }: {
   piece: PieceType;
   size: number;
@@ -101,6 +102,7 @@ const DraggablePiece = memo(function DraggablePiece({
   gameStatus: string;
   myColor: "white" | "black" | null;
   gameMode: string;
+  isConnected: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -112,7 +114,7 @@ const DraggablePiece = memo(function DraggablePiece({
   const canDrag =
     gameStatus === "playing" &&
     (gameMode === 'online'
-      ? !isViewingHistory
+      ? !isViewingHistory && isConnected
       : amIAtTurn && isMyPiece && (!isViewingHistory || gameMode === 'computer'));
 
   const style: React.CSSProperties = {
@@ -173,6 +175,7 @@ const SquareTile = memo(function SquareTile({
   amIAtTurn,
   gameMode,
   redMarked,
+  isConnected,
 }: {
   pos: string;
   isWhite: boolean;
@@ -191,6 +194,7 @@ const SquareTile = memo(function SquareTile({
   amIAtTurn: boolean;
   gameMode: string;
   redMarked: boolean;
+  isConnected: boolean;
 }) {
   const { setNodeRef } = useDroppable({ id: pos });
   const hasShared = sharedPieces && sharedPieces.length > 0;
@@ -231,6 +235,7 @@ const SquareTile = memo(function SquareTile({
           gameStatus={gameStatus}
           myColor={myColor}
           gameMode={gameMode}
+          isConnected={isConnected}
         />
       )}
       {/* Shared square: render both pieces scaled & offset */}
@@ -248,6 +253,7 @@ const SquareTile = memo(function SquareTile({
               gameStatus={gameStatus}
               myColor={myColor}
               gameMode={gameMode}
+              isConnected={isConnected}
             />
           </div>
           {/* Shared piece(s) — bottom-left */}
@@ -786,7 +792,12 @@ export default function Board({
 
   useEffect(() => {
     if (!socket) return;
-    const register = () => {
+
+    const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
+
+    // Emit register_player on connect (initial mount AND reconnection).
+    // The server handles rejoin via getPlayerRoom, so this is sufficient.
+    const registerPlayer = () => {
       let pId = localStorage.getItem("chess_player_id");
       if (!pId && session?.user?.id) {
         pId = session.user.id;
@@ -797,20 +808,27 @@ export default function Board({
         localStorage.setItem("chess_player_id", pId);
       }
       socket.emit("register_player", { playerId: pId });
-      const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
-      if (initialRoomId && !isComputerMode) {
-        if (mode === 'create') {
-          socket.emit("create_room", { roomId: initialRoomId });
-        } else {
-          socket.emit("join_room", { roomId: initialRoomId, pId });
-        }
-      } else if (isComputerMode) {
+
+      if (isComputerMode) {
         setMyColor("white");
       }
     };
-    register();
-    socket.on("connect", register);
-    return () => { socket.off("connect", register); };
+
+    registerPlayer();
+    socket.on("connect", registerPlayer);
+
+    // Emit create_room or join_room ONLY on initial mount, NOT on reconnect.
+    // Reconnection is handled by register_player → server getPlayerRoom → rejoin_game.
+    if (initialRoomId && !isComputerMode) {
+      if (mode === 'create') {
+        socket.emit("create_room", { roomId: initialRoomId });
+      } else {
+        let pId = localStorage.getItem("chess_player_id") || session?.user?.id || Math.random().toString(36).substring(2, 15);
+        socket.emit("join_room", { roomId: initialRoomId, pId });
+      }
+    }
+
+    return () => { socket.off("connect", registerPlayer); };
   }, [session?.user?.id, sessionStatus, socket, initialRoomId, gameMode, gameModeVar]);
 
   const handleRematchRequest = useCallback(() => {
@@ -1274,6 +1292,7 @@ export default function Board({
           amIAtTurn={amIAtTurn}
           gameMode={gameMode}
           redMarked={redMarkedSquares.has(pos)}
+          isConnected={isConnected}
         />
       );
     }
