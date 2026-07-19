@@ -11,7 +11,7 @@ import {
     getProject,
     saveProject,
     saveProjectBoard 
-} from "@/lib/firestore";
+} from "@/db";
 import { revalidatePath } from "next/cache";
 import { Project } from "@/types/Project";
 

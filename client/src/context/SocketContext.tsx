@@ -29,9 +29,22 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     if (s.connected) setIsConnected(true);
 
+    // Backup: when the tab becomes visible after being backgrounded (Chrome throttling),
+    // re-register the player to ensure the server has the latest socket mapping.
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && s.connected) {
+        const playerId = localStorage.getItem("chess_player_id");
+        if (playerId) {
+          s.emit("register_player", { playerId });
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 

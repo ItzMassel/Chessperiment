@@ -34,7 +34,7 @@ export function UserPanel() {
 
     if (loading) {
         return (
-            <div className="fixed bottom-6 right-6 z-100">
+            <div className="hidden lg:block fixed bottom-6 right-6 z-100">
                 <div className="w-12 h-12 rounded-full bg-islands/60 shadow-lg backdrop-blur-md border border-amber-400/30 flex items-center justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-amber-400"></div>
                 </div>
@@ -43,7 +43,7 @@ export function UserPanel() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-100">
+        <div className="hidden lg:block fixed bottom-6 right-6 z-100">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div

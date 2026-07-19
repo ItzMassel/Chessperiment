@@ -35,7 +35,7 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
 
     return (
         <div
-            className="fixed bottom-0 left-0 right-0 bg-gray-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 transition-all duration-300 z-30 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 bg-gray-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 transition-all duration-300 z-[60] shadow-lg"
             style={{ height: isExpanded ? `${expandedHeight}px` : `${collapsedHeight}px` }}
             onClick={(e) => {
                 // If clicking the background of the panel, deselect

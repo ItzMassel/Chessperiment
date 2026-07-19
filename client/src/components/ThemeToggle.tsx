@@ -22,7 +22,7 @@ export function ThemeToggle() {
     if (!mounted) {
         return (
             <div
-                className="fixed bottom-6 z-100 transition-all duration-500 ease-in-out"
+                className="hidden lg:block fixed bottom-6 z-100 transition-all duration-500 ease-in-out"
                 style={{ left: `calc(1.5rem + var(--ai-sidebar-width, 0px))` }}
             >
                 <div className="w-14 h-14" />
@@ -32,7 +32,7 @@ export function ThemeToggle() {
 
     return (
         <div 
-            className="fixed bottom-6 z-100 transition-all duration-500 ease-in-out"
+            className="hidden lg:block fixed bottom-6 z-100 transition-all duration-500 ease-in-out"
             style={{ 
                 left: `calc(1.5rem + var(--ai-sidebar-width, 0px))`
             }}

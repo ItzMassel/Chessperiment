@@ -2,8 +2,7 @@
 
 import { useState } from "react"
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { doc, setDoc, serverTimestamp } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase-client"
+import { auth } from "@/lib/firebase-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
@@ -25,7 +24,7 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    if (!auth || !db) {
+    if (!auth) {
         return (
             <div className="w-full p-6 text-center">
                 <p className="text-white/60">Firebase is not configured. Sign-up is unavailable in offline mode.</p>
@@ -67,17 +66,7 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
                 await updateProfile(user, { displayName })
             }
 
-            // 3. Create Firestore Document
-            await setDoc(doc(db!, "users", user.uid), {
-                email: user.email,
-                displayName: displayName || null,
-                createdAt: serverTimestamp(),
-                authProvider: "email",
-                uid: user.uid,
-                photoURL: user.photoURL || null,
-            })
-
-            // 4. Sync with NextAuth session
+            // 3. Sync with NextAuth session
             const idToken = await userCredential.user.getIdToken();
             await signIn("credentials", {
                 idToken,

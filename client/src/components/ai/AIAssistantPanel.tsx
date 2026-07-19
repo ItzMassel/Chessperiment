@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, Trash2, Loader2, Bot } from 'lucide-react';
+import { Sparkles, X, Send, Trash2, Loader2, Bot, LogIn } from 'lucide-react';
 import { useAIAssistant } from '@/context/AIAssistantContext';
+import { Link } from '@/i18n/navigation';
 import AIMessage from './AIMessage';
 
 export default function AIAssistantPanel() {
@@ -12,10 +13,14 @@ export default function AIAssistantPanel() {
     isOpen,
     isLoading,
     currentPage,
+    isAuthenticated,
+    authLoading,
     togglePanel,
     sendMessage,
     clearMessages
   } = useAIAssistant();
+
+  const needsAuth = !isAuthenticated && !authLoading;
 
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,7 +39,7 @@ export default function AIAssistantPanel() {
   }, [isOpen]);
 
   const handleSend = () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || needsAuth) return;
     sendMessage(input);
     setInput('');
   };
@@ -71,7 +76,7 @@ export default function AIAssistantPanel() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed left-0 top-24 h-[calc(100vh-6rem)] w-[380px] z-40 bg-stone-950 border-r border-white/10 flex flex-col shadow-2xl shadow-black/50"
+            className="fixed inset-0 z-50 lg:left-0 lg:top-24 lg:h-[calc(100vh-6rem)] lg:w-[380px] lg:z-40 bg-stone-950 lg:border-r border-white/10 flex flex-col shadow-2xl shadow-black/50"
           >
             {/* Header */}
             <div className="relative px-5 py-4 border-b border-white/5 bg-linear-to-b from-white/3 to-transparent backdrop-blur-xl">
@@ -119,7 +124,28 @@ export default function AIAssistantPanel() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
-              {visibleMessages.length === 0 && (
+              {needsAuth && visibleMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-4 pb-20 px-6">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                    <LogIn className="w-7 h-7 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white/70">Sign in required</p>
+                    <p className="text-xs text-white/30 mt-2 max-w-[240px] leading-relaxed">
+                      You need to be signed in to use the AI assistant.
+                    </p>
+                  </div>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/90 text-black text-sm font-semibold hover:bg-amber-400 transition-all active:scale-95"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign in
+                  </Link>
+                </div>
+              )}
+
+              {!needsAuth && visibleMessages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-3 pb-20">
                   <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-purple-500/20 to-indigo-600/20 flex items-center justify-center">
                     <Sparkles className="w-7 h-7 text-purple-400" />
@@ -170,14 +196,14 @@ export default function AIAssistantPanel() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Describe your chess variant..."
+                  placeholder={needsAuth ? 'Sign in to use the AI assistant' : 'Describe your chess variant...'}
                   className="flex-1 bg-transparent text-sm text-white placeholder-white/25 resize-none outline-none max-h-32 min-h-[20px] leading-relaxed"
                   rows={1}
-                  disabled={isLoading}
+                  disabled={isLoading || needsAuth}
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || needsAuth}
                   className="shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
                 >
                   <Send className="w-4 h-4" />

@@ -181,7 +181,9 @@ export default function PageClient({ projectId }: PageClientProps) {
 
     return (
         <div className="flex min-h-screen bg-bg">
-            <ProjectEditorSidebar projectId={projectId} />
+            <div className="hidden lg:block">
+                <ProjectEditorSidebar projectId={projectId} />
+            </div>
 
             <main className="flex-1 overflow-hidden flex flex-col pt-20 relative">
                 <Link
