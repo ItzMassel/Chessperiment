@@ -95,7 +95,6 @@ async function initRedis() {
     })();
   });
 }
-
 await initRedis();
 
 const app = express();
@@ -103,9 +102,10 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://chessperiment.app",
     methods: ["GET", "POST"],
   },
+  path: "/chessperiment-server/socket.io",
   maxHttpBufferSize: 1e8, // 100 MB for custom assets
 });
 class Game {
