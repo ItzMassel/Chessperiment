@@ -71,7 +71,7 @@ export function SEOFooter() {
                                 </li>
                                 <li>
                                     <button
-                                        onClick={() => window.klaro?.show()}
+                                        onClick={() => (window as any).klaro?.show()}
                                         className="text-stone-500 hover:text-accent transition-colors text-sm text-left cursor-pointer"
                                     >
                                         {t('cookieSettings')}
