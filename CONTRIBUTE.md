@@ -1,4 +1,6 @@
 # How to contribute
+NOTE: This is a guide on how to contribute to the codebase, if you want to contribute in other ways - like advertising, testing alpha and beta versions or really anything you can think of - just dm me on discord! 
+
 
 Start by visiting the [issues](https://github.com/ItzMassel/Chessperiment/issues?q=is%3Aissue%20state%3Aopen%20no%3Aassignee%20label%3A%22good%20first%20issue%22). Pick one issue to work on (TIP: Look out for the tag "good first issue"). 
 

@@ -23,7 +23,7 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment.app/chessperiment-server";
+    const SOCKET_URL = "https://chessperiment.app/chessperiment-server";
     socket = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: Infinity,
