@@ -1,0 +1,36 @@
+name: Sync main to beta and alpha
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into beta
+        run: |
+          git checkout beta
+          git merge origin/main --no-ff -m "chore: sync main into beta"
+          git push origin beta
+
+      - name: Merge beta into alpha
+        run: |
+          git checkout alpha
+          git merge origin/beta --no-ff -m "chore: sync beta into alpha"
+          git push origin alpha
