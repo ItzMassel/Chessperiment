@@ -61,9 +61,12 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
                     const isActive = pathname.includes(item.href);
                     const Icon = item.icon;
 
+                    const navTarget = item.id === 'piece' ? 'nav-piece-editor' : item.id === 'square' ? 'nav-square-editor' : undefined;
+
                     return (
                         <div key={item.id} className="relative">
                             <button
+                                {...(navTarget ? { 'data-tutorial-target': navTarget } : {})}
                                 onClick={() => router.push(item.href)}
                                 onMouseEnter={() => handleMouseEnter(item.id)}
                                 onMouseLeave={handleMouseLeave}

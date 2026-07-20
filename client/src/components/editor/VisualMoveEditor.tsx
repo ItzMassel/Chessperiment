@@ -537,7 +537,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId, 
     const [showTutorial, setShowTutorial] = useState(false);
 
     return (
-        <div className="w-full max-w-5xl mx-auto space-y-8 p-4">
+        <div data-tutorial-target="move-editor" className="w-full max-w-5xl mx-auto space-y-8 p-4">
             <AnimatePresence>
                 {showTutorial && <LogicTutorial onClose={() => setShowTutorial(false)} />}
             </AnimatePresence>

@@ -17,6 +17,7 @@ import PieceTestBoard from '@/components/editor/PieceTestBoard';
 import { invertLightness } from '@/lib/colors';
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 import { getPresetRules } from '@/lib/standardPiecePresets';
+import { useTutorialOptional } from '@/components/tutorial';
 import { v4 as uuidv4 } from 'uuid';
 import { trackEvent } from '@/lib/track';
 
@@ -31,6 +32,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const locale = useLocale();
+    const tutorial = useTutorialOptional();
 
     const {
         project,
@@ -581,30 +583,37 @@ export default function PageClient({ projectId }: PageClientProps) {
                 saveStatus={saveStatus}
                 currentName={currentName}
                 setCurrentName={setCurrentName}
+                onNameChanged={(name) => {
+                    if (name.trim().length > 0 && tutorial?.state.currentStepIndex === 5) {
+                        tutorial.goNext();
+                    }
+                }}
                 currentColor={editingColor}
                 setCurrentColor={setEditingColor}
                 mode={mode}
-                setMode={(m: any) => { if (m === 'moves') trackEvent('open_rules_editor'); setMode(m); }}
+                setMode={(m: any) => { if (m === 'moves') { trackEvent('open_rules_editor'); tutorial?.goNext(); } setMode(m); }}
                 undo={undo}
                 redo={redo}
                 canUndo={historyIndex > 0}
                 canRedo={historyIndex < history.length - 1}
                 onDeletePiece={handleDeletePiece}
                 onGenerateInvertedPiece={() => {
-                    if (!confirm(t('confirmInvert'))) return;
                     if (editingColor === 'white') {
                         const inverted = currentPixelsWhite.map(row =>
                             row.map(pixel => invertLightness(pixel))
                         );
                         setCurrentPixelsBlack(inverted);
                         handleSavePiece({ pixelsBlack: inverted });
+                        setEditingColor('black');
                     } else {
                         const inverted = currentPixelsBlack.map(row =>
                             row.map(pixel => invertLightness(pixel))
                         );
                         setCurrentPixelsWhite(inverted);
                         handleSavePiece({ pixelsWhite: inverted });
+                        setEditingColor('white');
                     }
+                    tutorial?.goNext();
                 }}
                 onImageUpload={handleImageUpload}
                 projectId={projectId}

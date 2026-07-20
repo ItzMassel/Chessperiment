@@ -1,5 +1,6 @@
 import { AIAssistantProvider } from '@/context/AIAssistantContext';
 import AIAssistantPanel from '@/components/ai/AIAssistantPanel';
+import { TutorialProvider } from '@/components/tutorial';
 
 interface EditorProjectLayoutProps {
   children: React.ReactNode;
@@ -11,8 +12,10 @@ export default async function EditorProjectLayout({ children, params }: EditorPr
 
   return (
     <AIAssistantProvider projectId={projectId}>
-      <AIAssistantPanel />
-      {children}
+      <TutorialProvider projectId={projectId}>
+        <AIAssistantPanel />
+        {children}
+      </TutorialProvider>
     </AIAssistantProvider>
   );
 }

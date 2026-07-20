@@ -1079,6 +1079,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 {/* --- Resize Handles --- */}
                 {/* RIGHT handle */}
                 <div
+                    data-tutorial-target="board-resize-handle"
                     className="absolute top-0 -right-10 w-10 h-full cursor-e-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handlePointerDown('right', e)}
                     onTouchStart={(e) => handlePointerDown('right', e)}
@@ -1091,6 +1092,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
                 {/* LEFT handle */}
                 <div
+                    data-tutorial-target="board-resize-handle"
                     className="absolute top-0 -left-10 w-10 h-full cursor-w-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handlePointerDown('left', e)}
                     onTouchStart={(e) => handlePointerDown('left', e)}
@@ -1103,6 +1105,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
                 {/* BOTTOM handle */}
                 <div
+                    data-tutorial-target="board-resize-handle"
                     className="absolute -bottom-10 left-0 w-full h-10 cursor-s-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handlePointerDown('bottom', e)}
                     onTouchStart={(e) => handlePointerDown('bottom', e)}
@@ -1115,6 +1118,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
                 {/* TOP handle */}
                 <div
+                    data-tutorial-target="board-resize-handle"
                     className="absolute -top-10 left-0 w-full h-10 cursor-n-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handlePointerDown('top', e)}
                     onTouchStart={(e) => handlePointerDown('top', e)}

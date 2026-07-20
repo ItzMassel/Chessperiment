@@ -12,6 +12,7 @@ import BoardEditor from '@/components/editor/BoardEditor';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
+import { useTutorialOptional } from '@/components/tutorial';
 
 import { EditMode } from '@/types/editor';
 
@@ -27,8 +28,20 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [selectedPiece, setSelectedPiece] = useState<{ type: string, color: string, movement?: 'run' | 'jump' }>({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
     const [boardKey, setBoardKey] = useState(0);
+    const tutorial = useTutorialOptional();
+    const prevDimsRef = useRef({ rows: 0, cols: 0 });
+    const prevWhiteCountRef = useRef(0);
+    const prevBlackCountRef = useRef(0);
 
     const { project, loading, saveBoard, saveProject } = useProject(projectId);
+
+    // Initialize prev refs once project loads
+    if (project && prevDimsRef.current.rows === 0) {
+        const placed = Object.values(project.placedPieces || {});
+        prevDimsRef.current = { rows: project.rows, cols: project.cols };
+        prevWhiteCountRef.current = placed.filter(p => p.color === 'white').length;
+        prevBlackCountRef.current = placed.filter(p => p.color === 'black').length;
+    }
 
     // Transform project.customPieces into the format expected by BoardEditor
     const customCollection = useMemo(() => {
@@ -58,14 +71,38 @@ export default function PageClient({ projectId }: PageClientProps) {
     }, [project?.customPieces]);
 
     const handleGenerateBoardData = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>, gridType: 'square' | 'hex') => {
-        saveBoard({
+        await saveBoard({
             rows,
             cols,
             gridType,
             activeSquares: Array.from(activeSquares),
             placedPieces: placedPieces as any
         });
-    }, [saveBoard]);
+
+        if (!tutorial) return;
+
+        const stepIndex = tutorial.state.currentStepIndex;
+        const placed = Object.values(placedPieces);
+        const whiteCount = placed.filter(p => p.color === 'white').length;
+        const blackCount = placed.filter(p => p.color === 'black').length;
+
+        // Step 0 (resize-board): detect board dimension change
+        if (stepIndex === 0 && prevDimsRef.current.rows > 0 && (rows !== prevDimsRef.current.rows || cols !== prevDimsRef.current.cols)) {
+            tutorial.goNext();
+        }
+        // Step 1 (place-white): detect first white piece placed
+        if (stepIndex === 1 && whiteCount > prevWhiteCountRef.current) {
+            tutorial.goNext();
+        }
+        // Step 3 (place-black): detect first black piece placed
+        if (stepIndex === 3 && blackCount > prevBlackCountRef.current) {
+            tutorial.goNext();
+        }
+
+        prevDimsRef.current = { rows, cols };
+        prevWhiteCountRef.current = whiteCount;
+        prevBlackCountRef.current = blackCount;
+    }, [saveBoard, tutorial]);
 
     // ─── AI Tool Registration ───
     const boardToolHandlers = useMemo(() => ({
@@ -226,6 +263,11 @@ export default function PageClient({ projectId }: PageClientProps) {
                     }
                 }}
                 selectedPiece={editMode === 'pieces' ? selectedPiece : null}
+                onColorChange={(color) => {
+                    if (color === 'black' && tutorial?.state.currentStepIndex === 2) {
+                        tutorial.goNext();
+                    }
+                }}
             />
         </div>
     );
