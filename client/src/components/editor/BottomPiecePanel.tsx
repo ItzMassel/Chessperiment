@@ -12,11 +12,12 @@ interface BottomPiecePanelProps {
     project: Project;
     onSelectPiece?: (piece: { type: string, color: string, movement?: 'run' | 'jump' }) => void;
     selectedPiece?: { type: string, color: string, movement?: 'run' | 'jump' } | null;
+    onColorChange?: (color: 'white' | 'black') => void;
 }
 
 const standardPieces = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece }: BottomPiecePanelProps) {
+export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece, onColorChange }: BottomPiecePanelProps) {
     const t = useTranslations('BottomPiecePanel');
     const [isExpanded, setIsExpanded] = useState(true);
     const [selectedColor, setSelectedColor] = useState<'white' | 'black'>('white');
@@ -35,6 +36,7 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
 
     return (
         <div
+            data-tutorial-target="piece-panel"
             className="fixed bottom-0 left-0 right-0 bg-gray-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 transition-all duration-300 z-[60] shadow-lg"
             style={{ height: isExpanded ? `${expandedHeight}px` : `${collapsedHeight}px` }}
             onClick={(e) => {
@@ -61,9 +63,9 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
                     if (e.target === e.currentTarget) onSelectPiece?.({ type: '', color: '' });
                 }}>
                     {/* Color Toggle */}
-                    <div className="flex gap-2 mb-4 justify-center">
+                    <div data-tutorial-target="color-toggle" className="flex gap-2 mb-4 justify-center">
                         <button
-                            onClick={() => setSelectedColor('white')}
+                            onClick={() => { setSelectedColor('white'); onColorChange?.('white'); }}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedColor === 'white'
                                 ? 'bg-white text-gray-900 shadow-md'
                                 : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-400 dark:hover:bg-gray-600'
@@ -72,7 +74,7 @@ export default function BottomPiecePanel({ project, onSelectPiece, selectedPiece
                             {t('white')}
                         </button>
                         <button
-                            onClick={() => setSelectedColor('black')}
+                            onClick={() => { setSelectedColor('black'); onColorChange?.('black'); }}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${selectedColor === 'black'
                                 ? 'bg-gray-900 text-white shadow-md'
                                 : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-400 dark:hover:bg-gray-600'

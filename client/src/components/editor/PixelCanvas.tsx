@@ -243,6 +243,7 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
                 className="bg-stone-400 dark:bg-stone-900 p-1 rounded-sm shadow-xl border border-stone-400/50"
             >
                 <canvas
+                    data-tutorial-target="pixel-canvas"
                     ref={canvasRef}
                     width={512}
                     height={512}
