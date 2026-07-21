@@ -19,6 +19,7 @@ interface PieceEditorSidebarProps {
     saveStatus?: 'idle' | 'success' | 'error';
     currentName: string;
     setCurrentName: (name: string) => void;
+    onNameChanged?: (name: string) => void;
     currentColor: 'white' | 'black';
     setCurrentColor: (color: 'white' | 'black') => void;
     projectId?: string;
@@ -46,6 +47,7 @@ export default function PieceEditorSidebar({
     saveStatus,
     currentName,
     setCurrentName,
+    onNameChanged,
     currentColor,
     setCurrentColor,
     mode,
@@ -116,9 +118,10 @@ export default function PieceEditorSidebar({
                     </label>
                     <div className="relative">
                         <input
+                            data-tutorial-target="piece-name-input"
                             type="text"
                             value={currentName}
-                            onChange={(e) => setCurrentName(e.target.value)}
+                            onChange={(e) => { setCurrentName(e.target.value); onNameChanged?.(e.target.value); }}
                             onBlur={() => onSavePiece()}
                             placeholder="e.g. Shadow Knight"
                             className="w-full bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-2xl px-6 py-4 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all font-bold shadow-xs tabular-nums"
@@ -149,6 +152,7 @@ export default function PieceEditorSidebar({
 
                 {selectedPieceId && (
                     <motion.button
+                        data-tutorial-target="invert-button"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={(e) => {
@@ -210,6 +214,7 @@ export default function PieceEditorSidebar({
                     <Palette size={14} /> {t('design')}
                 </button>
                 <button
+                    data-tutorial-target="mode-toggle-moves"
                     onClick={() => setMode('moves')}
                     className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'moves'
                         ? 'bg-amber-500 text-white dark:text-bg shadow-md'
@@ -356,6 +361,7 @@ export default function PieceEditorSidebar({
             <div className="mt-auto pt-8 space-y-3 shrink-0">
                 {selectedPieceId && projectId && (
                     <button
+                        data-tutorial-target="advanced-logic-button"
                         onClick={() => router.push(`/editor/${projectId}/piece-editor/${selectedPieceId}/logic`)}
                         className="w-full bg-linear-to-r from-indigo-500/20 to-violet-500/20 hover:from-indigo-500 hover:to-violet-600 text-indigo-400 hover:text-white py-4 rounded-3xl font-black text-xs uppercase tracking-widest border border-indigo-500/30 transition-all flex items-center justify-center gap-2 group shadow-lg hover:shadow-indigo-500/40 relative overflow-hidden"
                     >
