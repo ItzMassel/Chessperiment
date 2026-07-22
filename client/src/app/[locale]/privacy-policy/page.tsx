@@ -50,8 +50,6 @@ export default async function PrivacyPolicy({ params }: { params: Promise<{ loca
 
             <section className={styles.section}>
                 <h2 className={styles.heading}>{t("cookiesHeading")}</h2>
-                <h3 className={styles.subheading}>{t("klaroSubheading")}</h3>
-                <p className={styles.text}>{t("klaroText")}</p>
                 <h3 className={styles.subheading}>{t("sessionSubheading")}</h3>
                 <p className={styles.text}>{t("sessionText")}</p>
                 <h3 className={styles.subheading}>{t("localStorageSubheading")}</h3>

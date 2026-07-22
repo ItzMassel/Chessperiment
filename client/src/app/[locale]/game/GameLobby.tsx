@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Users, Search, Plus, LogIn, Monitor, X, Copy, Check, Sparkles, UserRound } from 'lucide-react';
-import { trackEvent } from '@/lib/track';
 
 interface GameLobbyProps {
     onQuickSearch: () => void;
@@ -62,7 +61,7 @@ export default function GameLobby({
             {/* Quick Play & Create */}
             <div className="flex flex-col gap-8">
                 <button
-                    onClick={() => { trackEvent('play_game'); onQuickSearch(); }}
+                    onClick={onQuickSearch}
                     className="group relative overflow-hidden bg-linear-to-br from-amber-400 via-amber-500 to-orange-600 p-10 rounded-[2.5rem] shadow-2xl hover:shadow-amber-500/40 transition-all hover:-translate-y-2 active:scale-[0.98]"
                 >
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 group-hover:rotate-12 transition-all duration-700">
@@ -80,7 +79,7 @@ export default function GameLobby({
                 </button>
 
                 <button
-                    onClick={() => { trackEvent('play_game'); onCreateRoom(); }}
+                    onClick={onCreateRoom}
                     className="group relative overflow-hidden bg-white dark:bg-stone-900 border border-gray-200 dark:border-white/5 p-10 rounded-[2.5rem] shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-2 active:scale-[0.98]"
                 >
                     <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -97,7 +96,7 @@ export default function GameLobby({
                 </button>
 
                 <button
-                    onClick={() => { trackEvent('play_game'); onLocalGame(); }}
+                    onClick={onLocalGame}
                     className="group relative overflow-hidden bg-white dark:bg-stone-900 border border-gray-200 dark:border-white/5 p-10 rounded-[2.5rem] shadow-2xl hover:border-emerald-500/50 transition-all hover:-translate-y-2 active:scale-[0.98]"
                 >
                     <div className="absolute inset-0 bg-linear-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -134,7 +133,7 @@ export default function GameLobby({
                             className="flex-1 bg-stone-50 dark:bg-stone-950/50 border border-stone-200 dark:border-white/10 rounded-2xl px-6 py-4 text-stone-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase font-mono text-xl tracking-[0.3em] placeholder:tracking-normal placeholder:font-sans placeholder:text-stone-400 dark:placeholder:text-stone-600"
                         />
                         <button
-                            onClick={() => { trackEvent('play_game'); onJoinRoom(roomInput); }}
+                            onClick={() => { onJoinRoom(roomInput); }}
                             className="px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl transition-all shadow-xl shadow-blue-600/30 active:scale-95 flex items-center justify-center"
                         >
                             <LogIn size={28} />
@@ -161,7 +160,7 @@ export default function GameLobby({
                         ].map((level) => (
                             <button
                                 key={level.elo}
-                                onClick={() => { trackEvent('play_game'); onVsComputer(level.elo); }}
+                                onClick={() => { onVsComputer(level.elo); }}
                                 className="group/level relative p-4 bg-stone-50 dark:bg-stone-950/50 hover:bg-white dark:hover:bg-white/5 border border-stone-200 dark:border-white/10 rounded-2xl transition-all hover:border-amber-500/50 hover:shadow-xl active:scale-95 text-left overflow-hidden"
                             >
                                 <div className={`absolute top-0 right-0 w-16 h-16 ${level.color} opacity-5 blur-2xl group-hover/level:opacity-20 transition-opacity`} />

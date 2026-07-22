@@ -38,6 +38,7 @@ export function TutorialTooltip({
   const getTooltipStyle = (s: StepDefinition, tRect: DOMRect | null): React.CSSProperties => {
     const gap = 20
     const TW = 380
+    const isMobile = window.innerWidth < 640
 
     const clampH = (centerX: number) =>
       Math.max(gap, Math.min(centerX, window.innerWidth - TW - gap))
@@ -45,7 +46,7 @@ export function TutorialTooltip({
     const clampV = (centerY: number) =>
       Math.max(gap, Math.min(centerY, window.innerHeight - 200))
 
-    if (s.placement === "center" || !tRect) {
+    if (s.placement === "center" || !tRect || isMobile) {
       return {
         position: "fixed",
         top: "50%",

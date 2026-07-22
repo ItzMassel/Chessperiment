@@ -49,6 +49,7 @@ export type TriggerType =
 export interface MoveCondition {
     id: string;
     variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist' | 'cooldown' | 'charge' | 'mode';
+    variableVariable?: string; // If set, compare this piece variable instead of the spatial/state variable
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
     valueVariable?: string; // If set, compare against this piece variable instead of `value`

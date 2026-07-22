@@ -11,7 +11,6 @@ import { BlocklyWorkspace } from 'react-blockly';
 import * as Blockly from 'blockly';
 import './blocklyDefinitions'; // Registration happens here
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
-import { trackEvent } from '@/lib/track';
 import SmallScreenNotice from '@/components/editor/SmallScreenNotice';
 
 const SAVE_DEBOUNCE_MS = 2000;
@@ -102,9 +101,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         saveProject,
         isSaving: hookIsSaving
     } = useProject(projectId);
-
-    // Track open on mount
-    useEffect(() => { trackEvent('open_square_editor'); }, []);
 
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState<string>('trigger');

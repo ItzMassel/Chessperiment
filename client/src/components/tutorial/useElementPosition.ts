@@ -13,10 +13,12 @@ export function useElementPosition(selector: string | null): ElementPosition {
     visible: false,
   })
   const rafRef = useRef<number | null>(null)
+  const prevSelectorRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!selector) {
       setPosition({ rect: null, visible: false })
+      prevSelectorRef.current = selector
       return
     }
 
@@ -56,6 +58,12 @@ export function useElementPosition(selector: string | null): ElementPosition {
 
     window.addEventListener("scroll", update, { capture: true, passive: true })
     window.addEventListener("resize", update, { passive: true })
+
+    if (el && selector !== prevSelectorRef.current) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" })
+    }
+
+    prevSelectorRef.current = selector
 
     return () => {
       ro.disconnect()
