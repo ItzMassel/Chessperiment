@@ -165,25 +165,29 @@ export class CustomPiece extends Piece {
                 const cond = rule.conditions[i];
                 let value = 0;
                 
-                // Helper to check standard spatial conditions
-                if (cond.variable === 'diffX') value = dx;
-                else if (cond.variable === 'diffY') value = forwardDy;
-                else if (cond.variable === 'absDiffX') value = adx;
-                else if (cond.variable === 'absDiffY') value = ady;
-                // Hex specific / generic distance
-                else if (cond.variable === 'dist') {
-                    if (board.gridType === 'hex') {
-                        const ds = -dx - dy;
-                        value = (Math.abs(dx) + Math.abs(dy) + Math.abs(ds)) / 2;
-                    } else {
-                        value = Math.max(adx, ady); // Chebyshev distance for square
+                // If variableVariable is set, resolve left side from piece variables
+                if (cond.variableVariable !== undefined) {
+                    value = this.variables[cond.variableVariable] ?? 0;
+                } else {
+                    // Helper to check standard spatial conditions
+                    if (cond.variable === 'diffX') value = dx;
+                    else if (cond.variable === 'diffY') value = forwardDy;
+                    else if (cond.variable === 'absDiffX') value = adx;
+                    else if (cond.variable === 'absDiffY') value = ady;
+                    // Hex specific / generic distance
+                    else if (cond.variable === 'dist') {
+                        if (board.gridType === 'hex') {
+                            const ds = -dx - dy;
+                            value = (Math.abs(dx) + Math.abs(dy) + Math.abs(ds)) / 2;
+                        } else {
+                            value = Math.max(adx, ady); // Chebyshev distance for square
+                        }
                     }
+                    // NEW: Check state variable conditions
+                    else if (cond.variable === 'cooldown') value = this.variables['cooldown'] || 0;
+                    else if (cond.variable === 'charge') value = this.variables['charge'] || 0;
+                    else if (cond.variable === 'mode') value = this.variables['mode'] || 0;
                 }
-                // NEW: Check state variable conditions
-                else if (cond.variable === 'cooldown') value = this.variables['cooldown'] || 0;
-                else if (cond.variable === 'charge') value = this.variables['charge'] || 0;
-                else if (cond.variable === 'mode') value = this.variables['mode'] || 0;
-
 
                 // Resolve the comparison value: either a literal number or a piece variable reference
                 const compareValue = cond.valueVariable !== undefined

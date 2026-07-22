@@ -19,7 +19,6 @@ import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 import { getPresetRules } from '@/lib/standardPiecePresets';
 import { useTutorialOptional } from '@/components/tutorial';
 import { v4 as uuidv4 } from 'uuid';
-import { trackEvent } from '@/lib/track';
 
 export type EditMode = 'design' | 'moves';
 
@@ -46,8 +45,6 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [mode, setMode] = useState<'design' | 'moves'>('design');
     const [showTestBoard, setShowTestBoard] = useState(false);
 
-    // Track open on mount
-    useEffect(() => { trackEvent('open_piece_editor'); }, []);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     // Editor state for the CURRENTLY selected piece
@@ -591,7 +588,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                 currentColor={editingColor}
                 setCurrentColor={setEditingColor}
                 mode={mode}
-                setMode={(m: any) => { if (m === 'moves') { trackEvent('open_rules_editor'); tutorial?.goNext(); } setMode(m); }}
+                setMode={(m: any) => { if (m === 'moves') { tutorial?.goNext(); } setMode(m); }}
                 undo={undo}
                 redo={redo}
                 canUndo={historyIndex > 0}

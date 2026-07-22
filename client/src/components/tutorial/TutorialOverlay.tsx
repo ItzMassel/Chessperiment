@@ -10,7 +10,7 @@ interface TutorialOverlayProps {
 }
 
 export function TutorialOverlay({ step, isActive }: TutorialOverlayProps) {
-  const { rect: targetRect } = useElementPosition(
+  const { rect: targetRect, visible: targetVisible } = useElementPosition(
     isActive && step?.target ? step.target : null
   )
 
@@ -20,7 +20,7 @@ export function TutorialOverlay({ step, isActive }: TutorialOverlayProps) {
 
   const hasTarget = step.target && targetRect
 
-  if (!hasTarget || step.placement === "center") {
+  if (!hasTarget || step.placement === "center" || !targetVisible) {
     return (
       <AnimatePresence>
         <motion.div
