@@ -106,7 +106,7 @@ export const tutorialSteps: readonly StepDefinition[] = [
     id: "build-knight",
     title: "Build a Knight Move",
     description:
-      "Let's create a knight together. Add a condition: absDiffX = 1 AND absDiffY = 2, with movement type 'Jump' (pieces can leap over obstacles). Then add a catch-all rule marked 'Illegal' so it can't go anywhere else.",
+      "Let's create a knight together. Add a condition: absDiffX = 1 AND absDiffY = 2, with movement type 'Jump' (pieces can leap over obstacles).",
     placement: "center",
     type: "action-with-solution",
     target: "[data-tutorial-target='move-editor']",

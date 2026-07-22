@@ -28,6 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface MoveCondition {
     id: string;
     variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist' | 'cooldown' | 'charge' | 'mode';
+    variableVariable?: string; // If set, compare this piece variable instead of the spatial/state variable
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
     valueVariable?: string; // If set, compare against this piece variable instead of `value`
@@ -278,26 +279,59 @@ function SortableRule({
                     {rule.conditions.map((cond, cIdx) => (
                         <div key={cond.id} className="flex items-center gap-2">
                             <div className="flex items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
-                                <div
-                                    className="relative flex items-center"
-                                    onClick={() => setExplaining(cond.variable)}
-                                >
-                                    <select
-                                        value={cond.variable}
-                                        onChange={(e) => {
-                                            onUpdateCondition(rule.id, cond.id, { variable: e.target.value as any });
-                                            setExplaining(null);
-                                        }}
-                                        className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-amber-500 pl-2 pr-6 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
-                                    >
-                                        {(Object.keys(VAR_MATH) as Array<keyof typeof VAR_MATH>).map((key) => (
-                                            <option key={key} value={key}>{t(`variables.${key}.label`)} ({VAR_MATH[key]})</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-2 pointer-events-none text-amber-500/40">
-                                        <Plus size={10} className="rotate-45" />
+                                {cond.variableVariable !== undefined ? (
+                                    <div className="flex items-center gap-1">
+                                        <select
+                                            value={cond.variableVariable}
+                                            onChange={(e) => onUpdateCondition(rule.id, cond.id, { variableVariable: e.target.value })}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-violet-500 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        >
+                                            {BUILTIN_VALUE_VARS.map(v => (
+                                                <option key={v} value={v}>{v}</option>
+                                            ))}
+                                            {variables.map(v => (
+                                                <option key={v.id} value={v.name}>{v.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            title="Switch to spatial/state variable"
+                                            onClick={() => onUpdateCondition(rule.id, cond.id, { variableVariable: undefined })}
+                                            className="text-[10px] font-black text-violet-500 hover:text-stone-500 px-1 py-1 rounded transition-colors"
+                                        >
+                                            123
+                                        </button>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div
+                                        className="relative flex items-center"
+                                        onClick={() => setExplaining(cond.variable)}
+                                    >
+                                        <select
+                                            value={cond.variable}
+                                            onChange={(e) => {
+                                                onUpdateCondition(rule.id, cond.id, { variable: e.target.value as any });
+                                                setExplaining(null);
+                                            }}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-amber-500 pl-2 pr-6 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        >
+                                            {(Object.keys(VAR_MATH) as Array<keyof typeof VAR_MATH>).map((key) => (
+                                                <option key={key} value={key}>{t(`variables.${key}.label`)} ({VAR_MATH[key]})</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-2 pointer-events-none text-amber-500/40">
+                                            <Plus size={10} className="rotate-45" />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            title="Use a piece variable"
+                                            onClick={() => onUpdateCondition(rule.id, cond.id, { variableVariable: BUILTIN_VALUE_VARS[0] })}
+                                            className="text-[10px] font-black text-stone-400 hover:text-violet-500 px-1 py-1 rounded transition-colors"
+                                        >
+                                            var
+                                        </button>
+                                    </div>
+                                )}
 
                                 <select
                                     value={cond.operator}
