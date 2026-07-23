@@ -76,3 +76,68 @@ export interface OllamaResponse {
 export type ToolHandler = (args: Record<string, any>) => Promise<string> | string;
 
 export type ToolHandlerRegistry = Map<string, ToolHandler>;
+
+// ─── Orchestrator types ───
+
+export type GenStep =
+  | 'plan'
+  | 'board'
+  | 'piece-roster'
+  | 'piece-design'
+  | 'movement'
+  | 'square-patterns'
+  | 'validation'
+  | 'summary';
+
+export interface GenPlan {
+  theme: string;
+  description: string;
+  boardSize: string;
+  pieces: string[];
+  movementPhilosophy: string;
+  squareEffectIdeas: string;
+  keyConstraints: string[];
+  skipSteps?: GenStep[];
+}
+
+export interface StepContext {
+  step: GenStep;
+  plan: GenPlan;
+  projectState: any;
+  previousStepResults?: Record<string, any>;
+  revisionNotes?: string;
+}
+
+export interface StepResult {
+  step: GenStep;
+  success: boolean;
+  summary: string;
+  projectState?: any;
+  artifacts?: Record<string, any>;
+  error?: string;
+}
+
+export interface CheckpointRequest {
+  step: GenStep;
+  summary: string;
+  expectedTools: string[];
+  requiresApproval: boolean;
+}
+
+export type CheckpointAction = 'approve' | 'revise' | 'cancel';
+
+export interface CheckpointResponse {
+  action: CheckpointAction;
+  revisionNotes?: string;
+  step: GenStep;
+}
+
+export interface GenProgress {
+  currentStep: GenStep;
+  completedSteps: GenStep[];
+  stepResults: Record<string, StepResult>;
+  plan: GenPlan | null;
+  status: 'generating' | 'checkpoint' | 'done' | 'error';
+  checkpoint?: CheckpointRequest;
+  error?: string;
+}

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AIMessage } from './types';
+import { AIMessage, CheckpointResponse, GenProgress } from './types';
 import * as crypto from 'crypto';
 
 export interface SSEEvent {
@@ -21,7 +21,7 @@ export interface ClientToolResult {
   content: string;
 }
 
-export type JobStatus = 'pending' | 'running' | 'waiting_for_client' | 'done' | 'error';
+export type JobStatus = 'pending' | 'running' | 'waiting_for_client' | 'waiting_for_checkpoint' | 'done' | 'error';
 
 export interface Job {
   id: string;
@@ -41,6 +41,11 @@ export interface Job {
     reject: (error: Error) => void;
   } | null;
   pendingClientToolCalls: any[] | null;
+  pendingCheckpoint: {
+    resolve: (response: CheckpointResponse) => void;
+    reject: (error: Error) => void;
+  } | null;
+  genProgress: GenProgress | null;
   subscribers: Set<(event: SSEEvent) => void>;
   createdAt: number;
 }
@@ -71,6 +76,8 @@ export function createJob(params: {
     cumulativeTokens: 0,
     pendingClientResult: null,
     pendingClientToolCalls: null,
+    pendingCheckpoint: null,
+    genProgress: null,
     subscribers: new Set(),
     createdAt: Date.now(),
   };

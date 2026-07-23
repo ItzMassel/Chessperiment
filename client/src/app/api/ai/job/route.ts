@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createJob } from '@/lib/ai/jobStore';
-import { runJob } from '@/lib/ai/jobRunner';
+import { runJob, runOrchestratedJob } from '@/lib/ai/jobRunner';
 import { requireAuth, checkRateLimit } from '@/lib/ai/security';
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, projectId, currentPage } = body;
+    const { messages, projectId, currentPage, mode } = body;
+    const isOrchestrated = mode !== 'chat'; // default to generate
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'messages array is required' }, { status: 400 });
@@ -56,9 +57,13 @@ export async function POST(request: NextRequest) {
       initialChatMessages: chatMessages,
     });
 
-    void runJob(job);
+    if (isOrchestrated) {
+      void runOrchestratedJob(job);
+    } else {
+      void runJob(job);
+    }
 
-    return NextResponse.json({ jobId: job.id, secret: job.secret });
+    return NextResponse.json({ jobId: job.id, secret: job.secret, mode: isOrchestrated ? 'generate' : 'chat' });
   } catch (error) {
     console.error('POST /api/ai/job error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });

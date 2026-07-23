@@ -1,0 +1,88 @@
+name: Remove good first issue and help wanted on progress
+
+on:
+  projects_v2_item:
+    types: [created, edited]
+
+jobs:
+  clean-labels:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      projects: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const itemNodeId = context.payload.projects_v2_item.node_id;
+
+            const query = `query($item: ID!) {
+              node(id: $item) {
+                ... on ProjectV2Item {
+                  content {
+                    ... on Issue {
+                      number
+                      repository {
+                        owner { login }
+                        name
+                      }
+                    }
+                  }
+                  fieldValues(first: 10) {
+                    nodes {
+                      ... on ProjectV2ItemFieldSingleSelectValue {
+                        field {
+                          ... on ProjectV2SingleSelectField {
+                            name
+                          }
+                        }
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }`;
+
+            const result = await github.graphql(query, { item: itemNodeId });
+            const node = result.node;
+
+            if (!node?.content?.number) {
+              console.log('Not an issue, skipping');
+              return;
+            }
+
+            const issue = node.content.number;
+            const owner = node.content.repository.owner.login;
+            const repo = node.content.repository.name;
+
+            const statusField = node.fieldValues.nodes.find(
+              v => v?.field?.name?.toLowerCase() === 'status'
+            );
+
+            if (!statusField) {
+              console.log('No status field found, skipping');
+              return;
+            }
+
+            const status = statusField.name.toLowerCase();
+            const activeStatuses = ['in progress', 'in review', 'done', 'completed'];
+
+            if (!activeStatuses.includes(status)) {
+              console.log(`Status "${statusField.name}" is not active, skipping`);
+              return;
+            }
+
+            for (const label of ['good first issue', 'help wanted']) {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: issue,
+                name: label,
+              }).catch(err => {
+                if (err.status !== 404) throw err;
+                console.log(`Label "${label}" not found on issue #${issue}`);
+              });
+            }
+
+            console.log(`Removed labels from issue #${issue}`);

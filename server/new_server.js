@@ -100,9 +100,16 @@ await initRedis();
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
+const SOCKET_IO_PATH = process.env.SOCKET_IO_PATH || "/socket.io";
+
 const io = new Server(server, {
+  path: SOCKET_IO_PATH,
   cors: {
-    origin: "https://chessperiment.app",
+    origin: [
+      "https://chessperiment.app",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ],
     methods: ["GET", "POST"],
   },
   maxHttpBufferSize: 1e8, // 100 MB for custom assets

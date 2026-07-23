@@ -23,9 +23,8 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    const SOCKET_URL = "https://chessperiment.app";
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment.app/chessperiment-server";
     socket = io(SOCKET_URL, {
-      path: "/chessperiment-server/socket.io",
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -41,7 +40,16 @@ export function getSocket() {
     });
 
     socket.on("connect_error", (error) => {
-      console.error('❌ Socket connection error:', error.message);
+      if (error.message === "xhr poll error") {
+        console.error(
+          `❌ Socket connection error: "xhr poll error" — the HTTP polling transport failed.`,
+          `\n   URL: ${SOCKET_URL}`,
+          `\n   Causes: server not running, CORS blocked, or path mismatch.`,
+          `\n   Check that the server is started on the correct port and CORS allows this origin.`,
+        );
+      } else {
+        console.error('❌ Socket connection error:', error.message);
+      }
     });
 
     socket.on("disconnect", (reason) => {

@@ -4,6 +4,7 @@ import { Job, emitJobEvent, ClientToolResult } from './jobStore';
 import { isServerTool, executeServerTool } from './serverTools';
 import { getToolsForPage } from './tools';
 import { buildSystemPrompt } from './systemPrompt';
+import { runGenerationFlow } from './orchestrator';
 import { AIMessage } from './types';
 
 const apiKey = process.env.DEEPSEEK_API_KEY || '';
@@ -219,4 +220,17 @@ const openaiMessages = [
   job.status = 'done';
   emitJobEvent(job, 'done', {});
   console.log(`[job:${job.id}] Done. Total tokens: ${job.cumulativeTokens}`);
+}
+
+/** Run the multi-step generation flow (orchestrator mode). */
+export async function runOrchestratedJob(job: Job): Promise<void> {
+  try {
+    await runGenerationFlow(job);
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[job:${job.id}] Orchestrator error:`, errMsg);
+    job.status = 'error';
+    job.error = errMsg;
+    emitJobEvent(job, 'error', { message: errMsg });
+  }
 }

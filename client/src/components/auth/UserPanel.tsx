@@ -4,18 +4,21 @@ import { signOut as nextAuthSignOut } from "next-auth/react"
 import { auth, isConfigured } from "@/lib/firebase-client"
 import { useAuth } from "@/context/AuthContext"
 import { useTranslations } from "next-intl"
-import { LogIn, LogOut, User as UserIcon, ChevronUp } from "lucide-react"
+import { LogIn, LogOut, User as UserIcon, ChevronUp, Sun, Moon } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "@/i18n/navigation"
 import Image from "next/image"
+import { useTheme } from "@/components/providers/ThemeProvider"
 
 export function UserPanel() {
     const { user, loading } = useAuth()
+    const { resolvedTheme, setTheme } = useTheme()
     const t = useTranslations("Auth")
     const [isOpen, setIsOpen] = useState(false)
     const router = useRouter()
+    const isDark = resolvedTheme === "dark"
 
     const handleLogout = async () => {
         if (auth) {
@@ -94,6 +97,16 @@ export function UserPanel() {
                                     <LogOut size={16} />
                                     {t("logout")}
                                 </button>
+
+                                <div className="border-t border-amber-400/10 pt-2">
+                                    <button
+                                        onClick={() => setTheme(isDark ? "light" : "dark")}
+                                        className="flex items-center gap-2 w-full p-2 text-text dark:text-white hover:bg-amber-400/10 rounded-xl transition-colors text-sm"
+                                    >
+                                        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                                        {isDark ? "Light Mode" : "Dark Mode"}
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-3">
@@ -107,6 +120,16 @@ export function UserPanel() {
                                     <LogIn size={18} />
                                     {t("login")}
                                 </button>
+
+                                <div className="border-t border-amber-400/10 pt-2">
+                                    <button
+                                        onClick={() => setTheme(isDark ? "light" : "dark")}
+                                        className="flex items-center gap-2 w-full p-2 text-text dark:text-white hover:bg-amber-400/10 rounded-xl transition-colors text-sm"
+                                    >
+                                        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                                        {isDark ? "Light Mode" : "Dark Mode"}
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </motion.div>

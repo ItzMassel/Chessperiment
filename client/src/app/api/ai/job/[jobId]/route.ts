@@ -29,6 +29,7 @@ export async function GET(
     eventCount: job.events.length,
     cumulativeTokens: job.cumulativeTokens,
     error: job.error,
+    genProgress: job.genProgress,
     pendingClientToolCalls: job.status === 'waiting_for_client'
       ? job.pendingClientToolCalls
       : null,

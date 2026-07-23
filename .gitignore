@@ -1,6 +1,7 @@
 # ====================
 # Node.js / Next.js
 # ====================
+Temporary files/
 node_modules/
 .pnp
 .pnp.*

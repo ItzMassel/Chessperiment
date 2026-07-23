@@ -1,4 +1,5 @@
 import { Project } from '@/types/Project';
+import { GenPlan, GenStep } from './types';
 
 export function buildSystemPrompt(project: Project | null, currentPage: string): string {
   const projectSummary = project ? getProjectSummary(project) : 'No project loaded.';
@@ -69,6 +70,96 @@ Per-square special logic using visual blocks:
    - Bishop: |ΔX|=|ΔY| with |ΔX|>=1 (allow, run)
    - Rook: (|ΔX|=0 AND |ΔY|>=1) OR (|ΔY|=0 AND |ΔX|>=1) (allow, run)
    - King: |ΔX|<=1 AND |ΔY|<=1 AND (|ΔX|+|ΔY|>=1) — use two rules: |ΔX|<=1,|ΔY|<=1 (allow, jump)`;
+}
+
+export function buildGenStepPrompt(step: GenStep, plan: GenPlan, projectState: any): string {
+  const basePrompts: Record<GenStep, string> = {
+    plan: `You are the **Variant Architect** for Chessperiment. Analyze the user's request and create a plan.
+
+Output JSON with:
+- theme: visual/story theme
+- description: what makes this unique
+- boardSize: recommended board dimensions
+- pieces: list of piece names or []
+- movementPhilosophy: how pieces move
+- squareEffectIdeas: special square ideas
+- keyConstraints: balance constraints
+- skipSteps: array of steps that are NOT needed based on the request
+
+Available steps: plan, board, piece-roster, piece-design, movement, square-patterns, validation, summary
+
+If the user only wants to change one thing (e.g. "make the king move like a knight"), skip all irrelevant steps. If building from scratch, include all steps.
+
+Be concise and practical.`,
+
+    board: `You are the **Board Designer** for Chessperiment.
+
+Output JSON: { rows, cols, gridType, activeSquares, startingPieces, description }
+
+Consider: shape, active/inactive squares, piece starting positions, theme.`,
+
+    'piece-roster': `You are the **Piece Roster Designer** for Chessperiment.
+
+Output JSON array: [{ name, role, visualDescription, count? }]
+
+Match theme and board size.`,
+
+    'piece-design': `You are the **Piece Artist** for Chessperiment. 64x64 pixel art.
+
+Output: { pieces: [{ name, whitePixels: [{x,y,color}], blackPixels: [{x,y,color}] }] }
+
+Distinct shapes, clear silhouettes.`,
+
+    movement: `You are the **Movement Designer** for Chessperiment.
+
+Output: { pieces: [{ name, moves: [{ conditions: [{ variable, operator, value, logic }], result, type }] }] }
+
+Variables: diffX, diffY, absDiffX, absDiffY. Types: run (sliding), jump (leaping).`,
+
+    'square-patterns': `You are the **Square Effects Designer** for Chessperiment. Design pattern-based (not per-square) effects.
+
+Output JSON: { patterns: [{ name, trigger, effect, squares, socketValues }] }
+
+Triggers: on-step, on-proximity. Effects: teleport, kill, win, disable-square, enable-square.`,
+
+    validation: `You are the **Variant Reviewer** for Chessperiment. Review the completed variant for coherence and playability.
+
+Check:
+- Are all referenced pieces actually defined?
+- Do movement rules work on this board geometry?
+- Are square effect coordinates valid?
+- Can the game be won?
+- Does everything feel like the same theme?
+- Is the variant balanced enough to be playable?
+
+Output a JSON with:
+- passed: boolean
+- issues: array of { severity: 'error' | 'warning' | 'suggestion', message: string }
+- summary: overall assessment`,
+
+    summary: `You are the **Variant Presenter** for Chessperiment. Summarize what was created in an engaging, human-readable way.
+
+Include:
+- The variant name and theme
+- Board description (size, shape, special features)
+- Piece roster with roles
+- Movement highlights
+- Special square effects
+- How to win
+- Tips for playing
+
+Make the user excited to try their new variant!`
+  };
+
+  const planIntro = plan ? `Plan: ${plan.theme} — ${plan.description.slice(0, 200)}` : '';
+  const stateIntro = projectState ? `Board: ${projectState.rows}x${projectState.cols}` : '';
+
+  return `${basePrompts[step] || 'You are assisting with Chessperiment variant design.'}
+
+${planIntro}
+${stateIntro}
+
+Coordinate system: "x,y" format, "0,0" is top-left. Output clean JSON only.`;
 }
 
 function getProjectSummary(project: Project): string {

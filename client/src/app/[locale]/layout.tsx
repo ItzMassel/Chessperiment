@@ -6,7 +6,7 @@ import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { HeaderWrapper } from "@/components/HeaderWrapper";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { SessionWrapper } from "@/components/auth/SessionWrapper";
 import { UserPanel } from "@/components/auth/UserPanel";
 import { generateBreadcrumbs } from "@/lib/breadcrumbs";
@@ -176,7 +176,6 @@ export default async function RootLayout({
                 <Providers>
 
                   <UserPanel />
-                  <ThemeToggle />
                   <OpenSourceAnnouncement />
                   <ReferralSurvey />
                   <WarningSplashModal />

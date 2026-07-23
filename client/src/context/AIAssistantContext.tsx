@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useProject } from '@/hooks/useProject';
-import { AIMessage, ToolHandler, ToolHandlerRegistry } from '@/lib/ai/types';
+import { AIMessage, ToolHandler, ToolHandlerRegistry, GenProgress, CheckpointResponse, CheckpointAction, GenStep } from '@/lib/ai/types';
 import { executeToolCalls } from '@/lib/ai/toolExecutor';
 import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,6 +20,7 @@ interface AIAssistantContextType {
   registerToolHandler: (name: string, handler: ToolHandler) => void;
   unregisterToolHandler: (name: string) => void;
   clearMessages: () => void;
+  genProgress: GenProgress | null;
 }
 
 const AIAssistantContext = createContext<AIAssistantContextType | null>(null);
@@ -106,6 +107,22 @@ function saveActiveJobSecret(projectId: string, secret: string | null) {
   } catch { /* ignore */ }
 }
 
+function buildFallbackSummary(progress: GenProgress): string {
+  const steps = progress.completedSteps.filter(s => s !== 'plan');
+  if (!steps.length) return 'Generation complete — no changes were needed.';
+  const desc: Record<string, string> = {
+    board: 'Reshaped the board',
+    'piece-roster': 'Designed the piece roster',
+    'piece-design': 'Created piece artwork',
+    movement: 'Defined movement rules',
+    'square-patterns': 'Set up square effects',
+    validation: 'Validated the variant',
+    summary: '',
+  };
+  const done = steps.map(s => desc[s] || s).filter(Boolean);
+  return `**Generation Complete** 🎉\n\n${done.join(', ')}.`;
+}
+
 function detectCurrentPage(pathname: string): string {
   if (pathname.includes('/board-editor')) return 'board-editor';
   if (pathname.includes('/logic')) return 'piece-logic';
@@ -123,19 +140,27 @@ interface AIAssistantProviderProps {
 export function AIAssistantProvider({ projectId, children }: AIAssistantProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { project, saveProject } = useProject(projectId);
+  const { project, saveProject, refresh: refreshProject } = useProject(projectId);
   const { user, loading: authLoading } = useAuth();
 
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [genProgress, setGenProgress] = useState<GenProgress | null>(null);
+  const [activeJobSecret, setActiveJobSecret] = useState<string | null>(null);
 
   const toolHandlers = useRef<ToolHandlerRegistry>(new Map());
   const projectRef = useRef(project);
   projectRef.current = project;
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  const genProgressRef = useRef(genProgress);
+  genProgressRef.current = genProgress;
+  const activeJobSecretRef = useRef(activeJobSecret);
+  activeJobSecretRef.current = activeJobSecret;
+  const refreshProjectRef = useRef(refreshProject);
+  refreshProjectRef.current = refreshProject;
 
   const activeEventSource = useRef<EventSource | null>(null);
 
@@ -153,13 +178,10 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
     if (mounted) saveMessages(projectId, messages);
   }, [messages, projectId, mounted]);
 
-  // Persist panel state and set CSS variable for theme toggle movement
+  // Persist panel state
   useEffect(() => {
     if (mounted) {
       savePanelOpen(projectId, isOpen);
-      if (typeof document !== 'undefined') {
-        document.documentElement.style.setProperty('--ai-sidebar-width', isOpen ? '380px' : '0px');
-      }
     }
   }, [isOpen, projectId, mounted]);
 
@@ -315,6 +337,48 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       setMessages(prev => [...prev, msg]);
     });
 
+    // Orchestration events
+    es.addEventListener('gen_progress', (e) => {
+      const { progress } = JSON.parse((e as MessageEvent).data);
+      setGenProgress(progress);
+    });
+
+    es.addEventListener('gen_complete', (e) => {
+      const { progress } = JSON.parse((e as MessageEvent).data);
+      setGenProgress(progress);
+      const lastResult = progress.stepResults?.['summary'];
+      const content = lastResult?.summary
+        ? `**Generation Complete** 🎉\n\n${lastResult.summary}`
+        : buildFallbackSummary(progress);
+      setMessages(prev => [...prev, {
+        id: uuidv4(), role: 'assistant', content, timestamp: Date.now(),
+      }]);
+    });
+
+    es.addEventListener('gen_error', (e) => {
+      const { error } = JSON.parse((e as MessageEvent).data);
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: 'assistant',
+        content: `Generation error: ${error}`,
+        timestamp: Date.now(),
+      }]);
+    });
+
+    es.addEventListener('gen_cancelled', () => {
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: 'assistant',
+        content: 'Generation cancelled.',
+        timestamp: Date.now(),
+      }]);
+      setGenProgress(null);
+    });
+
+    es.addEventListener('project_updated', () => {
+      refreshProjectRef.current();
+    });
+
     es.addEventListener('client_tool_calls', async (e) => {
       const { tool_calls } = JSON.parse((e as MessageEvent).data);
       try {
@@ -437,13 +501,10 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
-
     if (authLoading) return;
-
     if (!user) {
       setMessages(prev => [...prev, {
-        id: uuidv4(),
-        role: 'assistant',
+        id: uuidv4(), role: 'assistant',
         content: `Error: Authentication required`,
         timestamp: Date.now(),
       }]);
@@ -456,33 +517,23 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
     }
 
     const userMessage: AIMessage = {
-      id: uuidv4(),
-      role: 'user',
-      content: content.trim(),
-      timestamp: Date.now(),
+      id: uuidv4(), role: 'user', content: content.trim(), timestamp: Date.now(),
     };
-
-    const newMessages = [...messagesRef.current, userMessage];
-    setMessages(newMessages);
+    const allMessages = [...messagesRef.current, userMessage];
+    setMessages(allMessages);
+    setGenProgress(null);
     setIsLoading(true);
 
     try {
-      const apiMessages = newMessages.map(m => ({
-        role: m.role,
-        content: m.content,
-        ...(m.reasoning_content ? { reasoning_content: m.reasoning_content } : {}),
-        ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}),
-        ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-      }));
-
       const res = await fetch('/api/ai/job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: apiMessages,
-          chatMessages: newMessages,
+          messages: allMessages.map(m => ({ role: m.role, content: m.content })),
+          chatMessages: allMessages,
           projectId,
           currentPage,
+          mode: 'generate',
         }),
       });
 
@@ -492,21 +543,33 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       }
 
       const { jobId, secret } = await res.json();
+      setActiveJobSecret(secret);
       saveActiveJobId(projectId, jobId);
       saveActiveJobSecret(projectId, secret);
-
-      // Connect to SSE from the start (after=0 — no prior events for this fresh job)
       connectToJobStream(jobId, secret, 0);
     } catch (error) {
       setMessages(prev => [...prev, {
-        id: uuidv4(),
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Something went wrong. Please try again.'}`,
+        id: uuidv4(), role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Something went wrong.'}`,
         timestamp: Date.now(),
       }]);
       setIsLoading(false);
     }
   }, [isLoading, currentPage, projectId, connectToJobStream, user, authLoading]);
+
+  // kept for future use — checkpoints are disabled in current orchestrator
+  const respondToCheckpoint = useCallback(async (action: CheckpointAction, revisionNotes?: string) => {
+    const secret = activeJobSecretRef.current;
+    const progress = genProgressRef.current;
+    if (!secret || !progress?.checkpoint) return;
+    const jobId = loadActiveJobId(projectId);
+    if (!jobId) return;
+    await fetch(`/api/ai/job/${jobId}/checkpoint?secret=${encodeURIComponent(secret)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, revisionNotes, step: progress.checkpoint.step }),
+    });
+    if (action === 'cancel') setGenProgress(null);
+  }, [projectId]);
 
   return (
     <AIAssistantContext.Provider value={{
@@ -521,6 +584,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       registerToolHandler,
       unregisterToolHandler,
       clearMessages,
+      genProgress,
     }}>
       {children}
     </AIAssistantContext.Provider>
