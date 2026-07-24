@@ -38,4 +38,13 @@ export class EngineGame {
   getLegalMoves(color) {
     return this.validator.getLegalMoves(color || this.getTurn());
   }
+
+  getGameStatus() {
+    const turn = this.board.getTurn();
+    const legalMoves = this.getLegalMoves(turn);
+    if (legalMoves.length > 0) {
+      return this.validator.isInCheck(turn) ? "check" : "normal";
+    }
+    return this.validator.isInCheck(turn) ? "checkmate" : "stalemate";
+  }
 }

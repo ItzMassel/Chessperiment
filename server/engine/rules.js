@@ -219,6 +219,13 @@ export class ValidatorClass {
     return effectExecutor.wasMoveCancelled() || context.movePrevented;
   }
 
+  isInCheck(color) {
+    const kingSquare = this.findKing(color, this.board);
+    if (!kingSquare) return false;
+    const attackerColor = color === "white" ? "black" : "white";
+    return this.isSquareAttacked(kingSquare, attackerColor, this.board);
+  }
+
   getLegalMoves(color) {
     const legalMoves = [];
     const squares = this.board.getSquares();

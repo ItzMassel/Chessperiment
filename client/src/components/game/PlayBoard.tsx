@@ -639,20 +639,17 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     setBoard(newBoard);
                     boardRef.current = newBoard;
 
-                    // Check for game-over on remote moves
-                    if (!isOnline) {
-                        const status = currentGame.getGameStatus();
-                        if (status === 'checkmate') {
-                            const loser = currentGame.getTurn();
-                            const winner = loser === 'white' ? 'Black' : 'White';
-                            setGameResultMessage(`Checkmate! ${winner} wins!`);
-                            setGameOver(true);
-                            addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
-                        } else if (status === 'stalemate') {
-                            setGameResultMessage('Stalemate! Draw!');
-                            setGameOver(true);
-                            addLog(`[STALEMATE] Draw!`, 'effect');
-                        }
+                    const status = currentGame.getGameStatus();
+                    if (status === 'checkmate') {
+                        const loser = currentGame.getTurn();
+                        const winner = loser === 'white' ? 'Black' : 'White';
+                        setGameResultMessage(`Checkmate! ${winner} wins!`);
+                        setGameOver(true);
+                        addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
+                    } else if (status === 'stalemate') {
+                        setGameResultMessage('Stalemate! Draw!');
+                        setGameOver(true);
+                        addLog(`[STALEMATE] Draw!`, 'effect');
                     }
                 }
             }

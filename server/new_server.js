@@ -1003,6 +1003,19 @@ io.on("connection", (socket) => {
             game.turn = game.turn === "w" ? "b" : "w";
           }
 
+          // Check for checkmate/stalemate on custom games
+          if (game.gameEngine) {
+            const engineStatus = game.gameEngine.getGameStatus();
+            if (engineStatus === "checkmate") {
+              game.status = "ended";
+              const loser = game.gameEngine.getTurn();
+              game.result = loser === "white" ? "b" : "w";
+            } else if (engineStatus === "stalemate") {
+              game.status = "ended";
+              game.result = "0";
+            }
+          }
+
           game.updateActivity();
           await saveGame(game);
 
