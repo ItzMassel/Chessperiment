@@ -15,7 +15,9 @@ export default async function EditorProjectLayout({ children, params }: EditorPr
     <AIAssistantProvider projectId={projectId}>
       <TutorialProvider projectId={projectId}>
         <AIAssistantPanel />
-        <ProjectEditorSidebar projectId={projectId} />
+        <div className="hidden lg:block">
+          <ProjectEditorSidebar projectId={projectId} />
+        </div>
         {children}
       </TutorialProvider>
     </AIAssistantProvider>
