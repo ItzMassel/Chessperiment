@@ -80,7 +80,12 @@ export async function executeServerTool(
         name: (piece as any).name,
         movesCount: (piece as any).moves?.length || 0,
         moves: (piece as any).moves,
-        logicBlocksCount: Array.isArray((piece as any).logic) ? (piece as any).logic.length : 0,
+        logicBlocksCount: (() => {
+          const logic = (piece as any).logic;
+          if (Array.isArray(logic)) return logic.length;
+          if (logic && typeof logic === 'object') return (logic as any).logic?.length || 0;
+          return 0;
+        })(),
         variables: (piece as any).variables || [],
         hasWhitePixels: !!(piece as any).pixelsWhite,
         hasBlackPixels: !!(piece as any).pixelsBlack,
@@ -90,6 +95,7 @@ export async function executeServerTool(
     case 'get_block_templates': {
       return JSON.stringify([
         { id: 'on-is-captured', type: 'trigger', label: 'onIsCaptured', sockets: [{ id: 'by', type: 'select', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }] },
+        { id: 'on-captured', type: 'trigger', label: 'onCaptured', sockets: [{ id: 'piece', type: 'select', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }] },
         { id: 'on-threat', type: 'trigger', label: 'onThreat', sockets: [{ id: 'by', type: 'select', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }] },
         { id: 'on-move', type: 'trigger', label: 'onMove', sockets: [] },
         { id: 'on-environment', type: 'trigger', label: 'onEnvironment', sockets: [{ id: 'condition', type: 'select', options: ['White Square', 'Black Square', 'Is Attacked'] }] },
@@ -97,10 +103,11 @@ export async function executeServerTool(
         { id: 'cooldown', type: 'effect', label: 'cooldown', sockets: [{ id: 'duration', type: 'number' }, { id: 'unit', type: 'select', options: ['seconds', 'half-moves', 'full-moves'] }] },
         { id: 'transformation', type: 'effect', label: 'transformation', sockets: [{ id: 'target', type: 'select', options: ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }] },
         { id: 'modify-var', type: 'effect', label: 'modVar', sockets: [{ id: 'varName', type: 'text' }, { id: 'op', type: 'select', options: ['+=', '-=', '='] }, { id: 'value', type: 'number' }] },
-        { id: 'prevent', type: 'effect', label: 'prevent', sockets: [] },
+        { id: 'prevent', type: 'effect', label: 'prevent', sockets: [{ id: 'action', type: 'select', options: ['Jump Back', 'Nearest Square', 'Share Square'] }] },
         { id: 'kill', type: 'terminal', label: 'kill', sockets: [{ id: 'target', type: 'select', options: ['Selected Piece', 'Attacker'] }] },
-        { id: 'explode', type: 'terminal', label: 'explode', sockets: [{ id: 'radius', type: 'number' }] },
-        { id: 'win', type: 'terminal', label: 'win', sockets: [] },
+        { id: 'explode', type: 'effect', label: 'explode', sockets: [{ id: 'radius', type: 'number' }] },
+        { id: 'tell-user', type: 'effect', label: 'tellUser', sockets: [{ id: 'message', type: 'text' }] },
+        { id: 'win', type: 'effect', label: 'win', sockets: [] },
       ]);
     }
 
