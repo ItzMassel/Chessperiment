@@ -9,7 +9,6 @@ import { useProject } from '@/hooks/useProject';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import BoardEditor from '@/components/editor/BoardEditor';
-import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
 import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 import { useTutorialOptional } from '@/components/tutorial';
@@ -218,10 +217,6 @@ export default function PageClient({ projectId }: PageClientProps) {
 
     return (
         <div className="flex min-h-screen bg-bg">
-            <div className="hidden lg:block">
-                <ProjectEditorSidebar projectId={projectId} />
-            </div>
-
             <main className="flex-1 overflow-hidden flex flex-col pt-20 relative">
                 <Link
                     href={`/editor/${projectId}`}
