@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { useProject } from '@/hooks/useProject';
 import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink, Download } from 'lucide-react';
-import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
 import ExportVariantModal from '@/components/editor/ExportVariantModal';
 import { useSocket, useSocketConnection } from '@/context/SocketContext';
@@ -328,10 +327,6 @@ export default function PageClient({ projectId }: PageClientProps) {
                     </div>
                 </div>
             </div>
-
-
-            {/* Editor Sidebar */}
-            <ProjectEditorSidebar projectId={projectId} />
 
             {/* Export Modal */}
             {showExportModal && project && (
