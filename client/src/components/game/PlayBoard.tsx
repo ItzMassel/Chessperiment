@@ -650,6 +650,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                         setGameResultMessage('Stalemate! Draw!');
                         setGameOver(true);
                         addLog(`[STALEMATE] Draw!`, 'effect');
+                    } else if (data.gameStatus === 'ended') {
+                        // Server declared game ended but local engine disagrees.
+                        // Use server as authority in case of desync.
+                        setGameResultMessage('Game Over!');
+                        setGameOver(true);
+                        addLog('[GAME OVER] Server ended the game', 'effect');
                     }
                 }
             }

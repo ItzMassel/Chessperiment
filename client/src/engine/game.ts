@@ -36,11 +36,12 @@ export class Game {
 
     getGameStatus(): 'checkmate' | 'stalemate' | 'check' | 'normal' {
         const turn = this.board.getTurn();
+        const inCheck = this.validator.isInCheck(turn);
         const legalMoves = this.getLegalMoves(turn);
         if (legalMoves.length > 0) {
-            return this.validator.isInCheck(turn) ? 'check' : 'normal';
+            return inCheck ? 'check' : 'normal';
         }
-        return this.validator.isInCheck(turn) ? 'checkmate' : 'stalemate';
+        return inCheck ? 'checkmate' : 'stalemate';
     }
 
     isCheckmate(): boolean {
