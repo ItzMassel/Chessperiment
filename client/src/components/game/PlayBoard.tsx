@@ -639,20 +639,23 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     setBoard(newBoard);
                     boardRef.current = newBoard;
 
-                    // Check for game-over on remote moves
-                    if (!isOnline) {
-                        const status = currentGame.getGameStatus();
-                        if (status === 'checkmate') {
-                            const loser = currentGame.getTurn();
-                            const winner = loser === 'white' ? 'Black' : 'White';
-                            setGameResultMessage(`Checkmate! ${winner} wins!`);
-                            setGameOver(true);
-                            addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
-                        } else if (status === 'stalemate') {
-                            setGameResultMessage('Stalemate! Draw!');
-                            setGameOver(true);
-                            addLog(`[STALEMATE] Draw!`, 'effect');
-                        }
+                    const status = currentGame.getGameStatus();
+                    if (status === 'checkmate') {
+                        const loser = currentGame.getTurn();
+                        const winner = loser === 'white' ? 'Black' : 'White';
+                        setGameResultMessage(`Checkmate! ${winner} wins!`);
+                        setGameOver(true);
+                        addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
+                    } else if (status === 'stalemate') {
+                        setGameResultMessage('Stalemate! Draw!');
+                        setGameOver(true);
+                        addLog(`[STALEMATE] Draw!`, 'effect');
+                    } else if (data.gameStatus === 'ended') {
+                        // Server declared game ended but local engine disagrees.
+                        // Use server as authority in case of desync.
+                        setGameResultMessage('Game Over!');
+                        setGameOver(true);
+                        addLog('[GAME OVER] Server ended the game', 'effect');
                     }
                 }
             }
