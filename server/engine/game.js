@@ -41,9 +41,8 @@ export class EngineGame {
 
   getGameStatus() {
     const turn = this.board.getTurn();
-    const inCheck = this.validator.isInCheck(turn);
-    const legalMoves = this.getLegalMoves(turn);
-    if (legalMoves.length > 0) {
+    const { moves, inCheck } = this.getLegalMoves(turn);
+    if (moves.length > 0) {
       return inCheck ? "check" : "normal";
     }
     return inCheck ? "checkmate" : "stalemate";

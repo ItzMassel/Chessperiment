@@ -240,7 +240,10 @@ export class ValidatorClass {
         }
       }
     }
-    return legalMoves;
+    return {
+      moves: legalMoves,
+      inCheck: this.isInCheck(color),
+    };
   }
 
   findKing(color, board) {

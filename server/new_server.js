@@ -1014,6 +1014,13 @@ io.on("connection", (socket) => {
               game.status = "ended";
               game.result = "0";
             }
+            if (game.status === "ended") {
+              io.to(roomId).emit("game_ended", {
+                reason: engineStatus,
+                result: game.result,
+                status: "ended",
+              });
+            }
           }
 
           game.updateActivity();
