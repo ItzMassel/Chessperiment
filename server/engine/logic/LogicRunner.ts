@@ -253,6 +253,38 @@ export class LogicRunner {
                 context.preventAction = vals.action || 'Jump Back';
                 break;
 
+            case 'if':
+                if (vals.varA !== undefined && vals.varB !== undefined && vals.op) {
+                    const a = vals.varA;
+                    const b = vals.varB;
+                    const isNumber = !isNaN(Number(a)) && !isNaN(Number(b));
+                    let conditionMet = false;
+
+                    if (isNumber) {
+                        const numA = Number(a);
+                        const numB = Number(b);
+                        switch (vals.op) {
+                            case '==': conditionMet = numA === numB; break;
+                            case '!=': conditionMet = numA !== numB; break;
+                            case '>': conditionMet = numA > numB; break;
+                            case '<': conditionMet = numA < numB; break;
+                            case '>=': conditionMet = numA >= numB; break;
+                            case '<=': conditionMet = numA <= numB; break;
+                        }
+                    } else {
+                        const strA = String(a);
+                        const strB = String(b);
+                        switch (vals.op) {
+                            case '==': conditionMet = strA === strB; break;
+                            case '!=': conditionMet = strA !== strB; break;
+                            default: conditionMet = false; break;
+                        }
+                    }
+
+                    if (!conditionMet) return;
+                }
+                break;
+
             case 'win':
                 context.gameWon = true;
                 context.winner = piece.color;
