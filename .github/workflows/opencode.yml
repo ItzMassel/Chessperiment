@@ -34,5 +34,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TOKEN: ${{ github.token }}
         with:
-          model: opencode/deepseek-v4-flash-free
+          model: deepseek/deepseek-v4-flash
           use_github_token: true
