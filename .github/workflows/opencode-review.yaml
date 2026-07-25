@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: anomalyco/opencode/github@latest
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
         with:
           model: deepseek/deepseek-v4-flash
