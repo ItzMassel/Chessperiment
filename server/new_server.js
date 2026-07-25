@@ -1003,6 +1003,26 @@ io.on("connection", (socket) => {
             game.turn = game.turn === "w" ? "b" : "w";
           }
 
+          // Check for checkmate/stalemate on custom games
+          if (game.gameEngine) {
+            const engineStatus = game.gameEngine.getGameStatus();
+            if (engineStatus === "checkmate") {
+              game.status = "ended";
+              const loser = game.gameEngine.getTurn();
+              game.result = loser === "white" ? "b" : "w";
+            } else if (engineStatus === "stalemate") {
+              game.status = "ended";
+              game.result = "0";
+            }
+            if (game.status === "ended") {
+              io.to(roomId).emit("game_ended", {
+                reason: engineStatus,
+                result: game.result,
+                status: "ended",
+              });
+            }
+          }
+
           game.updateActivity();
           await saveGame(game);
 
