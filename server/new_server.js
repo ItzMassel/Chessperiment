@@ -1299,8 +1299,74 @@ setInterval(() => {
     }
 }, 5000);
 
-// DeepSeek chat proxy endpoint
 app.use(express.json());
+
+
+
+app.post("/api/feedback", async (req, res) => {
+  try {
+    const feedback = req.body;
+
+    console.log("New feedback:", feedback);
+
+    if (!feedback.message) {
+      return res.status(400).json({
+        error: "Message is required",
+      });
+    }
+
+    const discordResponse = await fetch(process.env.DISCORD_FEEDBACK_WEBHOOK, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        embeds: [
+          {
+            title: "📩 New Chessperiment Feedback",
+            color: 5814783,
+            fields: [
+              {
+                name: "Type",
+                value: feedback.type || "Unknown",
+                inline: true,
+              },
+              {
+                name: "Message",
+                value: feedback.message.substring(0, 1024),
+              },
+              {
+                name: "Page",
+                value: feedback.page || "Unknown",
+                inline: true,
+              },
+            ],
+            timestamp: feedback.timestamp || new Date().toISOString(),
+          },
+        ],
+      }),
+    });
+
+    if (!discordResponse.ok) {
+      throw new Error(`Discord webhook failed: ${discordResponse.status}`);
+    }
+
+    res.json({
+      success: true,
+    });
+
+  } catch (error) {
+    console.error("Feedback error:", error);
+
+    res.status(500).json({
+      error: "Failed to send feedback",
+    });
+  }
+});
+  res.json({
+    success: true,
+  });
+// DeepSeek chat proxy endpoint
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
   if (!message) {
