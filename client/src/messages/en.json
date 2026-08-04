@@ -764,6 +764,10 @@
             "title": "Feature Timeline — Chessperiment",
             "description": "See what's being built at Chessperiment — one feature a day. Report bugs, request features, or share feedback."
         },
+        "Feedback": {
+            "title": "Feedback — Chessperiment",
+            "description": "Report bugs, request features, or share your feedback about Chessperiment."
+        },
         "Marketplace": {
             "title": "Chessperiment Marketplace | Download Custom Chess Sets",
             "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",

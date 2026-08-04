@@ -764,6 +764,10 @@
             "title": "Feature-Zeitstrahl — Chessperiment",
             "description": "Verfolge, was bei Chessperiment gebaut wird – ein Feature pro Tag. Melde Fehler, fordere Features an oder gib allgemeines Feedback."
         },
+        "Feedback": {
+            "title": "Feedback — Chessperiment",
+            "description": "Melde Fehler, fordere Features an oder gib uns Feedback zu Chessperiment."
+        },
         "Marketplace": {
             "title": "Chessperiment Marktplatz | Lade individuelle Schachsets herunter",
             "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensätze herunter. Verbessere dein Spiel mit einzigartigen Designs.",
