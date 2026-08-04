@@ -70,3 +70,4 @@ migrations/
 # Secrets
 frontend/secrets.json
 frontend/client/public/inscription.html
+reddit-posts/

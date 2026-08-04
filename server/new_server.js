@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -20,6 +21,9 @@ import { EngineGame } from "./engine/game.js";
 
 // Import Stockfish pool for efficient engine management
 import { stockfishPool } from "./stockfish-pool.js";
+
+// Mastra editor agent
+import { createMastraRouter } from "./mastra-agent.js";
 
 // Redis client initialization (optional for development)
 let redisClient = null;
@@ -1308,6 +1312,10 @@ setInterval(() => {
 
 // DeepSeek chat proxy endpoint
 app.use(express.json());
+
+// Mastra editor agent endpoint
+app.use("/api/ai", createMastraRouter());
+
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
   if (!message) {

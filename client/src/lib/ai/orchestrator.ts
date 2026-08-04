@@ -213,7 +213,7 @@ export async function runGenerationFlow(job: Job): Promise<void> {
     for (const step of STEP_ORDER) {
       progress.currentStep = step;
       emitProgress(job, progress);
-
+      console.warn(progress.plan ? "": "Plan was not generated")
       const plan: GenPlan = progress.plan || {
         theme: 'Custom Chess', description: 'A custom chess variant',
         boardSize: '8x8 square', pieces: [],

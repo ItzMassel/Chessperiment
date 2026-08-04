@@ -525,15 +525,12 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/ai/job', {
+      // Mastra agent route — the current AI system is disconnected
+      const res = await fetch('/api/ai/mastra', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: allMessages.map(m => ({ role: m.role, content: m.content })),
-          chatMessages: allMessages,
-          projectId,
-          currentPage,
-          mode: 'generate',
         }),
       });
 
@@ -542,11 +539,14 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
         throw new Error(err.error || `API error: ${res.status}`);
       }
 
-      const { jobId, secret } = await res.json();
-      setActiveJobSecret(secret);
-      saveActiveJobId(projectId, jobId);
-      saveActiveJobSecret(projectId, secret);
-      connectToJobStream(jobId, secret, 0);
+      const data = await res.json();
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: 'assistant',
+        content: data.content,
+        timestamp: Date.now(),
+      }]);
+      setIsLoading(false);
     } catch (error) {
       setMessages(prev => [...prev, {
         id: uuidv4(), role: 'assistant',
@@ -555,7 +555,7 @@ export function AIAssistantProvider({ projectId, children }: AIAssistantProvider
       }]);
       setIsLoading(false);
     }
-  }, [isLoading, currentPage, projectId, connectToJobStream, user, authLoading]);
+  }, [isLoading, projectId, user, authLoading]);
 
   // kept for future use — checkpoints are disabled in current orchestrator
   const respondToCheckpoint = useCallback(async (action: CheckpointAction, revisionNotes?: string) => {
