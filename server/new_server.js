@@ -1363,9 +1363,6 @@ app.post("/api/feedback", async (req, res) => {
     });
   }
 });
-  res.json({
-    success: true,
-  });
 // DeepSeek chat proxy endpoint
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
