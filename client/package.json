@@ -42,7 +42,7 @@
     "cmdk": "^1.1.1",
     "drizzle-orm": "^0.45.2",
     "firebase": "^12.8.0",
-    "firebase-admin": "^12.7.0",
+    "firebase-admin": "^14.2.0",
     "framer-motion": "^12.23.26",
     "jose": "^6.2.2",
     "ldrs": "^1.1.7",
@@ -73,6 +73,9 @@
     "react-blockly": {
       "react": "$react",
       "react-dom": "$react-dom"
+    },
+    "@auth/firebase-adapter": {
+      "firebase-admin": "$firebase-admin"
     }
   },
   "devDependencies": {

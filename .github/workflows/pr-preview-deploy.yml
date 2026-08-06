@@ -1,0 +1,95 @@
+name: PR Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy PR Preview
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: PR_NUMBER,PR_BRANCH
+          script: |
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            PR_BRANCH=${{ github.head_ref }}
+            FRONTEND_PORT=$((4000 + PR_NUMBER))
+            BACKEND_PORT=$((5000 + PR_NUMBER))
+            DIR="/opt/chessperiment/pr-${PR_NUMBER}"
+
+            # Clone or update
+            if [ -d "$DIR" ]; then
+              cd "$DIR"
+              git fetch origin
+              git checkout "$PR_BRANCH"
+              git pull origin "$PR_BRANCH"
+            else
+              git clone -b "$PR_BRANCH" https://github.com/ItzMassel/chessperiment "$DIR"
+            fi
+
+            # Copy .env files from beta as base
+            cp /opt/chessperiment/chessperiment-beta/client/.env "$DIR/client/.env"
+            cp /opt/chessperiment/chessperiment-beta/server/.env "$DIR/server/.env"
+
+            # Set correct ports
+            sed -i "s/PORT=.*/PORT=${FRONTEND_PORT}/" "$DIR/client/.env"
+            sed -i "s/PORT=.*/PORT=${BACKEND_PORT}/" "$DIR/server/.env"
+
+            # Install and build
+            cd "$DIR/client"
+            npm install
+            npm run build
+
+            cd "$DIR/server"
+            npm install
+
+            # Start or restart PM2 processes
+            pm2 describe "pr-${PR_NUMBER}-frontend" > /dev/null 2>&1 \
+              && pm2 restart "pr-${PR_NUMBER}-frontend" \
+              || pm2 start npm --name "pr-${PR_NUMBER}-frontend" -- start --prefix "$DIR/client"
+
+            pm2 describe "pr-${PR_NUMBER}-backend" > /dev/null 2>&1 \
+              && pm2 restart "pr-${PR_NUMBER}-backend" \
+              || pm2 start npm --name "pr-${PR_NUMBER}-backend" -- start --prefix "$DIR/server"
+
+            pm2 save
+
+            # Nginx config
+            cat > /etc/nginx/sites-enabled/pr-${PR_NUMBER}.chessperiment.app << EOF
+            server {
+                listen 443 ssl;
+                server_name pr-${PR_NUMBER}.chessperiment.app;
+                ssl_certificate /etc/letsencrypt/live/chessperiment.app/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/chessperiment.app/privkey.pem;
+                location / {
+                    proxy_pass http://localhost:${FRONTEND_PORT};
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                }
+            }
+            server {
+                listen 443 ssl;
+                server_name api-pr-${PR_NUMBER}.chessperiment.app;
+                ssl_certificate /etc/letsencrypt/live/chessperiment.app/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/chessperiment.app/privkey.pem;
+                location / {
+                    proxy_pass http://localhost:${BACKEND_PORT};
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                }
+            }
+            EOF
+
+            sudo nginx -t && sudo systemctl reload nginx
