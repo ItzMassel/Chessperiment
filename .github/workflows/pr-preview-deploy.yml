@@ -53,45 +53,14 @@ jobs:
 
             # Start or restart PM2 processes
             pm2 describe "pr-${PR_NUMBER}-frontend" > /dev/null 2>&1 \
-              && pm2 restart "pr-${PR_NUMBER}-frontend" \
-              || pm2 start npm --name "pr-${PR_NUMBER}-frontend" -- start --prefix "$DIR/client"
+              && PORT=${FRONTEND_PORT} pm2 restart "pr-${PR_NUMBER}-frontend" --update-env \
+              || PORT=${FRONTEND_PORT} pm2 start npm --name "pr-${PR_NUMBER}-frontend" -- start --prefix "$DIR/client"
 
             pm2 describe "pr-${PR_NUMBER}-backend" > /dev/null 2>&1 \
-              && pm2 restart "pr-${PR_NUMBER}-backend" \
-              || pm2 start npm --name "pr-${PR_NUMBER}-backend" -- start --prefix "$DIR/server"
+              && PORT=${BACKEND_PORT} pm2 restart "pr-${PR_NUMBER}-backend" --update-env \
+              || PORT=${BACKEND_PORT} pm2 start npm --name "pr-${PR_NUMBER}-backend" -- start --prefix "$DIR/server"
 
             pm2 save
 
             # Nginx config
-            cat > /etc/nginx/sites-enabled/pr-${PR_NUMBER}.chessperiment.app << EOF
-            server {
-                listen 443 ssl;
-                server_name pr-${PR_NUMBER}.chessperiment.app;
-                ssl_certificate /etc/letsencrypt/live/chessperiment.app/fullchain.pem;
-                ssl_certificate_key /etc/letsencrypt/live/chessperiment.app/privkey.pem;
-                location / {
-                    proxy_pass http://localhost:${FRONTEND_PORT};
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade \$http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host \$host;
-                    proxy_cache_bypass \$http_upgrade;
-                }
-            }
-            server {
-                listen 443 ssl;
-                server_name api-pr-${PR_NUMBER}.chessperiment.app;
-                ssl_certificate /etc/letsencrypt/live/chessperiment.app/fullchain.pem;
-                ssl_certificate_key /etc/letsencrypt/live/chessperiment.app/privkey.pem;
-                location / {
-                    proxy_pass http://localhost:${BACKEND_PORT};
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade \$http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                }
-            }
-            EOF
-
-            sudo nginx -t && sudo systemctl reload nginx
+            sudo /usr/local/sbin/deploy-pr-nginx-conf.sh "${PR_NUMBER}" "${FRONTEND_PORT}" "${BACKEND_PORT}"
