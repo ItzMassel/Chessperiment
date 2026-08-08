@@ -34,12 +34,14 @@ jobs:
             fi
 
             # Copy .env files from beta as base
-            cp /opt/chessperiment/chessperiment-beta/client/.env "$DIR/client/.env"
+            cp /opt/chessperiment/chessperiment-beta/client/.env.local "$DIR/client/.env.local"
             cp /opt/chessperiment/chessperiment-beta/server/.env "$DIR/server/.env"
 
-            # Set correct ports
-            sed -i "s/PORT=.*/PORT=${FRONTEND_PORT}/" "$DIR/client/.env"
+            # Set correct ports and URLs
+            sed -i "s/PORT=.*/PORT=${FRONTEND_PORT}/" "$DIR/client/.env.local"
             sed -i "s/PORT=.*/PORT=${BACKEND_PORT}/" "$DIR/server/.env"
+            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=https://pr-${PR_NUMBER}.chessperiment.app|" "$DIR/client/.env.local"
+            sed -i "s|NEXT_PUBLIC_SOCKET_URL=.*|NEXT_PUBLIC_SOCKET_URL=https://api-pr-${PR_NUMBER}.chessperiment.app|" "$DIR/client/.env.local"
 
             # Install and build
             cd "$DIR/client"
