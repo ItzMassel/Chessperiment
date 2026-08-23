@@ -16,6 +16,63 @@
         "features": "Features",
         "editor": "Editor"
     },
+    "Landing": {
+        "nav": {
+            "play": "Spielen",
+            "editor": "Editor",
+            "news": "Neuigkeiten",
+            "marketplace": "Marktplatz",
+            "about": "Über uns",
+            "feedback": "Feedback",
+            "login": "Anmelden",
+            "signUp": "Registrieren"
+        },
+        "langEn": "EN",
+        "langDe": "DE",
+        "hero": {
+            "badge": "v2.0 Beta live",
+            "titleLine1": "Erschaffe das Spiel.",
+            "titleLine2": "Brich die Regeln.",
+            "subtitle": "Die ultimative visuelle Logik-Sandbox zum Erfinden, Testen und Teilen von Schachvarianten. Keine Programmierkenntnisse nötig.",
+            "startDesigning": "Jetzt gestalten",
+            "guestAccess": "Als Gast spielen"
+        },
+        "visualBoard": {
+            "ruleLabel": "Regel #1",
+            "ruleText": "L-Sprung + Explosion"
+        },
+        "features": {
+            "visualLogic": {
+                "title": "Visueller Logik-Editor",
+                "description": "Verbinde Blöcke, um Zugbewegungen, Schlagregeln und bedingte Auslöser zu definieren — ganz ohne Programmieren. Wie Scratch, aber für Schachregeln. Unterstützt Leaper, Rider und komplexes Verhalten von Fantasiefiguren. Keine Vorlagen — echte Anpassbarkeit."
+            },
+            "customPieces": {
+                "title": "Eigene Figuren & Bretter",
+                "description": "Gestalte Figuren mit einzigartigen Sprites, definiere beliebige Bewegungsmuster und baue Bretter in jeder Form — rechteckig, hexagonal oder frei zugeschnitten. Jede Regel bestimmst du selbst."
+            },
+            "stockfish": {
+                "title": "Stockfish-Analyse",
+                "description": "Dein individuelles Spiel wird von der Stockfish-Engine bewertet — selbst wenn die Regeln völlig unkonventionell sind."
+            },
+            "multiplayer": {
+                "title": "Sofortiger Multiplayer",
+                "description": "Erzeuge einen Raum-Link und teile ihn. Dein Gegner tritt direkt im Browser bei, keine Installation nötig. Teste eine neue Variante in wenigen Minuten."
+            }
+        },
+        "footer": {
+            "about": "Über uns",
+            "privacyPolicy": "Datenschutzerklärung",
+            "terms": "AGB",
+            "contact": "Kontakt",
+            "copyright": "© 2026 Chessperiment"
+        },
+        "mobileNav": {
+            "home": "Start",
+            "editor": "Editor",
+            "login": "Anmelden",
+            "signUp": "Registrieren"
+        }
+    },
     "filters": {
         "all": "Alle Elemente",
         "board": "Bretter",

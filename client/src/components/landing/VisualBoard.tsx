@@ -1,8 +1,11 @@
 "use client"
 
 import { Sword, Wand2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const VisualBoard: React.FC = () => {
+    const t = useTranslations('Landing.visualBoard');
+
     return (
         <div className="relative w-full aspect-video bg-white dark:bg-stone-900/40 rounded-3xl border border-gray-100 dark:border-stone-800 shadow-xl overflow-hidden flex items-center justify-center max-w-5xl mx-auto transform hover:scale-[1.01] transition-transform duration-500">
             <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-purple-500/5 opacity-50"></div>
@@ -54,9 +57,9 @@ const VisualBoard: React.FC = () => {
                 <div className="absolute top-[25%] left-[25%] bg-gray-900 dark:bg-stone-800 text-white p-4 rounded-xl shadow-2xl z-40 transform -rotate-2 border border-gray-700 dark:border-stone-600">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-                        <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">Rule #1</span>
+                        <span className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">{t('ruleLabel')}</span>
                     </div>
-                    <div className="text-sm font-bold text-stone-100">L-Jump + Explosion</div>
+                    <div className="text-sm font-bold text-stone-100">{t('ruleText')}</div>
                 </div>
             </div>
         </div>

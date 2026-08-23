@@ -16,6 +16,63 @@
         "features": "Features",
         "editor": "Editor"
     },
+    "Landing": {
+        "nav": {
+            "play": "Play",
+            "editor": "Editor",
+            "news": "News",
+            "marketplace": "Marketplace",
+            "about": "About",
+            "feedback": "Feedback",
+            "login": "Login",
+            "signUp": "Sign Up"
+        },
+        "langEn": "EN",
+        "langDe": "DE",
+        "hero": {
+            "badge": "v2.0 Beta Live",
+            "titleLine1": "Build the Game.",
+            "titleLine2": "Break the Rules.",
+            "subtitle": "The ultimate visual logic sandbox for inventing, testing, and sharing chess variants. No coding required.",
+            "startDesigning": "Start Designing",
+            "guestAccess": "Guest Access"
+        },
+        "visualBoard": {
+            "ruleLabel": "Rule #1",
+            "ruleText": "L-Jump + Explosion"
+        },
+        "features": {
+            "visualLogic": {
+                "title": "Visual Logic Editor",
+                "description": "Connect blocks to define piece movement, capture rules, and conditional triggers — no coding. Think Scratch, but for chess rules. Supports leapers, riders, and complex fairy piece behaviour. Not presets — actual customizability."
+            },
+            "customPieces": {
+                "title": "Custom Pieces & Boards",
+                "description": "Design pieces with unique sprites, define any movement pattern, and build boards of any shape — rectangular, hexagonal, or custom-cut topologies. Every rule is yours to define."
+            },
+            "stockfish": {
+                "title": "Stockfish Analysis",
+                "description": "Your custom game is evaluated by the Stockfish engine — even when the rules are completely non-standard."
+            },
+            "multiplayer": {
+                "title": "Instant Multiplayer",
+                "description": "Generate a room link and share it. Your opponent joins in their browser, no install needed. Playtest a new variant in minutes."
+            }
+        },
+        "footer": {
+            "about": "About",
+            "privacyPolicy": "Privacy Policy",
+            "terms": "Terms",
+            "contact": "Contact",
+            "copyright": "© 2026 Chessperiment"
+        },
+        "mobileNav": {
+            "home": "Home",
+            "editor": "Editor",
+            "login": "Login",
+            "signUp": "Sign Up"
+        }
+    },
     "filters": {
         "all": "All Items",
         "board": "Boards",

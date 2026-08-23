@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { Link } from '@/i18n/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 const Header: React.FC = () => {
     const locale = useLocale();
+    const t = useTranslations('Landing');
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-stone-950/90 backdrop-blur-md border-b border-gray-200 dark:border-stone-800">
@@ -19,12 +20,12 @@ const Header: React.FC = () => {
                 </div>
                 <nav className="hidden md:flex items-center gap-8">
                     {[
-                        { name: 'Play', href: '/game' },
-                        { name: 'Editor', href: '/editor' },
-                        { name: 'News', href: '/announcements' },
-                        { name: 'Marketplace', href: '/marketplace' },
-                        { name: 'About', href: '/about' },
-                        { name: 'Feedback', href: '/feedback' }
+                        { name: t('nav.play'), href: '/game' },
+                        { name: t('nav.editor'), href: '/editor' },
+                        { name: t('nav.news'), href: '/announcements' },
+                        { name: t('nav.marketplace'), href: '/marketplace' },
+                        { name: t('nav.about'), href: '/about' },
+                        { name: t('nav.feedback'), href: '/feedback' }
                     ].map((item) => (
                         <Link
                             key={item.name}
@@ -40,13 +41,13 @@ const Header: React.FC = () => {
                         className="text-sm font-medium text-gray-500 dark:text-stone-400 hover:text-amber-500 transition-colors hidden sm:block"
                         href="/login"
                     >
-                        Login
+                        {t('nav.login')}
                     </Link>
                     <Link
                         className="text-sm font-bold bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded-lg transition-colors hidden sm:block shadow-sm"
                         href="/login"
                     >
-                        Sign Up
+                        {t('nav.signUp')}
                     </Link>
                     <div className="flex items-center bg-gray-100 dark:bg-stone-800 rounded-full p-1 ml-2">
                         <Link
