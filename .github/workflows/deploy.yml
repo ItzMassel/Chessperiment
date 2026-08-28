@@ -21,10 +21,16 @@ jobs:
             git pull origin main
 
             cd client
+            # Pin the NextAuth origin to the production https URL so the Google
+            # OAuth redirect_uri is https://chessperiment.app/api/auth/callback/google
+            # (without this, NextAuth derives http:// from proxy headers -> redirect_uri_mismatch)
+            sed -i -e '/^NEXTAUTH_URL=/d' -e '/^AUTH_URL=/d' .env.local
+            [ -n "$(tail -c1 .env.local)" ] && echo >> .env.local
+            printf 'NEXTAUTH_URL=https://chessperiment.app\nAUTH_URL=https://chessperiment.app\n' >> .env.local
             npm install
             npm run build
-            pm2 restart chessperiment-frontend
+            pm2 restart chessperiment-frontend --update-env
 
             cd ../server
             npm install
-            pm2 restart chessperiment-backend
+            pm2 restart chessperiment-backend --update-env
