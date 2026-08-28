@@ -38,10 +38,21 @@ jobs:
             cp /opt/chessperiment/chessperiment-beta/server/.env "$DIR/server/.env"
 
             # Set correct ports and URLs
+            BETA_AUTH_ORIGIN="https://beta.chessperiment.app"
             sed -i "s/PORT=.*/PORT=${FRONTEND_PORT}/" "$DIR/client/.env.local"
             sed -i "s/PORT=.*/PORT=${BACKEND_PORT}/" "$DIR/server/.env"
-            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=https://pr-${PR_NUMBER}.chessperiment.app|" "$DIR/client/.env.local"
-            sed -i "s|NEXT_PUBLIC_SOCKET_URL=.*|NEXT_PUBLIC_SOCKET_URL=https://api-pr-${PR_NUMBER}.chessperiment.app|" "$DIR/client/.env.local"
+            # Auth: the preview runs on a throwaway pr-N subdomain that cannot be
+            # registered as a Google OAuth redirect URI. Route the OAuth round-trip
+            # through beta's stable, registered callback via AUTH_REDIRECT_PROXY_URL;
+            # NextAuth still completes sign-in and sets the session cookie on the
+            # preview origin. Prereqs: beta reachable at BETA_AUTH_ORIGIN, its callback
+            # https://beta.chessperiment.app/api/auth/callback/google registered in
+            # Google, and beta + preview sharing AUTH_SECRET (true here because
+            # .env.local is copied from beta above). Beta itself must NOT set
+            # AUTH_REDIRECT_PROXY_URL, so it acts as the proxy rather than being proxied.
+            sed -i -e '/^NEXTAUTH_URL=/d' -e '/^AUTH_URL=/d' -e '/^AUTH_REDIRECT_PROXY_URL=/d' -e '/^NEXT_PUBLIC_SOCKET_URL=/d' "$DIR/client/.env.local"
+            [ -n "$(tail -c1 "$DIR/client/.env.local")" ] && echo >> "$DIR/client/.env.local"
+            printf 'NEXTAUTH_URL=https://pr-%s.chessperiment.app\nAUTH_URL=https://pr-%s.chessperiment.app\nAUTH_REDIRECT_PROXY_URL=%s/api/auth\nNEXT_PUBLIC_SOCKET_URL=https://api-pr-%s.chessperiment.app\n' "$PR_NUMBER" "$PR_NUMBER" "$BETA_AUTH_ORIGIN" "$PR_NUMBER" >> "$DIR/client/.env.local"
 
             # Install and build
             cd "$DIR/client"
