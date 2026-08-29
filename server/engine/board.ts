@@ -21,7 +21,10 @@ export class BoardClass {
         this.height = height;
         this.gridType = gridType;
         this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
-        const squares = initialPieces || this.setupInitialBoard();
+        const squares = this.ensureAllSquares(
+            initialPieces || this.setupInitialBoard(),
+            width, height, gridType, activeSquares
+        );
         this.stateManager = new BoardStateManager(squares, activeSquares);
         if (squareLogic) this.squareLogic = squareLogic;
     }
@@ -48,6 +51,44 @@ export class BoardClass {
 
     setActive(square: Square, active: boolean) {
         this.stateManager.setActive(square, active);
+    }
+
+    /**
+     * Guarantee the square map has an entry for every cell of the board.
+     *
+     * Callers build `initialPieces` with only the occupied squares, but the
+     * engine (legal-move generation, attack scans, king lookup) assumes
+     * `getSquares()` enumerates the whole board. A square missing from the map
+     * is invisible as a move destination, which made move generation return
+     * nothing and the game report an instant checkmate/stalemate. Backfill the
+     * gaps with `null`.
+     */
+    private ensureAllSquares(
+        provided: Record<Square, Piece | null>,
+        width: number,
+        height: number,
+        gridType: 'square' | 'hex',
+        activeSquares?: Square[],
+    ): Record<Square, Piece | null> {
+        const full: Record<Square, Piece | null> = {};
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                full[toSquare([x, y], gridType === 'square')] = null;
+            }
+        }
+
+        if (activeSquares) {
+            for (const sq of activeSquares) {
+                if (!(sq in full)) full[sq] = null;
+            }
+        }
+
+        for (const sq in provided) {
+            full[sq as Square] = provided[sq as Square];
+        }
+
+        return full;
     }
 
     private setupInitialBoard(): Record<Square, Piece | null> {
