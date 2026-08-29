@@ -229,11 +229,14 @@ export class ValidatorClass {
   getLegalMoves(color) {
     const legalMoves = [];
     const squares = this.board.getSquares();
+    // Destination candidates must include empty squares, so enumerate the
+    // whole board rather than just the occupied keys in `squares`.
+    const allSquares = this.board.getAllSquares();
 
     for (const from in squares) {
       const piece = squares[from];
       if (piece && piece.color === color) {
-        for (const to in squares) {
+        for (const to of allSquares) {
           if (this.isLegal(from, to)) {
             legalMoves.push({ from, to });
           }

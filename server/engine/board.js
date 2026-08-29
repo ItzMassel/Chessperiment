@@ -375,6 +375,27 @@ export class BoardClass {
     getSquares() {
         return this.stateManager.getSquares();
     }
+    // Every square identifier on the board, whether occupied or empty.
+    // `getSquares()` only carries keys for occupied squares on custom boards, so
+    // callers that need empty destinations (legal-move generation) must use this.
+    getAllSquares() {
+        const useAlgebraic = this.gridType === 'square';
+        const seen = new Set();
+        const result = [];
+        for (let col = 0; col < this.width; col++) {
+            for (let row = 0; row < this.height; row++) {
+                const sq = toSquare([col, row], useAlgebraic);
+                seen.add(sq);
+                result.push(sq);
+            }
+        }
+        for (const sq in this.stateManager.getSquares()) {
+            if (!seen.has(sq)) {
+                result.push(sq);
+            }
+        }
+        return result;
+    }
     getHistory() {
         return this.stateManager.getHistory();
     }
