@@ -94,7 +94,12 @@ export default function PieceTestBoard({ currentPiece, pieceColor }: PieceTestBo
             const r = 1 + Math.floor(i / 8);
             return `${f}${r}` as Square;
         }));
-        
+
+        // The validator only allows moves for the side to move, so align the
+        // board's turn with the piece being tested (otherwise a black test
+        // piece would have no legal moves).
+        board.setTurn(pieceColor);
+
         setGame(new Game(board));
     }, [currentPiece, pieceColor, piecePos]);
 
