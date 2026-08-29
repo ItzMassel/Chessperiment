@@ -536,6 +536,10 @@ export class BoardClass {
         return this.stateManager.turn;
     }
 
+    setTurn(color: "white" | "black"): void {
+        this.stateManager.turn = color;
+    }
+
     clone(): BoardClass {
         const clonedBoard = new BoardClass(undefined, undefined, this.width, this.height, this.gridType);
         clonedBoard.stateManager = this.stateManager.clone();
