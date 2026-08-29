@@ -253,16 +253,13 @@ export class ValidatorClass {
     getLegalMoves(color: 'white' | 'black'): { from: Square, to: Square }[] {
         const legalMoves: { from: Square, to: Square }[] = [];
         const squares = this.board.getSquares();
-        // Destination candidates must include empty squares, so enumerate the
-        // whole board rather than just the occupied keys in `squares`.
-        const allSquares = this.board.getAllSquares();
 
         for (const from in squares) {
             const piece = squares[from as Square];
             if (piece && piece.color === color) {
-                for (const to of allSquares) {
-                    if (this.isLegal(from as Square, to)) {
-                        legalMoves.push({ from: from as Square, to });
+                for (const to in squares) {
+                    if (this.isLegal(from as Square, to as Square)) {
+                        legalMoves.push({ from: from as Square, to: to as Square });
                     }
                 }
             }
