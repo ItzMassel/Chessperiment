@@ -24,7 +24,10 @@ export class BoardClass {
         this.height = height;
         this.gridType = gridType;
         this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
-        const squares = initialPieces || this.setupInitialBoard();
+        const squares = this.ensureAllSquares(
+            initialPieces || this.setupInitialBoard(),
+            width, height, gridType, activeSquares
+        );
         this.stateManager = new BoardStateManager(squares, activeSquares);
         if (squareLogic) this.squareLogic = squareLogic;
     }
@@ -72,6 +75,48 @@ export class BoardClass {
      */
     setSquareState(square: Square, state: SquareState) {
         this.squareStates[square] = state;
+    }
+
+    /**
+     * Guarantee the square map has an entry for every cell of the board.
+     *
+     * Callers such as the play board build `initialPieces` with only the
+     * occupied squares. The engine — legal-move generation, attack scans,
+     * king lookup — assumes `getSquares()` enumerates the whole board, so any
+     * square missing from the map is invisible (e.g. as a move destination),
+     * which made move generation return nothing and the game report an
+     * instant checkmate/stalemate. Backfill the gaps with `null`.
+     */
+    private ensureAllSquares(
+        provided: Record<Square, Piece | null>,
+        width: number,
+        height: number,
+        gridType: 'square' | 'hex',
+        activeSquares?: Square[],
+    ): Record<Square, Piece | null> {
+        const full: Record<Square, Piece | null> = {};
+
+        // Every cell of the generated grid.
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                full[toSquare([x, y], gridType === 'square')] = null;
+            }
+        }
+
+        // Explicitly-active squares that fall outside the generated bounds
+        // (custom topologies can place squares anywhere).
+        if (activeSquares) {
+            for (const sq of activeSquares) {
+                if (!(sq in full)) full[sq] = null;
+            }
+        }
+
+        // Real contents win over the backfilled nulls.
+        for (const sq in provided) {
+            full[sq as Square] = provided[sq as Square];
+        }
+
+        return full;
     }
 
     private setupInitialBoard(): Record<Square, Piece | null> {
