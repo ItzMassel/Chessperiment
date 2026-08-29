@@ -528,48 +528,12 @@ export class BoardClass {
         return this.stateManager.getSquares() as Record<Square, Piece | null>;
     }
 
-    /**
-     * Every square identifier on the board, whether occupied or empty.
-     *
-     * `getSquares()` only carries keys for squares that hold a piece on custom
-     * boards (the standard 8x8 board happens to pre-seed all 64 with null), so
-     * callers that need empty destinations — e.g. legal-move generation — must
-     * use this instead of iterating `getSquares()`.
-     */
-    getAllSquares(): Square[] {
-        const useAlgebraic = this.gridType === 'square';
-        const seen = new Set<Square>();
-        const result: Square[] = [];
-
-        for (let col = 0; col < this.width; col++) {
-            for (let row = 0; row < this.height; row++) {
-                const sq = toSquare([col, row], useAlgebraic);
-                seen.add(sq);
-                result.push(sq);
-            }
-        }
-
-        // Union in any square that exists in state but falls outside the
-        // rectangular bounds (irregular topologies, stray coordinates).
-        for (const sq in this.stateManager.getSquares()) {
-            if (!seen.has(sq as Square)) {
-                result.push(sq as Square);
-            }
-        }
-
-        return result;
-    }
-
     getHistory() {
         return this.stateManager.getHistory();
     }
 
     getTurn(): "white" | "black" {
         return this.stateManager.turn;
-    }
-
-    setTurn(color: "white" | "black"): void {
-        this.stateManager.turn = color;
     }
 
     clone(): BoardClass {
