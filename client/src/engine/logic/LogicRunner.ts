@@ -82,7 +82,7 @@ export class LogicRunner {
         for (const trigger of triggers) {
             if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
                 if (trigger.childId) {
-                    this.runBlock(piece, trigger.childId, context, board);
+                    this.runBlock(piece, trigger.childId, context, board, triggerType);
                 }
             }
         }
@@ -99,7 +99,7 @@ export class LogicRunner {
             for (const trigger of triggers) {
                 if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
                     if (trigger.childId) {
-                        this.runBlock(piece, trigger.childId, context, board);
+                        this.runBlock(piece, trigger.childId, context, board, triggerType);
                     }
                 }
             }
@@ -114,7 +114,7 @@ export class LogicRunner {
             for (const trigger of triggers) {
                 if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
                     if (trigger.childId) {
-                        this.runBlock(piece, trigger.childId, context, board);
+                        this.runBlock(piece, trigger.childId, context, board, triggerType);
                     }
                 }
             }
@@ -122,11 +122,11 @@ export class LogicRunner {
         }
 
         const triggers = piece.logic.filter((b: any) => b.type === 'trigger' && b.id === targetType);
-        
+
         for (const trigger of triggers) {
             if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
                 if (trigger.childId) {
-                    this.runBlock(piece, trigger.childId, context, board);
+                    this.runBlock(piece, trigger.childId, context, board, triggerType);
                 }
             }
         }
@@ -218,7 +218,7 @@ export class LogicRunner {
         }
     }
 
-    private static runBlock(piece: LogicPiece, blockId: string, context: any, board: BoardClass) {
+    private static runBlock(piece: LogicPiece, blockId: string, context: any, board: BoardClass, triggerType: string = '') {
         const block = piece.logic.find((b: any) => b.instanceId === blockId);
         if (!block) return;
 
@@ -294,16 +294,38 @@ export class LogicRunner {
 
             // Removed 'charge' and 'mode' as per Step 1, but if they exist in old logic we ignore or support generic mod-var.
 
-            case 'prevent':
-                // Enqueue cancelMove effect for pre-move phase
-                if (this.effectExecutor) {
-                    this.effectExecutor.enqueue(EffectFactory.cancelMove('pre-move'));
+            case 'prevent': {
+                // 'prevent' means something different depending on which trigger fired it.
+                // It only makes sense for movement / capture triggers; on any other
+                // trigger it is a no-op (there is no pending action to veto).
+                if (triggerType === 'on-move') {
+                    // Veto the move itself: the piece does not move at all.
+                    // 'Nearest Square' / 'Share Square' are capture-relocation options and
+                    // don't apply here, so force a plain stay-put.
+                    if (this.effectExecutor) {
+                        this.effectExecutor.enqueue(EffectFactory.cancelMove('pre-move'));
+                    }
+                    context.prevented = true;
+                    context.movePrevented = true;
+                    context.preventAction = 'Jump Back';
+                } else if (
+                    triggerType === 'on-is-captured' ||
+                    triggerType === 'on-captured' ||
+                    triggerType === 'on-capture'
+                ) {
+                    // Veto the capture. The whole move is rejected; how the attacker is
+                    // resolved is chosen by the 'by' action socket.
+                    if (this.effectExecutor) {
+                        this.effectExecutor.enqueue(EffectFactory.cancelMove('pre-move'));
+                    }
+                    context.prevented = true;
+                    context.movePrevented = true;
+                    context.capturePrevented = true;
+                    context.preventAction = vals.action || 'Jump Back';
                 }
-                context.prevented = true;
-                context.movePrevented = true;
-                context.capturePrevented = true;
-                context.preventAction = vals.action || 'Jump Back';
+                // else: trigger for which 'prevent' has no meaning -> do nothing.
                 break;
+            }
 
             case 'win':
                 // Enqueue win effect
@@ -323,7 +345,7 @@ export class LogicRunner {
         }
 
         if (block.childId) {
-            this.runBlock(piece, block.childId, context, board);
+            this.runBlock(piece, block.childId, context, board, triggerType);
         }
     }
 
