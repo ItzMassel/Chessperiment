@@ -22,6 +22,11 @@ import { TutorialTooltip } from "./TutorialTooltip"
 
 const STORAGE_KEY_PREFIX = "chessperiment_tutorial_"
 
+// Set by the "Tutorial" button on the projects overview to explicitly request
+// that the tutorial starts the next time a TutorialProvider mounts. Without this
+// flag the tutorial never auto-starts.
+export const TUTORIAL_START_PENDING_KEY = "chessperiment_tutorial_start_pending"
+
 function getStorageKey(projectId: string) {
   return STORAGE_KEY_PREFIX + projectId
 }
@@ -126,19 +131,26 @@ export function TutorialProvider({ projectId, children }: TutorialProviderProps)
     saveState(projectId, state)
   }, [state, projectId])
 
+  // The tutorial only starts when explicitly requested via the "Tutorial" button
+  // on the projects overview, which sets TUTORIAL_START_PENDING_KEY before
+  // navigating into the editor. It never auto-starts on its own.
   useEffect(() => {
-    if (state.completed || state.dismissed) return
+    try {
+      if (localStorage.getItem(TUTORIAL_START_PENDING_KEY)) {
+        localStorage.removeItem(TUTORIAL_START_PENDING_KEY)
+        dispatch({ type: "START" })
+      }
+    } catch {
+      /* localStorage unavailable */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!state.active || state.completed || state.dismissed) return
 
     const step = steps[state.currentStepIndex]
     if (!step) return
-
-    if (!state.active) {
-      const isEditorRoute = /\/editor\/[^/]/.test(pathname)
-      if (isEditorRoute) {
-        dispatch({ type: "START" })
-      }
-      return
-    }
 
     if (step.navigateTo && matchesNavigateTo(pathname, step.navigateTo)) {
       dispatch({ type: "NEXT_STEP", totalSteps })

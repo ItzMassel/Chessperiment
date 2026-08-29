@@ -13,7 +13,8 @@ import {
     saveProjectAction
 } from '@/app/actions/editor';
 import { LocalProjectStore } from '@/lib/local-persistence';
-import { Plus, Sparkles, Loader2 } from 'lucide-react';
+import { TUTORIAL_START_PENDING_KEY } from '@/components/tutorial';
+import { Plus, Sparkles, Loader2, GraduationCap } from 'lucide-react';
 import ProjectList from '@/components/editor/ProjectList';
 import CreatorProfileSection from '@/components/dashboard/CreatorProfileSection';
 import PublishModal from '@/components/marketplace/PublishModal';
@@ -143,6 +144,16 @@ export default function PageClient() {
         }
     };
 
+    const handleStartTutorial = async () => {
+        if (isCreating) return;
+        try {
+            localStorage.setItem(TUTORIAL_START_PENDING_KEY, '1');
+        } catch {
+            /* localStorage unavailable */
+        }
+        await handleQuickCreate();
+    };
+
     const handleToggleStar = async (projectId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -261,6 +272,15 @@ export default function PageClient() {
                 </div>
 
                 <div className="flex gap-4">
+                    <button
+                        onClick={handleStartTutorial}
+                        disabled={isCreating}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-2xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-50"
+                    >
+                        <GraduationCap className="w-5 h-5 text-accent" />
+                        {t('tutorial')}
+                    </button>
+
                     <button
                         onClick={handleQuickCreate}
                         disabled={isCreating}
