@@ -13,7 +13,7 @@ export class BoardClass {
         this.height = height;
         this.gridType = gridType;
         this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
-        const squares = initialPieces || this.setupInitialBoard();
+        const squares = this.ensureAllSquares(initialPieces || this.setupInitialBoard(), width, height, gridType, activeSquares);
         this.stateManager = new BoardStateManager(squares, activeSquares);
         if (squareLogic)
             this.squareLogic = squareLogic;
@@ -35,6 +35,31 @@ export class BoardClass {
     }
     setActive(square, active) {
         this.stateManager.setActive(square, active);
+    }
+    /**
+     * Guarantee the square map has an entry for every cell of the board.
+     * Callers pass only occupied squares, but the engine assumes getSquares()
+     * enumerates the whole board (legal-move generation in particular), so
+     * missing squares were invisible as move destinations and the game
+     * reported an instant checkmate/stalemate. Backfill the gaps with null.
+     */
+    ensureAllSquares(provided, width, height, gridType, activeSquares) {
+        const full = {};
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                full[toSquare([x, y], gridType === 'square')] = null;
+            }
+        }
+        if (activeSquares) {
+            for (const sq of activeSquares) {
+                if (!(sq in full))
+                    full[sq] = null;
+            }
+        }
+        for (const sq in provided) {
+            full[sq] = provided[sq];
+        }
+        return full;
     }
     setupInitialBoard() {
         const squares = {};
