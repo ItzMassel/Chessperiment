@@ -27,11 +27,11 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface MoveCondition {
     id: string;
-    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist' | 'cooldown' | 'charge' | 'mode';
-    variableVariable?: string; // If set, compare this piece variable instead of the spatial/state variable
+    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY' | 'dist';
+    variableVariable?: string; // If set, use this named quantity on the left instead of `variable`
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
-    valueVariable?: string; // If set, compare against this piece variable instead of `value`
+    valueVariable?: string; // If set, compare against this named quantity instead of `value`
     logic?: 'AND' | 'OR';
 }
 
@@ -56,13 +56,10 @@ const VAR_MATH = {
     diffX: 'ΔX',
     diffY: 'ΔY',
     dist: 'dist',
-    cooldown: 'cooldown',
-    charge: 'charge',
-    mode: 'mode',
 } as const;
 
-// Built-in piece variables that can be referenced as comparison values
-const BUILTIN_VALUE_VARS = ['cooldown', 'charge', 'mode'] as const;
+// Built-in spatial quantities that can be referenced on either side of a comparison
+const BUILTIN_VALUE_VARS = ['diffX', 'diffY', 'absDiffX', 'absDiffY', 'dist'] as const;
 
 function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MATH, onClose: () => void }) {
     const t = useTranslations('Editor.Piece');
@@ -287,7 +284,7 @@ function SortableRule({
                                             className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-violet-500 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                         >
                                             {BUILTIN_VALUE_VARS.map(v => (
-                                                <option key={v} value={v}>{v}</option>
+                                                <option key={v} value={v}>{t(`variables.${v}.label`)} ({VAR_MATH[v]})</option>
                                             ))}
                                             {variables.map(v => (
                                                 <option key={v.id} value={v.name}>{v.name}</option>
@@ -295,7 +292,7 @@ function SortableRule({
                                         </select>
                                         <button
                                             type="button"
-                                            title="Switch to spatial/state variable"
+                                            title="Switch to movement variable"
                                             onClick={() => onUpdateCondition(rule.id, cond.id, { variableVariable: undefined })}
                                             className="text-[10px] font-black text-violet-500 hover:text-stone-500 px-1 py-1 rounded transition-colors"
                                         >
@@ -324,7 +321,7 @@ function SortableRule({
                                         </div>
                                         <button
                                             type="button"
-                                            title="Use a piece variable"
+                                            title="Compare against a variable"
                                             onClick={() => onUpdateCondition(rule.id, cond.id, { variableVariable: BUILTIN_VALUE_VARS[0] })}
                                             className="text-[10px] font-black text-stone-400 hover:text-violet-500 px-1 py-1 rounded transition-colors"
                                         >
@@ -353,7 +350,7 @@ function SortableRule({
                                             className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-violet-500 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                         >
                                             {BUILTIN_VALUE_VARS.map(v => (
-                                                <option key={v} value={v}>{v}</option>
+                                                <option key={v} value={v}>{t(`variables.${v}.label`)} ({VAR_MATH[v]})</option>
                                             ))}
                                             {variables.map(v => (
                                                 <option key={v.id} value={v.name}>{v.name}</option>
@@ -378,7 +375,7 @@ function SortableRule({
                                         />
                                         <button
                                             type="button"
-                                            title="Use a piece variable"
+                                            title="Compare against a variable"
                                             onClick={() => onUpdateCondition(rule.id, cond.id, { valueVariable: BUILTIN_VALUE_VARS[0] })}
                                             className="text-[10px] font-black text-stone-400 hover:text-violet-500 px-1 py-1 rounded transition-colors"
                                         >
