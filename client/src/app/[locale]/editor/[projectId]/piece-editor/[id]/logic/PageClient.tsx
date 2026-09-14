@@ -239,6 +239,20 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 360
     },
     {
+        id: 'if',
+        type: 'effect',
+        label: 'if',
+        category: 'effects',
+        color: '#E67E22',
+        description: 'Conditionally execute child blocks. Compares a variable with another variable or a value.',
+        sockets: [
+            { id: 'varA', type: 'text', label: 'Var', acceptsVariable: true },
+            { id: 'op', type: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
+            { id: 'varB', type: 'text', label: 'Value', acceptsVariable: true }
+        ],
+        width: 440
+    },
+    {
         id: 'variable-pos-x',
         type: 'variable',
         label: 'x',
