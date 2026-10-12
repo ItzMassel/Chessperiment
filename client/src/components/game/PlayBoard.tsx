@@ -207,14 +207,14 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
             </AnimatePresence>
 
             {/* Coordinate Labels */}
-            {!hideCoordinates && pos[1] === '1' && (
+            {!hideCoordinates && pos.slice(1) === '1' && (
                 <span className={`absolute bottom-0.5 right-0.5 text-[9px] font-black select-none pointer-events-none ${isWhite ? 'text-[#779556]' : 'text-[#ebecd0]'}`}>
                     {pos[0]}
                 </span>
             )}
             {!hideCoordinates && pos[0] === 'a' && (
                 <span className={`absolute top-0.5 left-0.5 text-[9px] font-black select-none pointer-events-none ${isWhite ? 'text-[#779556]' : 'text-[#ebecd0]'}`}>
-                    {pos[1]}
+                    {pos.slice(1)}
                 </span>
             )}
         </div>
