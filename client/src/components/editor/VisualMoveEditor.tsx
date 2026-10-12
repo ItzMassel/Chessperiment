@@ -32,6 +32,7 @@ interface MoveCondition {
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
     valueVariable?: string; // If set, compare against this named quantity instead of `value`
+    multiplier?: number; // Factor applied to `valueVariable` (default 1)
     logic?: 'AND' | 'OR';
 }
 
@@ -270,12 +271,12 @@ function SortableRule({
                     </span>
                 </div>
 
-                <div className="flex-1 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-3">
                     <span className="text-sm font-bold text-stone-900/40 dark:text-white/40">{t('if')}</span>
 
                     {rule.conditions.map((cond, cIdx) => (
-                        <div key={cond.id} className="flex items-center gap-2">
-                            <div className="flex items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
+                        <div key={cond.id} className="flex flex-wrap items-center gap-2 min-w-0">
+                            <div className="flex flex-wrap items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
                                 {cond.variableVariable !== undefined ? (
                                     <div className="flex items-center gap-1">
                                         <select
@@ -344,6 +345,18 @@ function SortableRule({
 
                                 {cond.valueVariable !== undefined ? (
                                     <div className="flex items-center gap-1">
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            title="Multiplier"
+                                            value={cond.multiplier ?? 1}
+                                            onChange={(e) => {
+                                                const m = parseFloat(e.target.value);
+                                                onUpdateCondition(rule.id, cond.id, { multiplier: Number.isFinite(m) ? m : 1 });
+                                            }}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900 dark:text-white w-12 px-2 py-1 outline-none text-center hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        />
+                                        <span className="text-sm font-bold text-stone-400">×</span>
                                         <select
                                             value={cond.valueVariable}
                                             onChange={(e) => onUpdateCondition(rule.id, cond.id, { valueVariable: e.target.value })}
@@ -415,7 +428,7 @@ function SortableRule({
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch">
+                <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch shrink-0">
                     <ArrowRight className="text-white/20" size={20} />
 
                     <button

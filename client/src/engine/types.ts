@@ -53,6 +53,7 @@ export interface MoveCondition {
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
     valueVariable?: string; // If set, compare against this piece variable instead of `value`
+    multiplier?: number; // Optional factor applied to `valueVariable` (e.g. |ΔY| = 2 × |ΔX|)
     logic?: 'AND' | 'OR';
 }
 
