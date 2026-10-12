@@ -11,7 +11,9 @@ const isOpenRouter = apiKey.startsWith('sk-or-');
 const baseURL = isOpenRouter ? 'https://openrouter.ai/api/v1' : 'https://api.deepseek.com';
 const model = isOpenRouter ? 'deepseek/deepseek-v4-flash' : 'deepseek-v4-flash';
 
-const openai = new OpenAI({ baseURL, apiKey });
+// Created on first use so that `next build` doesn't need the API key
+let openaiClient: OpenAI | null = null;
+const getOpenAI = () => (openaiClient ??= new OpenAI({ baseURL, apiKey }));
 
 const TOKEN_BUDGET = 400_000;
 const CLIENT_TOOL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -63,7 +65,7 @@ const openaiMessages = [
       if (tools && tools.length > 0) completionOptions.tools = tools;
 
       console.log(`[job:${job.id}] Calling LLM (${job.apiMessages.length} messages so far)`);
-      const completion = await openai.chat.completions.create(completionOptions);
+      const completion = await getOpenAI().chat.completions.create(completionOptions);
 
       if (!completion.choices?.length) throw new Error('LLM returned no choices');
 

@@ -158,7 +158,7 @@ export class CustomPiece extends Piece {
                     : resolveNamed(cond.variable);
                 // Right side: a named reference, otherwise the literal number
                 const compareValue = cond.valueVariable !== undefined
-                    ? resolveNamed(cond.valueVariable)
+                    ? resolveNamed(cond.valueVariable) * (cond.multiplier ?? 1)
                     : cond.value;
                 let condSatisfied = false;
                 switch (cond.operator) {
