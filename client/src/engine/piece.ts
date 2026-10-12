@@ -1,5 +1,6 @@
 import { Square, MoveRule } from './types';
 import { toCoords, toSquare } from './utils';
+import { getSlidePath } from './slidePath';
 import type { BoardClass } from './board';
 import { LogicRunner } from './logic/LogicRunner';
 
@@ -195,108 +196,28 @@ export class CustomPiece extends Piece {
         const dx = toCoordsCoords[0] - fromCoords[0];
         const dy = toCoordsCoords[1] - fromCoords[1];
 
-        // Horizontal/Vertical distance (absolute)
-        const adx = Math.abs(dx);
-        const ady = Math.abs(dy);
-
-        // Directions from white's perspective are different for black
-        // However, ΔY in our visual editor usually means "forward" for the color.
-        // Let's adjust dy based on color so that positive is always "forward"
-        let forwardDy = dy;
-        if (board.gridType === 'hex') {
-            // In hex pointy-top, white moving up is r decreasing.
-            // So if dy (dr) is negative, it's forward for white.
-            forwardDy = this.color === 'white' ? -dy : dy;
-        } else {
-            forwardDy = this.color === 'white' ? dy : -dy;
-        }
-
         let isAllowed = false;
 
         for (const rule of this.rules) {
-            let ruleResult = true; // For AND logic
-            let currentLogic: 'AND' | 'OR' = 'AND';
-
-            // Resolve a named quantity: built-in movement variable, else a piece variable
-            const resolveNamed = (name: string): number => {
-                switch (name) {
-                    case 'diffX': return dx;
-                    case 'diffY': return forwardDy;
-                    case 'absDiffX': return adx;
-                    case 'absDiffY': return ady;
-                    case 'dist':
-                        if (board.gridType === 'hex') {
-                            const ds = -dx - dy;
-                            return (Math.abs(dx) + Math.abs(dy) + Math.abs(ds)) / 2;
-                        }
-                        return Math.max(adx, ady); // Chebyshev distance for square
-                    default:
-                        return this.variables[name] ?? 0;
-                }
-            };
-
-            for (let i = 0; i < rule.conditions.length; i++) {
-                const cond = rule.conditions[i];
-
-                // Left side: an explicit named reference, otherwise the built-in movement variable
-                const value = cond.variableVariable !== undefined
-                    ? resolveNamed(cond.variableVariable)
-                    : resolveNamed(cond.variable);
-
-                // Right side: a named reference, otherwise the literal number
-                const compareValue = cond.valueVariable !== undefined
-                    ? resolveNamed(cond.valueVariable)
-                    : cond.value;
-
-                let condSatisfied = false;
-                switch (cond.operator) {
-                    case '===': condSatisfied = value === compareValue; break;
-                    case '>': condSatisfied = value > compareValue; break;
-                    case '<': condSatisfied = value < compareValue; break;
-                    case '>=': condSatisfied = value >= compareValue; break;
-                    case '<=': condSatisfied = value <= compareValue; break;
-                }
-
-                if (i === 0) {
-                    ruleResult = condSatisfied;
-                } else {
-                    if (currentLogic === 'AND') {
-                        ruleResult = ruleResult && condSatisfied;
-                    } else {
-                        ruleResult = ruleResult || condSatisfied;
-                    }
-                }
-                
-                // Prepare logic for NEXT condition
-                currentLogic = cond.logic || 'AND';
-            }
+            const ruleResult = this.ruleMatches(rule, dx, dy, board);
 
             if (ruleResult) {
                 // If a rule is met, it dictates the result
                 if (rule.result === 'allow') {
                     // Check if this is a 'slide' (run) move - path must be clear
                     if (rule.type === 'slide' || rule.type === 'run' || (rule as any).type === 'running') {
-                        // Calculate number of steps using GCD
-                        const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
-                        const steps = gcd(Math.abs(dx), Math.abs(dy));
+                        // Squares the move passes over (a straight line, or - for "several rooks side by
+                        // side" pieces - only the piece's own lane). Pieces elsewhere don't block it.
+                        const between = getSlidePath(dx, dy, (px, py) => this.ruleMatches(rule, px, py, board), board.gridType === 'square');
                         let pathClear = true;
-                        
-                        // Check intermediate squares
-                        if (steps > 1) {
-                            const stepX = dx / steps;
-                            const stepY = dy / steps;
-                            for (let s = 1; s < steps; s++) {
-                                const iX = fromCoords[0] + s * stepX;
-                                const iY = fromCoords[1] + s * stepY;
-                                const iSq = toSquare([iX, iY], board.gridType === 'square');
-                                
-                                if (board.getPiece(iSq) !== null || !board.isActive(iSq)) {
-                                    pathClear = false;
-                                    break;
-                                }
+                        for (const [px, py] of between) {
+                            const iSq = toSquare([fromCoords[0] + px, fromCoords[1] + py], board.gridType === 'square');
+                            if (board.getPiece(iSq) !== null || !board.isActive(iSq)) {
+                                pathClear = false;
+                                break;
                             }
                         }
-                        
+
                         if (!pathClear) {
                             // Path blocked, continue to next rule
                             continue;
@@ -312,6 +233,79 @@ export class CustomPiece extends Piece {
         }
 
         return isAllowed;
+    }
+
+    /**
+     * Does a movement rule's condition set match a relative move (dx, dy)?
+     */
+    ruleMatches(rule: MoveRule, dx: number, dy: number, board: BoardClass): boolean {
+        const adx = Math.abs(dx);
+        const ady = Math.abs(dy);
+
+        // ΔY is "forward" for the piece's color
+        let forwardDy = dy;
+        if (board.gridType === 'hex') {
+            // In hex pointy-top, white moving up is r decreasing.
+            forwardDy = this.color === 'white' ? -dy : dy;
+        } else {
+            forwardDy = this.color === 'white' ? dy : -dy;
+        }
+
+        let ruleResult = true; // For AND logic
+        let currentLogic: 'AND' | 'OR' = 'AND';
+
+        // Resolve a named quantity: built-in movement variable, else a piece variable
+        const resolveNamed = (name: string): number => {
+            switch (name) {
+                case 'diffX': return dx;
+                case 'diffY': return forwardDy;
+                case 'absDiffX': return adx;
+                case 'absDiffY': return ady;
+                case 'dist':
+                    if (board.gridType === 'hex') {
+                        const ds = -dx - dy;
+                        return (Math.abs(dx) + Math.abs(dy) + Math.abs(ds)) / 2;
+                    }
+                    return Math.max(adx, ady); // Chebyshev distance for square
+                default:
+                    return this.variables[name] ?? 0;
+            }
+        };
+
+        for (let i = 0; i < rule.conditions.length; i++) {
+            const cond = rule.conditions[i];
+
+            // Left side: an explicit named reference, otherwise the built-in movement variable
+            const value = cond.variableVariable !== undefined
+                ? resolveNamed(cond.variableVariable)
+                : resolveNamed(cond.variable);
+
+            // Right side: a named reference, otherwise the literal number
+            const compareValue = cond.valueVariable !== undefined
+                ? resolveNamed(cond.valueVariable)
+                : cond.value;
+
+            let condSatisfied = false;
+            switch (cond.operator) {
+                case '===': condSatisfied = value === compareValue; break;
+                case '>': condSatisfied = value > compareValue; break;
+                case '<': condSatisfied = value < compareValue; break;
+                case '>=': condSatisfied = value >= compareValue; break;
+                case '<=': condSatisfied = value <= compareValue; break;
+            }
+
+            if (i === 0) {
+                ruleResult = condSatisfied;
+            } else if (currentLogic === 'AND') {
+                ruleResult = ruleResult && condSatisfied;
+            } else {
+                ruleResult = ruleResult || condSatisfied;
+            }
+
+            // Prepare logic for NEXT condition
+            currentLogic = cond.logic || 'AND';
+        }
+        return ruleResult;
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
