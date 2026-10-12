@@ -271,12 +271,12 @@ function SortableRule({
                     </span>
                 </div>
 
-                <div className="flex-1 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-3">
                     <span className="text-sm font-bold text-stone-900/40 dark:text-white/40">{t('if')}</span>
 
                     {rule.conditions.map((cond, cIdx) => (
-                        <div key={cond.id} className="flex items-center gap-2">
-                            <div className="flex items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
+                        <div key={cond.id} className="flex flex-wrap items-center gap-2 min-w-0">
+                            <div className="flex flex-wrap items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
                                 {cond.variableVariable !== undefined ? (
                                     <div className="flex items-center gap-1">
                                         <select
@@ -428,7 +428,7 @@ function SortableRule({
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch">
+                <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch shrink-0">
                     <ArrowRight className="text-white/20" size={20} />
 
                     <button
