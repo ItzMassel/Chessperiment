@@ -79,6 +79,16 @@ export async function getProject(projectId: string, userId: string): Promise<Pro
   return rowToProject(row);
 }
 
+/** Loads a project without an ownership check. Only for published marketplace items. */
+export async function getProjectById(projectId: string): Promise<Project | null> {
+  const [row] = await db.select()
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!row) return null;
+  return rowToProject(row);
+}
+
 export async function deleteProject(projectId: string, userId: string): Promise<void> {
   const [row] = await db.select({ id: projects.id })
     .from(projects)
