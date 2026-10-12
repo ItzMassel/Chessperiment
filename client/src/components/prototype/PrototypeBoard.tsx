@@ -74,14 +74,14 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTur
             </AnimatePresence>
 
             {/* Coordinate Labels */}
-            {pos[1] === '1' && (
+            {pos.slice(1) === '1' && (
                 <span className={`absolute bottom-0.5 right-0.5 text-[10px] font-bold ${isWhite ? 'text-[#779556]' : 'text-[#ebecd0]'}`}>
                     {pos[0]}
                 </span>
             )}
             {pos[0] === 'a' && (
                 <span className={`absolute top-0.5 left-0.5 text-[10px] font-bold ${isWhite ? 'text-[#779556]' : 'text-[#ebecd0]'}`}>
-                    {pos[1]}
+                    {pos.slice(1)}
                 </span>
             )}
         </div>
