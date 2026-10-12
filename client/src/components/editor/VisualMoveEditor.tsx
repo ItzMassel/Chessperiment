@@ -32,6 +32,7 @@ interface MoveCondition {
     operator: '===' | '>' | '<' | '>=' | '<=';
     value: number;
     valueVariable?: string; // If set, compare against this named quantity instead of `value`
+    multiplier?: number; // Factor applied to `valueVariable` (default 1)
     logic?: 'AND' | 'OR';
 }
 
@@ -344,6 +345,18 @@ function SortableRule({
 
                                 {cond.valueVariable !== undefined ? (
                                     <div className="flex items-center gap-1">
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            title="Multiplier"
+                                            value={cond.multiplier ?? 1}
+                                            onChange={(e) => {
+                                                const m = parseFloat(e.target.value);
+                                                onUpdateCondition(rule.id, cond.id, { multiplier: Number.isFinite(m) ? m : 1 });
+                                            }}
+                                            className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900 dark:text-white w-12 px-2 py-1 outline-none text-center hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        />
+                                        <span className="text-sm font-bold text-stone-400">×</span>
                                         <select
                                             value={cond.valueVariable}
                                             onChange={(e) => onUpdateCondition(rule.id, cond.id, { valueVariable: e.target.value })}
