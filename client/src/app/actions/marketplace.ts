@@ -7,8 +7,10 @@ import { createNotification } from "./notifications";
 import { MarketplaceItem, Review } from "@/lib/marketplace-types";
 import {
   getProject,
+  getProjectById,
   saveProject,
   getBoard,
+  getBoardById,
   saveBoard,
   getPieceSet,
   savePieceSet,
@@ -289,13 +291,12 @@ async function resolveConfigData(item: MarketplaceItem): Promise<any | null> {
     if (!item.sourceId) return null;
 
     if (item.sourceType === 'project' || item.type === 'game') {
-        const doc = await getProject(item.sourceId, '');
+        const doc = await getProjectById(item.sourceId);
         if (!doc) return null;
         return doc;
     }
     if (item.sourceType === 'board') {
-        const boardsModule = await import("@/db");
-        const doc = await boardsModule.getBoard(item.sourceId, '');
+        const doc = await getBoardById(item.sourceId);
         if (!doc) return null;
         return doc;
     }
@@ -459,7 +460,11 @@ export async function forkMarketplaceItem(marketplaceId: string) {
 
 export async function getMarketplaceProjectAction(marketplaceId: string) {
     try {
-        const item = await getMarketplaceItem(marketplaceId);
+        let item = await getMarketplaceItem(marketplaceId);
+        if (!item) {
+            const { SEED_MARKETPLACE_ITEMS } = await import('@/lib/marketplace-seed');
+            item = SEED_MARKETPLACE_ITEMS.find(i => i.id === marketplaceId) as any;
+        }
         if (!item) return { success: false, error: "Marketplace item not found" };
         const configData = await resolveConfigData(item);
         if (!configData) return { success: false, error: "Project data missing from marketplace item" };

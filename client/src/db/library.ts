@@ -63,6 +63,16 @@ export async function getBoard(boardId: string, userId: string): Promise<SavedBo
   return row as unknown as SavedBoard;
 }
 
+/** Loads a board without an ownership check. Only for published marketplace items. */
+export async function getBoardById(boardId: string): Promise<SavedBoard | null> {
+  const [row] = await db.select()
+    .from(boards)
+    .where(eq(boards.id, boardId))
+    .limit(1);
+  if (!row) return null;
+  return row as unknown as SavedBoard;
+}
+
 export async function deleteBoard(boardId: string, userId: string): Promise<void> {
   await db.delete(boards)
     .where(and(eq(boards.id, boardId), eq(boards.userId, userId)));
