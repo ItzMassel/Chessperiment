@@ -428,11 +428,13 @@ export class BoardClass {
                 }
                 this.stateManager.setPiece(to, null);
             }
+            const kingHadMoved = pieceToMove.hasMoved;
             this.stateManager.setPiece(to, pieceToMove);
             this._leaveSquare(from, pieceToMove);
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+            this._moveCastlingRook(from, to, pieceToMove, kingHadMoved);
 
             // Execute Square Logic: on-step
             const squareCtx = {
@@ -469,6 +471,26 @@ export class BoardClass {
             return true;
         }
         return false;
+    }
+
+    // RulesEngine._isCastling already validated the move; here we only relocate the rook.
+    // Corner files 0 and 7 match the assumption made in RulesEngine._isCastling.
+    private _moveCastlingRook(from: Square, to: Square, king: Piece, kingHadMoved: boolean): void {
+        if (king.type !== 'king' || kingHadMoved || this.gridType !== 'square') return;
+
+        const [fromX, fromY] = toCoords(from);
+        const [toX, toY] = toCoords(to);
+        if (Math.abs(toX - fromX) !== 2 || fromY !== toY) return;
+
+        const rookFrom = toSquare([toX > fromX ? 7 : 0, fromY], true);
+        const rookTo = toSquare([(fromX + toX) / 2, fromY], true);
+        const rook = this.getPiece(rookFrom);
+        if (!rook || rook.type !== 'rook' || rook.color !== king.color) return;
+
+        this.stateManager.setPiece(rookFrom, null);
+        this.stateManager.setPiece(rookTo, rook);
+        rook.position = rookTo;
+        rook.hasMoved = true;
     }
 
     isSquareAttacked(square: Square, byColor: string): boolean {
