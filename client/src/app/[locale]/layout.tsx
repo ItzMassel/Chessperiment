@@ -15,7 +15,6 @@ import { Providers } from "../providers";
 import { SEOFooter } from "@/components/SEOFooter";
 import { ReferralSurvey } from "@/components/ReferralSurvey";
 import { WarningSplashModal } from "@/components/WarningSplashModal";
-import { OpenSourceAnnouncement } from "@/components/OpenSourceAnnouncement";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -177,7 +176,6 @@ export default async function RootLayout({
 
                   <UserPanel />
                   <ThemeToggle />
-                  <OpenSourceAnnouncement />
                   <ReferralSurvey />
                   <WarningSplashModal />
                   <HeaderWrapper />
