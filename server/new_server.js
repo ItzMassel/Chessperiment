@@ -102,7 +102,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://chessperiment.app",
+    origin: ["https://chessperiment.app", "http://localhost:3000"],
     methods: ["GET", "POST"],
   },
   maxHttpBufferSize: 1e8, // 100 MB for custom assets
