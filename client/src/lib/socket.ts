@@ -23,9 +23,12 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    const SOCKET_URL = "https://chessperiment.app";
+    const configured = new URL(
+      process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment.app/chessperiment-server"
+    );
+    const SOCKET_URL = configured.origin;
     socket = io(SOCKET_URL, {
-      path: "/chessperiment-server/socket.io",
+      path: `${configured.pathname.replace(/\/$/, "")}/socket.io`,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
