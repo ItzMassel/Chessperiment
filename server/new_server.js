@@ -433,10 +433,42 @@ async function getPlayerRoom(playerId) {
   return null;
 }
 
+async function removePlayerRoom(playerId) {
+  playerToRoom.delete(playerId);
+  if (!redisEnabled || !redisClient) return;
+  try {
+    await redisClient.del(`playerRoom:${playerId}`);
+  } catch (err) {
+    console.error("Error removing playerRoom from Redis:", err);
+  }
+}
+
+async function deleteGame(roomId) {
+  games.delete(roomId);
+  if (!redisEnabled || !redisClient) return;
+  try {
+    await redisClient.del(`game:${roomId}`);
+  } catch (err) {
+    console.error("Error deleting game from Redis:", err);
+  }
+}
+
 io.on("connection", (socket) => {
   console.log("connected:", socket.id);
+
+  // A client sends "move" and then "request_computer_move" back to back. Handle the
+  // two one after the other, otherwise the bot request checks the turn before the
+  // move was applied, bails out silently and the client waits forever.
+  let moveQueue = Promise.resolve();
+  const inOrder = (handler) => (...args) => {
+    moveQueue = moveQueue
+      .then(() => handler(...args))
+      .catch((err) => console.error("[Queue] Handler failed:", err));
+    return moveQueue;
+  };
+
   // --- Server-Side Stockfish (POOLED - MEMORY EFFICIENT) ---
-  socket.on("request_computer_move", async (data) => {
+  socket.on("request_computer_move", inOrder(async (data) => {
     console.log("Requested computer move");
     const { roomId, difficulty } = data;
     const playerId = socketToPlayer.get(socket.id);
@@ -446,6 +478,7 @@ io.on("connection", (socket) => {
 
     if (!game) {
       console.error(`[Stockfish] Unauthorized or invalid room: ${roomId}`);
+      socket.emit("computer_move_result", { bestMove: null, reason: "room_not_found" });
       return;
     }
 
@@ -453,6 +486,7 @@ io.on("connection", (socket) => {
 
     if (game.status !== "playing") {
       console.warn(`[Stockfish] Game not in progress: ${game.status}`);
+      socket.emit("computer_move_result", { bestMove: null, reason: "game_not_in_progress" });
       return;
     }
 
@@ -463,6 +497,9 @@ io.on("connection", (socket) => {
       console.warn(
         `[Stockfish] Computer move requested for room ${roomId} but it's ${playerColor}'s turn!`,
       );
+      // Client and server disagree about whose turn it is: send the real position and answer.
+      socket.emit("receive_fen", { board_fen: game.board_fen });
+      socket.emit("computer_move_result", { bestMove: null, reason: "not_computers_turn" });
       return;
     }
 
@@ -523,7 +560,7 @@ io.on("connection", (socket) => {
       console.error("[Stockfish] Error processing move:", error);
       socket.emit("computer_move_result", { bestMove: null });
     }
-  });
+  }));
 
   socket.on("find_match", async () => {
     const playerId = socketToPlayer.get(socket.id);
@@ -919,7 +956,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("move", async (data) => {
+  socket.on("move", inOrder(async (data) => {
     let playerId = socketToPlayer.get(socket.id);
     if (!playerId && data.pId) {
       playerId = data.pId;
@@ -1144,7 +1181,7 @@ io.on("connection", (socket) => {
         socket.emit("receive_fen", { board_fen: currentRoomGame.board_fen });
       }
     }
-  });
+  }));
 
   socket.on("resign", async () => {
     const playerId = socketToPlayer.get(socket.id);
@@ -1160,6 +1197,40 @@ io.on("connection", (socket) => {
         status: "ended",
       });
     }
+  });
+  socket.on("leave_room", async (data) => {
+    const playerId = socketToPlayer.get(socket.id);
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    if (!roomId) return;
+
+    // Ignore stale leaves (e.g. a rematch moved the player to a new room already).
+    const requested = data?.roomId ? String(data.roomId).trim().toUpperCase() : null;
+    if (requested && requested !== roomId) return;
+
+    const game = await getGame(roomId);
+    if (game) {
+      const isBotGame =
+        roomId.startsWith("COMPUTER-") || game.players.black === "STOCKFISH";
+      const hasOpponent = !!(game.players.white && game.players.black);
+
+      if (!isBotGame && hasOpponent && game.status === "playing") {
+        // Leaving a running game against a human counts as resigning.
+        const myColor = game.getColorForPlayer(playerId);
+        game.status = "ended";
+        await saveGame(game);
+        io.to(roomId).emit("game_ended", {
+          reason: "Resigned",
+          result: myColor === "w" ? "b" : "w",
+          status: "ended",
+        });
+      } else if (isBotGame || !hasOpponent) {
+        await deleteGame(roomId);
+      }
+    }
+
+    socket.leave(roomId);
+    await removePlayerRoom(playerId);
+    console.log(`[Leave] Player ${playerId} left room ${roomId}`);
   });
   socket.on("chat_message", async (data) => {
     const playerId = socketToPlayer.get(socket.id);
