@@ -455,8 +455,20 @@ async function deleteGame(roomId) {
 
 io.on("connection", (socket) => {
   console.log("connected:", socket.id);
+
+  // A client sends "move" and then "request_computer_move" back to back. Handle the
+  // two one after the other, otherwise the bot request checks the turn before the
+  // move was applied, bails out silently and the client waits forever.
+  let moveQueue = Promise.resolve();
+  const inOrder = (handler) => (...args) => {
+    moveQueue = moveQueue
+      .then(() => handler(...args))
+      .catch((err) => console.error("[Queue] Handler failed:", err));
+    return moveQueue;
+  };
+
   // --- Server-Side Stockfish (POOLED - MEMORY EFFICIENT) ---
-  socket.on("request_computer_move", async (data) => {
+  socket.on("request_computer_move", inOrder(async (data) => {
     console.log("Requested computer move");
     const { roomId, difficulty } = data;
     const playerId = socketToPlayer.get(socket.id);
@@ -466,6 +478,7 @@ io.on("connection", (socket) => {
 
     if (!game) {
       console.error(`[Stockfish] Unauthorized or invalid room: ${roomId}`);
+      socket.emit("computer_move_result", { bestMove: null, reason: "room_not_found" });
       return;
     }
 
@@ -473,6 +486,7 @@ io.on("connection", (socket) => {
 
     if (game.status !== "playing") {
       console.warn(`[Stockfish] Game not in progress: ${game.status}`);
+      socket.emit("computer_move_result", { bestMove: null, reason: "game_not_in_progress" });
       return;
     }
 
@@ -483,6 +497,9 @@ io.on("connection", (socket) => {
       console.warn(
         `[Stockfish] Computer move requested for room ${roomId} but it's ${playerColor}'s turn!`,
       );
+      // Client and server disagree about whose turn it is: send the real position and answer.
+      socket.emit("receive_fen", { board_fen: game.board_fen });
+      socket.emit("computer_move_result", { bestMove: null, reason: "not_computers_turn" });
       return;
     }
 
@@ -543,7 +560,7 @@ io.on("connection", (socket) => {
       console.error("[Stockfish] Error processing move:", error);
       socket.emit("computer_move_result", { bestMove: null });
     }
-  });
+  }));
 
   socket.on("find_match", async () => {
     const playerId = socketToPlayer.get(socket.id);
@@ -939,7 +956,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("move", async (data) => {
+  socket.on("move", inOrder(async (data) => {
     let playerId = socketToPlayer.get(socket.id);
     if (!playerId && data.pId) {
       playerId = data.pId;
@@ -1164,7 +1181,7 @@ io.on("connection", (socket) => {
         socket.emit("receive_fen", { board_fen: currentRoomGame.board_fen });
       }
     }
-  });
+  }));
 
   socket.on("resign", async () => {
     const playerId = socketToPlayer.get(socket.id);
