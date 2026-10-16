@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info } from 'lucide-react';
 
@@ -10,14 +10,16 @@ interface ToastProps {
 }
 
 export default function Toast({ message, show, onClose }: ToastProps) {
+    // Keep the latest onClose in a ref: callers pass a new function every render,
+    // which would otherwise restart the timer on each re-render and never close it.
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
+
     useEffect(() => {
-        if (show) {
-            const timer = setTimeout(() => {
-                onClose();
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [show, onClose]);
+        if (!show) return;
+        const timer = setTimeout(() => onCloseRef.current(), 5000);
+        return () => clearTimeout(timer);
+    }, [show, message]);
 
     return (
         <AnimatePresence>
