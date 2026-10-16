@@ -23,8 +23,10 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
+    // The deployed env var is stale, so only honor it in `next dev`.
     const configured = new URL(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "https://chessperiment.app/chessperiment-server"
+      (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SOCKET_URL) ||
+        "https://chessperiment.app/chessperiment-server"
     );
     const SOCKET_URL = configured.origin;
     socket = io(SOCKET_URL, {
