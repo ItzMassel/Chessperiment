@@ -78,7 +78,7 @@ export interface CustomPiece {
     pixelsBlack: string[][] // Grid for black version
     imageWhite?: string // Non-pixelated image for white version
     imageBlack?: string // Non-pixelated image for black version
-    moves: any[] // Move logic
+    moves: any[] // Move logic, now new, I'm reusing this variable
     logic?: any // Logic blocks (triggers/effects)
     variables?: { id: string, name: string }[] // Custom variable definitions
     
