@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -66,6 +66,9 @@ interface GhostState {
     parentId: string;
     template: BlockTemplate;
 }
+
+// Names of this project's custom pieces, offered next to the standard pieces in "by" dropdowns.
+const CustomPieceNamesContext = createContext<string[]>([]);
 
 // Mock Templates
 const BLOCK_TEMPLATES: BlockTemplate[] = [
@@ -291,6 +294,11 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         if (!project) return null;
         return project.customPieces.find(p => p.id === id || p.name === id);
     }, [project, id]);
+
+    const customPieceNames = useMemo(
+        () => Array.from(new Set((project?.customPieces ?? []).map(p => p.name).filter(Boolean))),
+        [project]
+    );
 
     useEffect(() => {
         setMounted(true);
@@ -742,6 +750,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
     }
 
     return (
+        <CustomPieceNamesContext.Provider value={customPieceNames}>
         <SmallScreenNotice>
         <DndContext
             sensors={sensors}
@@ -906,6 +915,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
             `}</style>
         </DndContext >
         </SmallScreenNotice>
+        </CustomPieceNamesContext.Provider>
     );
 }
 
@@ -1298,6 +1308,14 @@ function SocketComponent({
     onUpdateSocket?: (socketId: string, value: any) => void
 }) {
     const t = useTranslations('Editor.Piece.Logic');
+    const customPieceNames = useContext(CustomPieceNamesContext);
+
+    // Piece-type dropdowns ("by"/"piece") also list the project's custom pieces.
+    const standardOptions = socket.options;
+    const options = socket.id === 'by' && standardOptions?.includes('Pawn')
+        ? [...standardOptions, ...customPieceNames.filter(n => !standardOptions.some(o => o.toLowerCase() === n.toLowerCase()))]
+        : standardOptions;
+
     const { setNodeRef, isOver } = useDroppable({
         id: `socket-${block.instanceId}-${socket.id}`,
         data: {
@@ -1349,7 +1367,7 @@ function SocketComponent({
                     onPointerDown={(e) => e.stopPropagation()}
                 >
                     <option value="">-</option>
-                    {socket.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
             ) : (
                 <input
