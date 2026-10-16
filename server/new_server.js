@@ -433,6 +433,26 @@ async function getPlayerRoom(playerId) {
   return null;
 }
 
+async function removePlayerRoom(playerId) {
+  playerToRoom.delete(playerId);
+  if (!redisEnabled || !redisClient) return;
+  try {
+    await redisClient.del(`playerRoom:${playerId}`);
+  } catch (err) {
+    console.error("Error removing playerRoom from Redis:", err);
+  }
+}
+
+async function deleteGame(roomId) {
+  games.delete(roomId);
+  if (!redisEnabled || !redisClient) return;
+  try {
+    await redisClient.del(`game:${roomId}`);
+  } catch (err) {
+    console.error("Error deleting game from Redis:", err);
+  }
+}
+
 io.on("connection", (socket) => {
   console.log("connected:", socket.id);
   // --- Server-Side Stockfish (POOLED - MEMORY EFFICIENT) ---
@@ -1160,6 +1180,40 @@ io.on("connection", (socket) => {
         status: "ended",
       });
     }
+  });
+  socket.on("leave_room", async (data) => {
+    const playerId = socketToPlayer.get(socket.id);
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    if (!roomId) return;
+
+    // Ignore stale leaves (e.g. a rematch moved the player to a new room already).
+    const requested = data?.roomId ? String(data.roomId).trim().toUpperCase() : null;
+    if (requested && requested !== roomId) return;
+
+    const game = await getGame(roomId);
+    if (game) {
+      const isBotGame =
+        roomId.startsWith("COMPUTER-") || game.players.black === "STOCKFISH";
+      const hasOpponent = !!(game.players.white && game.players.black);
+
+      if (!isBotGame && hasOpponent && game.status === "playing") {
+        // Leaving a running game against a human counts as resigning.
+        const myColor = game.getColorForPlayer(playerId);
+        game.status = "ended";
+        await saveGame(game);
+        io.to(roomId).emit("game_ended", {
+          reason: "Resigned",
+          result: myColor === "w" ? "b" : "w",
+          status: "ended",
+        });
+      } else if (isBotGame || !hasOpponent) {
+        await deleteGame(roomId);
+      }
+    }
+
+    socket.leave(roomId);
+    await removePlayerRoom(playerId);
+    console.log(`[Leave] Player ${playerId} left room ${roomId}`);
   });
   socket.on("chat_message", async (data) => {
     const playerId = socketToPlayer.get(socket.id);

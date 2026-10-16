@@ -1246,6 +1246,22 @@ export default function Board({
     };
   }, [socket]);
 
+  // Navigating away inside the app leaves the server room. Reloads and tab closes
+  // never run effect cleanups, so rejoin-after-refresh keeps working.
+  const currentRoomRef = useRef(currentRoom);
+  currentRoomRef.current = currentRoom;
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!socket) return;
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    return () => {
+      // Deferred so React StrictMode's dev-only remount can cancel it.
+      leaveTimerRef.current = setTimeout(() => {
+        if (currentRoomRef.current) socket.emit("leave_room", { roomId: currentRoomRef.current });
+      }, 100);
+    };
+  }, [socket]);
+
   // Calculate board dimensions based on custom board or default 8x8
   const boardCols = customBoard ? customBoard.width : 8;
   const boardRows = customBoard ? customBoard.height : 8;
