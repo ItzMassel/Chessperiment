@@ -550,7 +550,14 @@ export default function PageClient({ projectId }: PageClientProps) {
                                 projectId={projectId}
                                 variables={currentVariables}
                             /> */}
-                            <MoveNotationPage handleSavePiece/>
+                            <MoveNotationPage
+                                key={selectedPieceId || 'new'}
+                                moves={currentMoves}
+                                onUpdate={(moves) => {
+                                    setCurrentMoves(moves);
+                                    handleSavePiece({ moves }, true);
+                                }}
+                            />
                         </div>
                         {showTestBoard && selectedPieceId && (
                             <div className="mt-8 lg:mt-32 sticky top-32 animate-in fade-in slide-in-from-right-8 duration-500">

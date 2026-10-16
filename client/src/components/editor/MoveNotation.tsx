@@ -1,15 +1,32 @@
 "use client"
 import { object_to_notation } from "@/lib/notations"
-import { useState, type JSX } from "react"
+import { useState, useEffect, useRef, type JSX } from "react"
 
-export default function MoveNotationPage({handleSavePiece} : {handleSavePiece:any}) {
-    const [text, setText] = useState<{modifier?:"sym",kind?:string,x?:number,y?:number,count?:number | "n"}>({})
+type Move = {modifier?:"sym",kind?:string,x?:number,y?:number,count?:number | "n"}
+
+// Pieces saved before the notation existed hold old condition-based rules in the same moves[].
+// They are not editable here, but they are kept untouched when saving.
+const isNotationMove = (m: any): m is Move => !!m && typeof m.kind === "string"
+
+export default function MoveNotationPage({ moves: savedMoves, onUpdate }: { moves: any[], onUpdate: (moves: any[]) => void }) {
+    const legacyMoves = (savedMoves ?? []).filter(m => !isNotationMove(m))
+    const [moves, setMoves] = useState<Move[]>(() => (savedMoves ?? []).filter(isNotationMove))
+    const [text, setText] = useState<Move>({})
     const [nextInput, setNextInput] = useState<"kind" | "x" | "y" | "count">("kind")
     const [feedback, setFeedback] = useState<string>()
 
+    // The editor loads a piece's moves after this component mounts. Resync whenever they change
+    // from outside, otherwise saving would overwrite them with an empty list.
+    const lastSent = useRef<any[] | null>(null)
+    useEffect(() => {
+        if (savedMoves === lastSent.current) return
+        setMoves((savedMoves ?? []).filter(isNotationMove))
+        setText({})
+        setNextInput("kind")
+    }, [savedMoves])
 
     const handlePressedButton = (label:any) => {
-        console.log("Handle Pressed Button Called")
+        setFeedback(undefined)
         if (typeof label === "number") {
             if (nextInput === "kind") {
                 setFeedback("Start by choosing run / jump")
@@ -68,9 +85,39 @@ export default function MoveNotationPage({handleSavePiece} : {handleSavePiece:an
             else if (text.modifier !== undefined) {
                 setText(({ modifier, ...rest }) => rest)
             }
+            else if (moves.length > 0) {
+                // Nothing left in the current move: remove the ";" and reopen the previous move
+                setText(moves[moves.length - 1])
+                setMoves(prev => prev.slice(0, -1))
+                setNextInput("count")
+            }
+        }
+        else if (label === ";") {
+            if (text.kind === undefined || text.x === undefined || text.y === undefined) {
+                setFeedback("Finish the current move before starting a new one")
+            }
+            else {
+                setFeedback(undefined)
+                setMoves(prev => [...prev, text])
+                setText({})
+                setNextInput("kind")
+            }
         }
         else if (label === "enter") {
-            handleSavePiece()
+            const started = Object.keys(text).length > 0
+            const complete = text.kind !== undefined && text.x !== undefined && text.y !== undefined
+            if (started && !complete) {
+                setFeedback("Finish the current move before saving")
+                return
+            }
+            const finished = started ? [...moves, text] : moves
+            setMoves(finished)
+            setText({})
+            setNextInput("kind")
+            const toSave = [...legacyMoves, ...finished]
+            lastSent.current = toSave
+            onUpdate(toSave)
+            setFeedback("Saved")
         }
         else {
             setFeedback("Unexpected input: " + label)
@@ -94,7 +141,7 @@ export default function MoveNotationPage({handleSavePiece} : {handleSavePiece:an
                             Current move
                         </p>
                         <p className="font-mono text-sm text-stone-900 dark:text-white whitespace-pre-wrap break-all">
-                            {object_to_notation(text)}
+                            {[...moves, ...(Object.keys(text).length ? [text] : [])].map(object_to_notation).join(";")}
                         </p>
                     </div>
                     {feedback && (
@@ -121,8 +168,9 @@ const tiles: Tile[] = [
   { id: "command-jump", label: "jump", variant: "command" },
   { id: "command-sym", label: "sym", variant: "command" },
   { id: "command-n", label: "n", variant: "command" },
+  { id: "command-semicolon", label: ";", variant: "command" },
   { id: "command-del", label: "del", variant: "command" },
-  { id: "command-enter", label: "enter", variant: "enter" },
+  { id: "command-enter", label: "enter", variant: "enter", wide: true },
 ];
 
 const variantClass = {
