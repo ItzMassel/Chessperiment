@@ -13,6 +13,5 @@ export function notation_to_object(token:any) {
 }
 
 export function object_to_notation(token:{modifier?:"sym",kind?:string,x?:number,y?:number,count?:number | "n"}) {
-  console.log(token)
-    return `${token.modifier ? token.modifier + "(" : ""}${token.kind ? token.kind : ""}${token.kind ? "(" : ""}${token.x ? token.x : ""}${token.y ? "," : ""}${token.y ? token.y : ""}${token.kind ? ")" : ""}${token.count ? token.count : ""}${token.modifier ? ")" : ""}`
+    return`${token.modifier ? token.modifier + "(" : ""}${token.kind ? token.kind : ""}${token.kind ? "(" : ""}${token.x !== undefined ? token.x : ""}${token.y !== undefined ? "," : ""}${token.y !== undefined ? token.y : ""}${token.kind ? ")" : ""}${token.count !== undefined ? token.count : ""}${token.modifier ? ")" : ""}`
 }

@@ -1,256 +1,112 @@
 /*
-# How to use the engine
-1. define movement pattern. Example:
+# Vector move engine
 
-const ROOK = [
-  { kind: "run", x: 1, y: 0, count: Infinity },
-  { kind: "run", x: -1, y: 0, count: Infinity },
-  { kind: "run", x: 0, y: 1, count: Infinity },
-  { kind: "run", x: 0, y: -1, count: Infinity },
-];
+A piece's moves are plain objects, exactly as they are saved in its moves[]:
 
-input board, from coordinates, color and move scheme
+  { kind: "run" | "jump", x, y, count?: number | "n", modifier?: "sym" }
+
+  run   walks (x, y) per step, up to `count` steps ("n" = unlimited, missing = 1),
+        and stops in front of the first piece in the way (enemies can be captured)
+  jump  lands exactly on (x, y) and ignores whatever is in between
+  sym   expands the move into all its mirrored / swapped variants (knight = jump(sym(2,1)))
+
+Black moves mirrored along y, so "forward" is always towards the enemy.
+Nothing here modifies the moves it is given.
+
+Usage:
+  const squares = getLegalMoves(board, { x: 3, y: 3 }, "white", expandMoves(piece.rules));
 */
-type Coord = { x: number; y: number };
-type Cell = string | null;
-type Board = Cell[][];
-type Move = { kind: string; x: number; y: number; count: number | "n" };
-type Piece = Coord & { color: string };
-// TODO: Add sym
+export type Coord = { x: number; y: number };
+/** null = empty, a color name = a piece of that color, BLOCKED = not a playable square. */
+export type Cell = string | null;
+export type Board = Cell[][];
+export type Move = {
+  kind: string;
+  x: number;
+  y: number;
+  count?: number | "n";
+  modifier?: "sym";
+};
 
-function isOccupied(
-  coord: Coord,
-  board: Board,
-  color: string,
-): false | "off" | string {
-  // coord = {x,y}
-  const maxX = board[0].length - 1;
-  const maxY = board.length - 1;
-  if (coord.x > maxX || coord.y > maxY || coord.x < 0 || coord.y < 0)
-    return "off";
-  const cell = board[coord.y][coord.x];
-  return cell === null ? false : cell;
+export const BLOCKED = "#blocked";
+
+/** True for moves in this notation. Old condition-based rules have no `kind`. */
+export function isNotationMove(m: unknown): m is Move {
+  const move = m as Move | null;
+  return (
+    !!move &&
+    typeof move.kind === "string" &&
+    typeof move.x === "number" &&
+    typeof move.y === "number"
+  );
 }
-function getLegalMoves(
+
+/** All distinct mirrored / swapped variants of (x, y): 8 for a knight, 4 for (1,1) or (0,1). */
+export function symExpand(x: number, y: number): [number, number][] {
+  const variants = new Map<string, [number, number]>();
+  for (const [a, b] of [[x, y], [y, x]]) {
+    for (const signX of [1, -1]) {
+      for (const signY of [1, -1]) {
+        // "+ 0" turns -0 into 0
+        const variant: [number, number] = [a * signX + 0, b * signY + 0];
+        variants.set(variant.join(","), variant);
+      }
+    }
+  }
+  return [...variants.values()];
+}
+
+/** Keeps only notation moves and resolves `sym`. Returns new objects, the input is untouched. */
+export function expandMoves(moves: unknown[]): Move[] {
+  const expanded: Move[] = [];
+  for (const move of moves) {
+    if (!isNotationMove(move)) continue;
+    if (move.modifier === "sym") {
+      const { modifier, ...rest } = move;
+      for (const [x, y] of symExpand(move.x, move.y)) {
+        expanded.push({ ...rest, x, y });
+      }
+    } else {
+      expanded.push({ ...move });
+    }
+  }
+  return expanded;
+}
+
+export function getLegalMoves(
   board: Board,
   from: Coord,
   color: string,
   moves: Move[],
 ): Coord[] {
-  let possibleSquares: Coord[] = [];
-  // run
-  for (let move of moves) {
-    let currentPosition = {
-      x: from.x,
-      y: from.y,
-    };
-    if (move.count === "n") {
-      move.count = Infinity;
+  const found = new Map<string, Coord>();
+  const forward = color === "black" ? -1 : 1;
+
+  for (const move of moves) {
+    const stepX = move.x;
+    const stepY = move.y * forward;
+    // A step of (0,0) never leaves the square; skip it so "n" cannot loop forever.
+    if (stepX === 0 && stepY === 0) continue;
+
+    const limit =
+      move.kind === "jump" ? 1 : move.count === "n" ? Infinity : (move.count ?? 1);
+
+    let x = from.x;
+    let y = from.y;
+    for (let step = 1; step <= limit; step++) {
+      x += stepX;
+      y += stepY;
+
+      const row = board[y];
+      if (!row || x < 0 || x >= row.length) break; // off the board
+      const cell = row[x];
+      if (cell === BLOCKED) break; // hole in the board
+      if (cell === color) break; // own piece
+
+      found.set(`${x},${y}`, { x, y });
+      if (cell !== null) break; // enemy piece: capture, then stop
     }
-    // one direction
-    for (let turn = 1; turn <= move.count; turn++) {
-      currentPosition.x += move.x;
-      currentPosition.y += move.y;
-      let occupied = isOccupied(currentPosition, board, color);
-      if (!occupied)
-        possibleSquares.push({ x: currentPosition.x, y: currentPosition.y });
-      else if (occupied === "off") break;
-      else if (occupied !== color) {
-        possibleSquares.push({ x: currentPosition.x, y: currentPosition.y });
-        break;
-      } else {
-        break;
-      }
-    }
   }
-  // Objects are compared by reference, so key each square by "x,y" in a Map
-  // to drop duplicates.
-  const unique = new Map<string, Coord>();
-  for (const square of possibleSquares) {
-    unique.set(`${square.x},${square.y}`, square);
-  }
-  return [...unique.values()];
+
+  return [...found.values()];
 }
-
-// ---- test helpers and tests, don't edit below this line ----
-
-function makeBoard(width: number, height: number, pieces: Piece[] = []): Board {
-  const board: Board = Array.from({ length: height }, () =>
-    Array(width).fill(null),
-  );
-  for (const p of pieces) board[p.y][p.x] = p.color;
-  return board;
-}
-
-function sameSquares(actual: Coord[], expected: Coord[]) {
-  const key = (s: Coord) => `${s.x},${s.y}`;
-  const a = actual.map(key).sort().join(" | ");
-  const e = expected.map(key).sort().join(" | ");
-  return { ok: a === e, a, e };
-}
-
-function check(label: string, actual: Coord[], expected: Coord[]) {
-  const r = sameSquares(actual, expected);
-  if (r.ok) {
-    console.log(`✅ pass: ${label}`);
-  } else {
-    console.log(`❌ FAIL: ${label}`);
-    console.log(`   expected: ${r.e}`);
-    console.log(`   actual:   ${r.a}`);
-  }
-}
-
-function run(label: string, fn: () => Coord[], expected: Coord[]) {
-  try {
-    check(label, fn(), expected);
-  } catch (e) {
-    console.log(
-      `❌ FAIL: ${label} (threw: ${e instanceof Error ? e.message : e})`,
-    );
-  }
-}
-
-const ROOK = [
-  { kind: "run", x: 1, y: 0, count: Infinity },
-  { kind: "run", x: -1, y: 0, count: Infinity },
-  { kind: "run", x: 0, y: 1, count: Infinity },
-  { kind: "run", x: 0, y: -1, count: Infinity },
-];
-
-const KNIGHT = [
-  [2, 1],
-  [1, 2],
-  [-1, 2],
-  [-2, 1],
-  [-2, -1],
-  [-1, -2],
-  [1, -2],
-  [2, -1],
-].map(([x, y]) => ({ kind: "jump", x, y, count: 1 }));
-
-// 1. rook on an empty 3x3, from the middle
-run(
-  "rook, empty 3x3 board, from centre",
-  () => getLegalMoves(makeBoard(3, 3), { x: 1, y: 1 }, "white", ROOK),
-  [
-    { x: 0, y: 1 },
-    { x: 2, y: 1 },
-    { x: 1, y: 0 },
-    { x: 1, y: 2 },
-  ],
-);
-
-// 2. rook on empty 8x8 has 14 moves from anywhere
-run(
-  "rook, empty 8x8, count of moves",
-  () => {
-    const m = getLegalMoves(makeBoard(8, 8), { x: 3, y: 3 }, "white", ROOK);
-    return Array.from({ length: m.length }, (_, i) => ({ x: i, y: 0 }));
-  },
-  Array.from({ length: 14 }, (_, i) => ({ x: i, y: 0 })),
-);
-
-// 3. friendly piece blocks, and its own square is excluded
-run(
-  "rook stops before a friendly piece",
-  () =>
-    getLegalMoves(
-      makeBoard(5, 1, [{ x: 3, y: 0, color: "white" }]),
-      { x: 0, y: 0 },
-      "white",
-      ROOK,
-    ),
-  [
-    { x: 1, y: 0 },
-    { x: 2, y: 0 },
-  ],
-);
-
-// 4. enemy piece can be captured but nothing beyond it
-run(
-  "rook captures an enemy and stops",
-  () =>
-    getLegalMoves(
-      makeBoard(5, 1, [{ x: 3, y: 0, color: "black" }]),
-      { x: 0, y: 0 },
-      "white",
-      ROOK,
-    ),
-  [
-    { x: 1, y: 0 },
-    { x: 2, y: 0 },
-    { x: 3, y: 0 },
-  ],
-);
-
-// 5. limited range
-run(
-  "run(1,0)2 only goes two squares",
-  () =>
-    getLegalMoves(makeBoard(8, 1), { x: 0, y: 0 }, "white", [
-      { kind: "run", x: 1, y: 0, count: 2 },
-    ]),
-  [
-    { x: 1, y: 0 },
-    { x: 2, y: 0 },
-  ],
-);
-
-// 6. knight in a corner, off-board jumps dropped
-run(
-  "knight in the corner has 2 moves",
-  () => getLegalMoves(makeBoard(8, 8), { x: 0, y: 0 }, "white", KNIGHT),
-  [
-    { x: 2, y: 1 },
-    { x: 1, y: 2 },
-  ],
-);
-
-// 7. knight jumps over pieces but can't land on a friendly one
-run(
-  "knight jumps over pieces, not onto friendly",
-  () =>
-    getLegalMoves(
-      makeBoard(8, 8, [
-        { x: 1, y: 0, color: "white" },
-        { x: 0, y: 1, color: "white" },
-        { x: 1, y: 1, color: "black" },
-        { x: 2, y: 1, color: "white" },
-      ]),
-      { x: 0, y: 0 },
-      "white",
-      KNIGHT,
-    ),
-  [{ x: 1, y: 2 }],
-);
-
-// 8. diagonal run isn't blocked by orthogonal neighbours
-run(
-  "diagonal run passes between blocked neighbours",
-  () =>
-    getLegalMoves(
-      makeBoard(4, 4, [
-        { x: 1, y: 0, color: "white" },
-        { x: 0, y: 1, color: "white" },
-      ]),
-      { x: 0, y: 0 },
-      "white",
-      [{ kind: "run", x: 1, y: 1, count: Infinity }],
-    ),
-  [
-    { x: 1, y: 1 },
-    { x: 2, y: 2 },
-    { x: 3, y: 3 },
-  ],
-);
-
-// 9. duplicates removed
-run(
-  "two moves reaching the same square give it once",
-  () =>
-    getLegalMoves(makeBoard(3, 1), { x: 0, y: 0 }, "white", [
-      { kind: "jump", x: 1, y: 0, count: 1 },
-      { kind: "run", x: 1, y: 0, count: 1 },
-    ]),
-  [{ x: 1, y: 0 }],
-);
