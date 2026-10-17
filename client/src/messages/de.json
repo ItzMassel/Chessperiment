@@ -507,6 +507,29 @@
                     "desc": "Eine allgemeine numerische Variable, die den aktuellen Modus oder Zustand der Figur repräsentiert."
                 }
             },
+            "MoveNotation": {
+                "title": "Zugnotation",
+                "description": "Baue Züge mit dem Tastenfeld oder tippe sie. Klicke ins Feld, um wie in jedem Text zu bearbeiten.",
+                "currentMove": "Notation",
+                "editHint": "Markiere einen Teil (Doppelklick) und drücke eine Taste, um ihn zu ersetzen. Löschen entfernt ein ganzes Teil wie jump( auf einmal.",
+                "keypadLabel": "Interaktives Tastenfeld für Befehle",
+                "keys": {
+                    "del": "Löschen",
+                    "enter": "Speichern"
+                },
+                "feedback": {
+                    "chooseKind": "Wähle zuerst run oder jump",
+                    "needNumber": "Gib eine Zahl ein",
+                    "nOnlyCount": "n kann nur als Anzahl verwendet werden",
+                    "symAtStart": "sym gehört ganz an den Anfang der Notation.",
+                    "finishBeforeNext": "Beende den aktuellen Zug, bevor du einen neuen beginnst",
+                    "countDone": "Die Anzahl ist schon gesetzt. Drücke ;, um den nächsten Zug zu beginnen.",
+                    "zeroZero": "x und y dürfen nicht beide 0 sein",
+                    "countMin": "Die Anzahl muss mindestens 1 sein",
+                    "syntax": "\"{segment}\" kann nicht gelesen werden. Erwartet wird etwas wie run(1,0)n oder sym(jump(2,1)).",
+                    "saved": "Gespeichert"
+                }
+            },
             "Logic": {
                 "title": "Logik-Editor",
                 "back": "Zurück zur Figur",
