@@ -2,6 +2,7 @@ import { Square, MoveRule } from './types';
 import { toCoords, toSquare } from './utils';
 import type { BoardClass } from './board';
 import { LogicRunner } from './logic/LogicRunner';
+import { getLegalMoves, expandMoves, isNotationMove, BLOCKED, type Board as VectorBoard, type Move as VectorMove } from './vectorNotation';
 
 export abstract class Piece {
     id: string;
@@ -61,8 +62,14 @@ export abstract class Piece {
 }
 
 export class CustomPiece extends Piece {
-    rules: MoveRule[];
+    // The saved moves, exactly as stored. New pieces hold vector moves ({kind, x, y, ...}),
+    // pieces made before the notation hold old condition-based rules. Never modified here.
+    rules: any[];
     logic: any[];
+    private splitSource: any[] | null = null;
+    private splitLength = -1;
+    private splitVector: VectorMove[] = [];
+    private splitLegacy: MoveRule[] = [];
     variables: Record<string, any> = {};
     public isCustom = true;
     public pixelsWhite?: string[][];
@@ -132,9 +139,58 @@ export class CustomPiece extends Piece {
             }
         }
 
+        // A piece may carry old rules, new vector moves, or both: either one can allow the move.
+        return this.isValidLegacyMove(from, to, board) || this.isValidVectorMove(from, to, board);
+    }
+
+    /** Splits `rules` into vector moves (sym already resolved) and old rules, recomputed only when `rules` changes. */
+    private splitRules() {
+        if (this.splitSource === this.rules && this.splitLength === this.rules.length) return;
+        this.splitSource = this.rules;
+        this.splitLength = this.rules.length;
+        this.splitVector = expandMoves(this.rules);
+        this.splitLegacy = this.rules.filter(r => !isNotationMove(r) && Array.isArray(r?.conditions));
+    }
+
+    get vectorMoves(): VectorMove[] {
+        this.splitRules();
+        return this.splitVector;
+    }
+
+    get legacyRules(): MoveRule[] {
+        this.splitRules();
+        return this.splitLegacy;
+    }
+
+    /** Convert the board into the Cell[][] grid (rows of colors / null / BLOCKED) that getLegalMoves expects. */
+    private toVectorBoard(board: BoardClass): VectorBoard {
+        return Array.from({ length: board.height }, (_, y) =>
+            Array.from({ length: board.width }, (_, x) => {
+                const square = toSquare([x, y], board.gridType === 'square');
+                if (!board.isActive(square)) return BLOCKED;
+                return board.getPiece(square)?.color ?? null;
+            }),
+        );
+    }
+
+    private isValidVectorMove(from: Square, to: Square, board: BoardClass): boolean {
+        // The vector notation walks a square grid; hex boards are not supported by it yet.
+        if (this.vectorMoves.length === 0 || board.gridType !== 'square') return false;
+
+        const [fromX, fromY] = toCoords(from);
+        const [toX, toY] = toCoords(to);
+        return getLegalMoves(this.toVectorBoard(board), { x: fromX, y: fromY }, this.color, this.vectorMoves)
+            .some(square => square.x === toX && square.y === toY);
+    }
+
+    /** Evaluates the old condition-based rules (pieces saved before the vector notation). */
+    private isValidLegacyMove(from: Square, to: Square, board: BoardClass): boolean {
+        const legacyRules = this.legacyRules;
+        if (legacyRules.length === 0) return false;
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
-        
+
         // Horizontal/Vertical steps
         const dx = toCoordsCoords[0] - fromCoords[0];
         const dy = toCoordsCoords[1] - fromCoords[1];
@@ -157,7 +213,7 @@ export class CustomPiece extends Piece {
 
         let isAllowed = false;
 
-        for (const rule of this.rules) {
+        for (const rule of legacyRules) {
             let ruleResult = true; // For AND logic
             let currentLogic: 'AND' | 'OR' = 'AND';
 
