@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Game } from '@/engine/game';
 import { BoardClass } from '@/engine/board';
 import { Piece } from '@/engine/piece';
+import { isNotationMove } from '@/engine/vectorNotation';
+import { object_to_notation } from '@/lib/notations';
 import { Square } from '@/engine/types';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, TouchSensor, KeyboardSensor, MeasuringStrategy } from '@dnd-kit/core';
@@ -92,7 +94,11 @@ function PieceTooltip({ piece, boardRef }: { piece: Piece; boardRef: React.RefOb
                 <div className="mb-3">
                     <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">Move Rules</p>
                     <div className="space-y-1 max-h-28 overflow-y-auto">
-                        {rules.map((rule: any, i: number) => (
+                        {rules.map((rule: any, i: number) => isNotationMove(rule) ? (
+                            <div key={i} className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                                {object_to_notation(rule)}
+                            </div>
+                        ) : (
                             <div key={i} className={`text-[10px] font-bold px-2 py-1 rounded-lg ${rule.result === 'allow' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
                                 {rule.conditions?.map((c: any, j: number) => (
                                     <span key={j}>

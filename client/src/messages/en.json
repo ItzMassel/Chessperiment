@@ -507,6 +507,29 @@
                     "desc": "A general-purpose numeric variable representing the piece's current mode or state."
                 }
             },
+            "MoveNotation": {
+                "title": "Move Notation",
+                "description": "Build moves with the keypad or type them. Click into the field to edit like any text.",
+                "currentMove": "Notation",
+                "editHint": "Select a part (double-click) and press a key to replace it. del removes a whole part like jump( at once.",
+                "keypadLabel": "Interactive command keypad",
+                "keys": {
+                    "del": "del",
+                    "enter": "enter"
+                },
+                "feedback": {
+                    "chooseKind": "Start by choosing run / jump",
+                    "needNumber": "Enter a numeral value",
+                    "nOnlyCount": "n can only be used as the count",
+                    "symAtStart": "sym belongs at the very start of the notation.",
+                    "finishBeforeNext": "Finish the current move before starting a new one",
+                    "countDone": "The count is already set. Press ; to start the next move.",
+                    "zeroZero": "x and y can't both be 0",
+                    "countMin": "The count must be at least 1",
+                    "syntax": "Can't read \"{segment}\". Expected something like run(1,0)n or sym(jump(2,1)).",
+                    "saved": "Saved"
+                }
+            },
             "Logic": {
                 "title": "Logic Editor",
                 "back": "Back to Piece",

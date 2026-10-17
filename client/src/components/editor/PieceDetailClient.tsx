@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CustomPiece } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
+import { isNotationMove } from '@/engine/vectorNotation';
+import { object_to_notation } from '@/lib/notations';
 
 interface PieceDetailClientProps {
     piece: CustomPiece;
@@ -120,7 +122,9 @@ export default function PieceDetailClient({ piece, locale, translations }: Piece
                             {piece.moves && piece.moves.length > 0 ? (
                                 piece.moves.map((move: any, idx: number) => (
                                     <div key={idx} className="p-3 bg-white/5 rounded-xl border border-white/5 text-sm text-white/60">
-                                        Rule #{idx + 1}: {move.conditions.length} conditions ({move.result})
+                                        {isNotationMove(move)
+                                            ? <>Move #{idx + 1}: <span className="font-mono">{object_to_notation(move)}</span></>
+                                            : <>Rule #{idx + 1}: {move.conditions?.length ?? 0} conditions ({move.result})</>}
                                     </div>
                                 ))
                             ) : (

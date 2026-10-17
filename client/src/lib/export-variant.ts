@@ -3,6 +3,8 @@ import { getPieceImage } from '@/lib/gameData';
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';
 import { Coordinate } from '@/lib/grid/GridType';
+import { isNotationMove } from '@/engine/vectorNotation';
+import { object_to_notation } from '@/lib/notations';
 
 const BOARD_SQUARE_SIZE = 80;
 const PADDING = 40;
@@ -243,7 +245,7 @@ export async function renderBoardWithInfoToCanvas(project: Project): Promise<HTM
                 ctx.fillStyle = '#888';
                 ctx.font = '11px sans-serif';
                 const moveDesc = cp.moves
-                    .map((m: any) => m.mode === 'run' ? 'slides' : m.mode === 'jump' ? 'jumps' : m.mode || 'moves')
+                    .map((m: any) => isNotationMove(m) ? object_to_notation(m) : m.mode === 'run' ? 'slides' : m.mode === 'jump' ? 'jumps' : m.mode || 'moves')
                     .join(', ');
                 ctx.fillText(`Moves: ${moveDesc || 'custom rules'}`, PADDING, descY);
                 descY += 16;

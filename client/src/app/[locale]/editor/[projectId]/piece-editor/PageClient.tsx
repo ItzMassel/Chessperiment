@@ -19,6 +19,7 @@ import { useAIToolRegistration } from '@/hooks/useAIToolRegistration';
 import { getPresetRules } from '@/lib/standardPiecePresets';
 import { useTutorialOptional } from '@/components/tutorial';
 import { v4 as uuidv4 } from 'uuid';
+import MoveNotationPage from '@/components/editor/MoveNotation';
 
 export type EditMode = 'design' | 'moves';
 
@@ -539,7 +540,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                 ) : (
                     <div className="flex flex-col lg:flex-row gap-8 items-start justify-center max-w-6xl w-full">
                         <div className="flex-1 w-full">
-                            <VisualMoveEditor
+                            {/* <VisualMoveEditor
                                 moves={currentMoves}
                                 onUpdate={(moves) => {
                                     setCurrentMoves(moves);
@@ -548,6 +549,14 @@ export default function PageClient({ projectId }: PageClientProps) {
                                 pieceId={selectedPieceId || undefined}
                                 projectId={projectId}
                                 variables={currentVariables}
+                            /> */}
+                            <MoveNotationPage
+                                key={selectedPieceId || 'new'}
+                                moves={currentMoves}
+                                onUpdate={(moves) => {
+                                    setCurrentMoves(moves);
+                                    handleSavePiece({ moves }, true);
+                                }}
                             />
                         </div>
                         {showTestBoard && selectedPieceId && (
