@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2, Eye } from 'lucide-react';
 import KillEffect from '@/components/game/KillEffect';
 import SpeechBubble from '@/components/game/SpeechBubble';
+import AskUserBubble from '@/components/game/AskUserBubble';
+import { LogicRunner } from '@/engine/logic/LogicRunner';
 import HexPlayBoardRenderer from '@/components/game/HexPlayBoardRenderer';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
@@ -150,7 +152,7 @@ function PieceTooltip({ piece, boardRef }: { piece: Piece; boardRef: React.RefOb
 }
 
 // Low-dependency Square Component
-function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSelected, amIAtTurn, effects, onEffectComplete, hideCoordinates, isHighlighted, isCapture, onHover, onHoverLeave }: any) {
+function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSelected, amIAtTurn, effects, onEffectComplete, onAskAnswer, hideCoordinates, isHighlighted, isCapture, onHover, onHoverLeave }: any) {
     const { setNodeRef, isOver } = useDroppable({ id: pos });
 
     return (
@@ -198,18 +200,33 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSel
             )}
 
             <AnimatePresence>
-                {effects.map((effect: any) => effect.type === 'tell-user' ? (
-                    <SpeechBubble
-                        key={effect.id}
-                        message={effect.params?.message || ''}
-                    />
-                ) : (
-                    <KillEffect
-                        key={effect.id}
-                        size={size}
-                        onComplete={() => onEffectComplete(effect.id)}
-                    />
-                ))}
+                {effects.map((effect: any) => {
+                    if (effect.type === 'tell-user') {
+                        return (
+                            <SpeechBubble
+                                key={effect.id}
+                                message={effect.params?.message || ''}
+                            />
+                        );
+                    }
+                    if (effect.type === 'ask-user') {
+                        return (
+                            <AskUserBubble
+                                key={effect.id}
+                                question={effect.params?.question || ''}
+                                options={effect.params?.options || []}
+                                onAnswer={(answer) => onAskAnswer?.(effect.params?.id, answer, effect.id)}
+                            />
+                        );
+                    }
+                    return (
+                        <KillEffect
+                            key={effect.id}
+                            size={size}
+                            onComplete={() => onEffectComplete(effect.id)}
+                        />
+                    );
+                })}
             </AnimatePresence>
 
             {/* Coordinate Labels */}
@@ -772,6 +789,15 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         setActiveEffects(prev => prev.filter(e => e.id !== id));
     };
 
+    // Resumes the paused piece-logic chain with the player's pick, then dismisses the prompt.
+    const handleAskAnswer = useCallback((askId: string | undefined, answer: string, effectId: number) => {
+        if (askId) {
+            LogicRunner.answerUser(askId, answer);
+        }
+        setActiveEffects(prev => prev.filter(e => e.id !== effectId));
+        addLog(`Answered "${answer}"`, 'effect');
+    }, [addLog]);
+
     // -- History Navigation --
     const jumpToSnapshot = (index: number) => {
         if (!historySnapshots[index] || !activeProject) return;
@@ -1213,6 +1239,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                                                     amIAtTurn={canInteract}
                                                     effects={activeEffects.filter(e => e.position === pos)}
                                                     onEffectComplete={handleEffectComplete}
+                                                    onAskAnswer={handleAskAnswer}
                                                     isHighlighted={highlightedSquares.has(pos)}
                                                     isCapture={highlightedSquares.has(pos) && !!squares[pos]}
                                                     onHover={(p: Square) => setHoveredSquare(p)}
