@@ -57,6 +57,8 @@ interface BlockInstance extends BlockTemplate {
     socketValues: Record<string, any>;
     parentId?: string;
     childId?: string;
+    thenChildId?: string;
+    elseChildId?: string;
     checkFrequency?: 'every-move' | 'every-square';
 }
 
@@ -240,6 +242,20 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
             { id: 'message', type: 'text', label: 'message' }
         ],
         width: 360
+    },
+    {
+        id: 'if',
+        type: 'effect',
+        label: 'if',
+        category: 'effects',
+        color: '#8B5CF6',
+        description: 'Compares two values (literals or dropped variables) and branches into a THEN or ELSE chain before continuing.',
+        sockets: [
+            { id: 'left', type: 'text', label: 'if', acceptsVariable: true },
+            { id: 'op', type: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
+            { id: 'right', type: 'text', acceptsVariable: true }
+        ],
+        width: 460
     },
     {
         id: 'variable-pos-x',
@@ -494,9 +510,10 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                 activeTemplateRef.current = instance;
 
                 // Calculate descendants to prevent snapping to them
+                // (uses filter, not find: an 'if' block can have two children — then + else — with the same parentId)
                 const findDescendants = (id: string) => {
-                    const child = canvasBlocks.find(b => b.parentId === id);
-                    if (child) {
+                    const children = canvasBlocks.filter(b => b.parentId === id);
+                    for (const child of children) {
                         draggedDescendantsRef.current.add(child.instanceId);
                         findDescendants(child.instanceId);
                     }
@@ -578,6 +595,61 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         setGhost(null);
 
         if (!currentTemplate) return;
+
+        // Check for drop into an 'if' block's THEN/ELSE branch zone
+        if (over && over.data.current && over.data.current.type === 'branch') {
+            const { blockId, slot } = over.data.current as { blockId: string, slot: 'then' | 'else' };
+            if (currentTemplate.type === 'effect' || currentTemplate.type === 'terminal') {
+                const parentBlock = canvasBlocks.find(b => b.instanceId === blockId);
+                if (parentBlock) {
+                    const childField = slot === 'then' ? 'thenChildId' : 'elseChildId';
+                    const newPos = {
+                        x: parentBlock.position.x + (slot === 'then' ? 20 : 280),
+                        y: parentBlock.position.y + 140
+                    };
+                    const isExistingDrag = canvasBlocks.some(b => b.instanceId === active.id);
+
+                    if (isExistingDrag) {
+                        setCanvasBlocks(prev => {
+                            const oldBlock = prev.find(b => b.instanceId === active.id);
+                            if (!oldBlock) return prev;
+                            const dx = newPos.x - oldBlock.position.x;
+                            const dy = newPos.y - oldBlock.position.y;
+                            let updated = prev.map(b => {
+                                if (b.childId === active.id) return { ...b, childId: undefined };
+                                if (b.thenChildId === active.id) return { ...b, thenChildId: undefined };
+                                if (b.elseChildId === active.id) return { ...b, elseChildId: undefined };
+                                return b;
+                            });
+                            updated = updated.map(b => b.instanceId === blockId ? { ...b, [childField]: active.id as string } : b);
+                            return updated.map(b => {
+                                if (b.instanceId === active.id) {
+                                    return { ...b, position: newPos, parentId: blockId };
+                                }
+                                if (draggedDescendantsRef.current.has(b.instanceId)) {
+                                    return { ...b, position: { x: b.position.x + dx, y: b.position.y + dy } };
+                                }
+                                return b;
+                            });
+                        });
+                    } else {
+                        const newInstanceId = `instance-${Date.now()}`;
+                        const newBlock: BlockInstance = {
+                            ...currentTemplate,
+                            instanceId: newInstanceId,
+                            position: newPos,
+                            socketValues: {},
+                            parentId: blockId
+                        };
+                        setCanvasBlocks(prev => {
+                            const updated = prev.map(b => b.instanceId === blockId ? { ...b, [childField]: newInstanceId } : b);
+                            return [...updated, newBlock];
+                        });
+                    }
+                }
+            }
+            return;
+        }
 
         // Check for drop into socket
         if (over && over.data.current && over.data.current.type === 'socket' && currentTemplate.type === 'variable') {
@@ -672,7 +744,12 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                     if (!oldBlock) return prev;
                     const dx = bestSnap!.x - oldBlock.position.x;
                     const dy = bestSnap!.y - oldBlock.position.y;
-                    let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
+                    let updated = prev.map(b => {
+                        if (b.childId === active.id) return { ...b, childId: undefined };
+                        if (b.thenChildId === active.id) return { ...b, thenChildId: undefined };
+                        if (b.elseChildId === active.id) return { ...b, elseChildId: undefined };
+                        return b;
+                    });
                     updated = updated.map(b => b.instanceId === bestSnap!.parentId ? { ...b, childId: active.id as string } : b);
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
@@ -711,7 +788,12 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                     if (!oldBlock) return prev;
                     const dx = canvasX - oldBlock.position.x;
                     const dy = canvasY - oldBlock.position.y;
-                    let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
+                    let updated = prev.map(b => {
+                        if (b.childId === active.id) return { ...b, childId: undefined };
+                        if (b.thenChildId === active.id) return { ...b, thenChildId: undefined };
+                        if (b.elseChildId === active.id) return { ...b, elseChildId: undefined };
+                        return b;
+                    });
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
                             return { ...b, position: { x: canvasX, y: canvasY }, parentId: undefined };
@@ -959,15 +1041,22 @@ function Canvas({
                                 onDelete={() => {
                                     setCanvasBlocks(prev => {
                                         const toDelete = new Set([block.instanceId]);
+                                        // filter, not find: an 'if' block can have two children (then + else) sharing a parentId
                                         const findChildren = (id: string) => {
-                                            const child = prev.find(b => b.parentId === id);
-                                            if (child) {
+                                            const children = prev.filter(b => b.parentId === id);
+                                            for (const child of children) {
                                                 toDelete.add(child.instanceId);
                                                 findChildren(child.instanceId);
                                             }
                                         };
                                         findChildren(block.instanceId);
-                                        return prev.filter(b => !toDelete.has(b.instanceId)).map(b => b.childId === block.instanceId ? { ...b, childId: undefined } : b);
+                                        return prev.filter(b => !toDelete.has(b.instanceId)).map(b => {
+                                            let nb = b;
+                                            if (nb.childId === block.instanceId) nb = { ...nb, childId: undefined };
+                                            if (nb.thenChildId === block.instanceId) nb = { ...nb, thenChildId: undefined };
+                                            if (nb.elseChildId === block.instanceId) nb = { ...nb, elseChildId: undefined };
+                                            return nb;
+                                        });
                                     });
                                 }}
                                 onUpdateSocket={(sid, val) => {
@@ -1105,10 +1194,14 @@ function BlockComponent({
 
     const currentFrequency = (block as BlockInstance).checkFrequency || 'every-move';
 
+    // 'if' blocks are not placed in the sidebar/overlay/ghost previews, only on the real canvas.
+    const isCanvasInstance = !['template', 'bg', 'ghost', 'overlay'].includes(block.instanceId);
+    const isIfBlock = block.id === 'if' && isCanvasInstance;
+
     const filledVariablesCount = Object.values(block.socketValues || {}).filter((v: any) => v && v.type === 'variable').length;
     const extraWidth = filledVariablesCount * 100;
     const width = (block.width || (block.type === 'variable' ? VARIABLE_WIDTH : DEFAULT_WIDTH)) + extraWidth;
-    const height = BLOCK_HEIGHT;
+    const height = isIfBlock ? BLOCK_HEIGHT + 80 : BLOCK_HEIGHT;
     const hasNotch = block.type !== 'variable';
 
     const handleMouseEnter = () => {
@@ -1241,6 +1334,13 @@ function BlockComponent({
                 ))}
             </div>
 
+            {isIfBlock && (
+                <div className="absolute inset-x-0 top-[60px] h-[70px] flex items-center gap-2 px-3">
+                    <BranchZone blockId={block.instanceId} slot="then" label="THEN" occupied={!!(block as BlockInstance).thenChildId} />
+                    <BranchZone blockId={block.instanceId} slot="else" label="ELSE" occupied={!!(block as BlockInstance).elseChildId} />
+                </div>
+            )}
+
             {onDelete && (
                 <button
                     onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -1294,6 +1394,41 @@ function BlockComponent({
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+// Drop target for an 'if' block's THEN/ELSE branch body. Dropping an effect/terminal
+// block here starts a separate chain (set as thenChildId/elseChildId on the parent),
+// independent from the parent's own childId (which continues the main chain after the if/else).
+function BranchZone({
+    blockId,
+    slot,
+    label,
+    occupied
+}: {
+    blockId: string,
+    slot: 'then' | 'else',
+    label: string,
+    occupied: boolean
+}) {
+    const { setNodeRef, isOver } = useDroppable({
+        id: `branch-${blockId}-${slot}`,
+        data: { type: 'branch', blockId, slot }
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`flex-1 h-[55px] rounded-lg border-2 border-dashed flex items-center justify-center gap-1 text-[10px] font-black uppercase transition-colors ${isOver ? 'border-white bg-white/25' : occupied ? 'border-black/30 bg-black/15' : 'border-black/15 bg-black/5'
+                }`}
+        >
+            <span className="text-black/50">{label}</span>
+            {occupied ? (
+                <span className="text-black/70">&#10003;</span>
+            ) : (
+                <span className="text-black/30 italic font-medium">drop here</span>
+            )}
         </div>
     );
 }

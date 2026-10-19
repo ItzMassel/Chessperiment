@@ -157,10 +157,54 @@ export class SquareLogicRunner {
                     }
                 }
                 break;
+
+            case 'if': {
+                // 'left'/'right' may each be a literal, or the name of an existing square variable.
+                const resolveOperand = (raw: any) =>
+                    (squareLogic.variables && Object.prototype.hasOwnProperty.call(squareLogic.variables, raw))
+                        ? squareLogic.variables[raw]
+                        : raw;
+                const left = resolveOperand(block.socketValues?.left);
+                const right = resolveOperand(block.socketValues?.right);
+                const result = this.evaluateComparison(left, block.socketValues?.op, right);
+                const branchId = result ? block.thenChildId : block.elseChildId;
+                if (branchId) {
+                    this.runBlock(squareLogic, branchId, context, board);
+                }
+                break;
+            }
         }
 
         if (block.childId) {
             this.runBlock(squareLogic, block.childId, context, board);
+        }
+    }
+
+    // Shared comparison logic for the 'if' block.
+    private static evaluateComparison(left: any, op: string, right: any): boolean {
+        const isNumber = left !== '' && right !== '' && left !== undefined && right !== undefined &&
+            !isNaN(Number(left)) && !isNaN(Number(right));
+
+        if (isNumber) {
+            const l = Number(left);
+            const r = Number(right);
+            switch (op) {
+                case '==': return l === r;
+                case '!=': return l !== r;
+                case '>': return l > r;
+                case '<': return l < r;
+                case '>=': return l >= r;
+                case '<=': return l <= r;
+                default: return false;
+            }
+        } else {
+            const l = String(left);
+            const r = String(right);
+            switch (op) {
+                case '==': return l === r;
+                case '!=': return l !== r;
+                default: return false; // Ordered comparison not supported for text
+            }
         }
     }
 
