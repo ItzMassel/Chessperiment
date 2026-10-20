@@ -9,7 +9,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/marketplace',
     '/game',
-    '/announcements',
     '/editor',
     '/legal-notice',
     '/privacy-policy',
