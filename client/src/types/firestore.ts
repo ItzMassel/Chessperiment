@@ -80,6 +80,7 @@ export interface CustomPiece {
     imageBlack?: string // Non-pixelated image for black version
     moves: any[] // Move logic, now new, I'm reusing this variable
     logic?: any // Logic blocks (triggers/effects)
+    logicBlocklyXml?: string // Serialized Blockly workspace for the logic editor
     variables?: { id: string, name: string }[] // Custom variable definitions
     
     // Multi-cell shape (NEW)

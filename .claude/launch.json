@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "client",
+      "name": "chessperiment",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "client", "run", "dev"],
+      "runtimeArgs": ["run", "dev:full"],
       "port": 3000
     }
   ]
