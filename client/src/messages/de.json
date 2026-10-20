@@ -505,6 +505,10 @@
                 "mode": {
                     "label": "Modus",
                     "desc": "Eine allgemeine numerische Variable, die den aktuellen Modus oder Zustand der Figur repräsentiert."
+                },
+                "answer": {
+                    "label": "Antwort",
+                    "desc": "Die Option, die der Spieler bei der letzten Nutzerabfrage ausgewählt hat."
                 }
             },
             "MoveNotation": {
@@ -555,8 +559,12 @@
                     "win": "Spiel gewinnen",
                     "explode": "Explosion",
                     "tellUser": "Sprechblase",
+                    "askUser": "Nutzer fragen",
                     "radius": "Radius",
-                    "message": "Nachricht"
+                    "message": "Nachricht",
+                    "ask": "Frage",
+                    "choices": "Optionen",
+                    "answer": "Antwort"
                 },
                 "descriptions": {
                     "onIsCaptured": "Wird ausgelöst, wenn eine Figur geschlagen wird.",
@@ -572,7 +580,8 @@
                     "prevent": "Verhindert das Standardverhalten der Engine.",
                     "win": "Beendet das Spiel sofort mit einem Sieg für den Besitzer dieser Figur.",
                     "explode": "Entfernt Figuren in einem Umkreis um diese Figur.",
-                    "tellUser": "Zeigt eine Sprechblase an der Figur mit einer eigenen Nachricht an."
+                    "tellUser": "Zeigt eine Sprechblase an der Figur mit einer eigenen Nachricht an.",
+                    "askUser": "Hält das Spiel an und lässt den Spieler eine von mehreren Optionen wählen; die Wahl wird dann in der Variable 'answer' gespeichert. Nützlich für Entscheidungen wie die Rochaderichtung."
                 }
             }
         }
