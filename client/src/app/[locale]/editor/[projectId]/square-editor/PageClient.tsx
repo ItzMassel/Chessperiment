@@ -109,13 +109,17 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const isSavingRef = useRef(false);
     const lastSavedDataRef = useRef<string>('');
     const [isSelecting, setIsSelecting] = useState(false);
-    const [initialXml, setInitialXml] = useState<string>('');
     const [mounted, setMounted] = useState(false);
     const [isCreatingVar, setIsCreatingVar] = useState(false);
     const [newVarName, setNewVarName] = useState('');
     const workspaceRef = useRef<Blockly.Workspace | null>(null);
     const variablesRef = useRef(variables);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const handleSaveRef = useRef<typeof handleSave | null>(null);
+    // Snapshot of the most recently generated (xml, logicJson), kept in sync with the
+    // live workspace so a flush-on-navigate doesn't have to read from a workspace that
+    // react-blockly may have already torn down by the time our cleanup runs.
+    const pendingSaveDataRef = useRef<{ xml: string, logicJson: any[] } | null>(null);
 
     useEffect(() => {
         variablesRef.current = variables;
@@ -125,19 +129,21 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         setMounted(true);
     }, []);
 
+    // Derived synchronously from the current render's project/selectedSquare (rather than
+    // mirrored into state by an effect) so that when BlocklyWorkspace remounts via `key`
+    // below, it mounts with the right XML on the very first render, with no stale frame.
+    const currentXml = selectedSquare ? ((project?.squareLogic?.[selectedSquare] as any)?.blocklyXml || '') : '';
+
     useEffect(() => {
         if (!project || !selectedSquare) {
-            setInitialXml('');
             setVariables([]);
             return;
         }
         const logicDef = project.squareLogic?.[selectedSquare];
         if (logicDef) {
-            setInitialXml((logicDef as any).blocklyXml || '');
             setVariables((logicDef as any).variables || []);
             lastSavedDataRef.current = JSON.stringify({ xml: (logicDef as any).blocklyXml || '', variables: (logicDef as any).variables || [] });
         } else {
-            setInitialXml('');
             setVariables([]);
             lastSavedDataRef.current = JSON.stringify({ xml: '', variables: [] });
         }
@@ -179,6 +185,26 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         }
     }, [project, projectId, selectedSquare, variables, saveProject]);
 
+    useEffect(() => {
+        handleSaveRef.current = handleSave;
+    }, [handleSave]);
+
+    // Flush any pending debounced save when leaving this square or the page entirely,
+    // so navigating away right after an edit doesn't silently drop it. Uses the cached
+    // snapshot rather than re-reading the workspace, since react-blockly may have already
+    // disposed it by the time this cleanup runs (child effects clean up before parent ones).
+    useEffect(() => {
+        return () => {
+            if (saveTimerRef.current) {
+                clearTimeout(saveTimerRef.current);
+                if (pendingSaveDataRef.current) {
+                    const { xml, logicJson } = pendingSaveDataRef.current;
+                    handleSaveRef.current?.(xml, variablesRef.current, logicJson);
+                }
+            }
+        };
+    }, [selectedSquare]);
+
     const generateLogicJson = (workspace: Blockly.Workspace) => {
         const logic: any[] = [];
         const processBlock = (block: Blockly.Block): any => {
@@ -219,6 +245,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         workspaceRef.current = workspace;
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
         const logicJson = generateLogicJson(workspace);
+        pendingSaveDataRef.current = { xml, logicJson };
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
             handleSave(xml, variablesRef.current, logicJson);
@@ -232,13 +259,13 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         setVariables(updated);
         setNewVarName('');
         setIsCreatingVar(false);
-        handleSave(initialXml, updated);
+        handleSave(currentXml, updated);
     };
 
     const deleteVariable = (id: string) => {
         const updated = variables.filter(v => v.id !== id);
         setVariables(updated);
-        handleSave(initialXml, updated);
+        handleSave(currentXml, updated);
     };
 
     // ─── AI Tool Registration ───
@@ -313,16 +340,16 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             const id = `var-${Date.now()}`;
             const updated = [...variables, { id, name: args.name, value: 0 }];
             setVariables(updated);
-            handleSave(initialXml, updated);
+            handleSave(currentXml, updated);
             return JSON.stringify({ success: true, variableId: id });
         },
         delete_square_variable: async (args: Record<string, any>) => {
             const updated = variables.filter(v => v.id !== args.variableId);
             setVariables(updated);
-            handleSave(initialXml, updated);
+            handleSave(currentXml, updated);
             return JSON.stringify({ success: true });
         },
-    }), [project, selectedSquare, variables, initialXml, handleSave]);
+    }), [project, selectedSquare, variables, currentXml, handleSave]);
 
     useAIToolRegistration(squareToolHandlers);
 
@@ -400,7 +427,15 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         <SmallScreenNotice>
         <div className="flex h-screen w-full bg-[#0f1115] text-white overflow-hidden font-sans">
             <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30">
-                <button data-tutorial-target="nav-project-overview" onClick={() => router.push(`/editor/${projectId}`)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-95 duration-200">
+                <button data-tutorial-target="nav-project-overview" onClick={async () => {
+                    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                    if (workspaceRef.current) {
+                        const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspaceRef.current));
+                        const logicJson = generateLogicJson(workspaceRef.current);
+                        await handleSave(xml, variablesRef.current, logicJson);
+                    }
+                    router.push(`/editor/${projectId}`);
+                }} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-95 duration-200">
                     <ChevronLeft size={20} />
                 </button>
                 {(['trigger', 'effects', 'variables'] as const).map(cat => (
@@ -420,7 +455,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                             const logicJson = generateLogicJson(workspaceRef.current);
                             handleSave(xml, variablesRef.current, logicJson);
                         } else {
-                            handleSave(initialXml, variablesRef.current);
+                            handleSave(currentXml, variablesRef.current);
                         }
                     }} disabled={isSaving || hookIsSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving || hookIsSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
                         <Save size={20} className={isSaving || hookIsSaving ? 'animate-pulse' : ''} />
@@ -496,6 +531,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     onDrop={handleDrop}
                 >
                     <BlocklyWorkspace
+                        key={selectedSquare || 'none'}
                         toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }}
                         workspaceConfiguration={{
                             grid: { spacing: 25, length: 1, colour: '#ffffff05', snap: true },
@@ -505,7 +541,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                             move: { scrollbars: true, drag: true, wheel: true }
                         }}
                         className="w-full h-full"
-                        initialXml={initialXml}
+                        initialXml={currentXml}
                         onWorkspaceChange={onWorkspaceChange}
                     />
                 </div>
