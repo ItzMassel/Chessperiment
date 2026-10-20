@@ -1,7 +1,6 @@
 {
     "Header": {
         "play": "Spielen",
-        "news": "Neuigkeiten",
         "notifications": "Benachrichtigungen",
         "menu": "Menü",
         "login": "Anmelden",
@@ -696,13 +695,6 @@
         "newGame": "Neues Spiel",
         "rematchRequested": "Angefragt"
     },
-    "Announcements": {
-        "title": "Neueste Nachrichten & Updates",
-        "by": "Von",
-        "news": "Neuigkeiten",
-        "backToOverview": "Zurück zur Übersicht",
-        "readMore": "Mehr lesen"
-    },
     "FAQ": {
         "title": "Board-Editor FAQ – Alle Antworten"
     },
@@ -883,11 +875,6 @@
                 "heading": "Erstelle und teile individuelle Schachbretter",
                 "text": "Mit dem Chessperiment Brett-Editor designst du Schachbretter jeder Dimension — von kompakten 4x4 bis zu ausgedehnten 14x14 Gittern oder jeder beliebigen Größe. Erstelle vollständige hexagonale Bretter für Hex-Schachvarianten. Schalte einzelne Felder um, um nicht-rechteckige Formen zu bauen: Ringe, Kreuze, Karten mit internen Hindernissen oder jede beliebige Topologie. Weise feldspezifische Regelüberschreibungen zu, um Territoriumszonen, Teleport-Felder oder eingeschränkte Bewegungsbereiche zu erstellen. Das sind keine Vorlagen — das ist echte Anpassbarkeit. Ob du eine klassische Märchenschachvariante baust, ein Verbindungsspiel im Stil von Hex oder Y prototypisierst oder ein völlig neues abstraktes Strategiespiel von Grund auf entwirfst — der Brett-Editor gibt dir volle geometrische Kontrolle ohne Programmierkenntnisse."
             }
-        },
-        "Announcements": {
-            "title": "Chessperiment Neuigkeiten & Ankündigungen",
-            "description": "Bleibe auf dem Laufenden über die neuesten Funktionen, Updates und Community-Neuigkeiten von Chessperiment.",
-            "h1": "Neueste Nachrichten"
         },
         "Analyze": {
             "title": "Schachpartien analysieren mit Stockfish",

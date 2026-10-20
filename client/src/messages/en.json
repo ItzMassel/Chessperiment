@@ -1,7 +1,6 @@
 {
     "Header": {
         "play": "Play",
-        "news": "News",
         "notifications": "Notifications",
         "menu": "Menu",
         "login": "Log In",
@@ -696,13 +695,6 @@
         "newGame": "New Game",
         "rematchRequested": "Requested"
     },
-    "Announcements": {
-        "title": "Latest News & Updates",
-        "by": "By",
-        "news": "News",
-        "backToOverview": "Back to Overview",
-        "readMore": "Read More"
-    },
     "FAQ": {
         "title": "Board Editor FAQ – All Answers"
     },
@@ -883,11 +875,6 @@
                 "heading": "Create and share custom chess boards",
                 "text": "With the Chessperiment board editor, design chess boards of any dimension — from compact 4x4 to expansive 14x14 grids or any custom size. Create full hexagonal boards for hex chess variants. Toggle individual squares to build non-rectangular shapes: rings, crosses, maps with internal obstacles, or any topology. Assign square-specific rule overrides to create territory zones, teleport squares, or restricted movement areas. These are not templates — this is real customization. Whether you're building a classic fairy chess variant, prototyping a Hex- or Y-style connection game, or designing an entirely new abstract strategy game from scratch — the board editor gives you full geometric control with no coding required."
             }
-        },
-        "Announcements": {
-            "title": "Chessperiment News & Announcements",
-            "description": "Stay up to date on the latest features, updates, and community news from Chessperiment.",
-            "h1": "Latest News"
         },
         "Analyze": {
             "title": "Analyze Chess Games with Stockfish",

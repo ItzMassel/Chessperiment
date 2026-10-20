@@ -32,16 +32,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/:locale/news",
-        destination: "/:locale/announcements",
-        permanent: true,
-      },
-      {
-        source: "/news",
-        destination: "/announcements",
-        permanent: true,
-      },
-      {
         source: "/:locale/editor/board/:path*",
         destination: "/:locale/editor",
         permanent: true,

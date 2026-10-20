@@ -21,7 +21,6 @@ const Header: React.FC = () => {
                     {[
                         { name: 'Play', href: '/game' },
                         { name: 'Editor', href: '/editor' },
-                        { name: 'News', href: '/announcements' },
                         { name: 'Marketplace', href: '/marketplace' },
                         { name: 'About', href: '/about' },
                         { name: 'Feedback', href: '/feedback' }
