@@ -490,7 +490,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             </div>
 
             <div className="flex-1 relative bg-[#0c0e12]">
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
+                <div className="absolute top-4 left-4 z-[60] flex gap-2">
                     <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/30 uppercase tracking-widest leading-none flex items-center">
                         {bulkMode ? 'Squares:' : 'Square:'}
                         <span className="ml-2 bg-blue-500 text-white px-1.5 rounded">
