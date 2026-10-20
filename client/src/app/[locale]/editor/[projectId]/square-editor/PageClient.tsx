@@ -103,6 +103,8 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     } = useProject(projectId);
 
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+    const [bulkMode, setBulkMode] = useState(false);
+    const [selectedSquares, setSelectedSquares] = useState<string[]>([]);
     const [activeCategory, setActiveCategory] = useState<string>('trigger');
     const [variables, setVariables] = useState<{ id: string, name: string, value: any }[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -121,6 +123,17 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     // react-blockly may have already torn down by the time our cleanup runs.
     const pendingSaveDataRef = useRef<{ xml: string, logicJson: any[] } | null>(null);
 
+    const targetSquares = useMemo(() => {
+        if (bulkMode) return selectedSquares;
+        return selectedSquare ? [selectedSquare] : [];
+    }, [bulkMode, selectedSquares, selectedSquare]);
+
+    // The square (single-select) or first of the selection (bulk mode) whose saved logic
+    // seeds the workspace. Derived synchronously (rather than mirrored into state by an
+    // effect) so that when BlocklyWorkspace remounts via `key` below, it mounts with the
+    // right XML on the very first render, with no stale frame.
+    const primarySquare = targetSquares[0];
+
     useEffect(() => {
         variablesRef.current = variables;
     }, [variables]);
@@ -129,17 +142,14 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         setMounted(true);
     }, []);
 
-    // Derived synchronously from the current render's project/selectedSquare (rather than
-    // mirrored into state by an effect) so that when BlocklyWorkspace remounts via `key`
-    // below, it mounts with the right XML on the very first render, with no stale frame.
-    const currentXml = selectedSquare ? ((project?.squareLogic?.[selectedSquare] as any)?.blocklyXml || '') : '';
+    const currentXml = primarySquare ? ((project?.squareLogic?.[primarySquare] as any)?.blocklyXml || '') : '';
 
     useEffect(() => {
-        if (!project || !selectedSquare) {
+        if (!project || !primarySquare) {
             setVariables([]);
             return;
         }
-        const logicDef = project.squareLogic?.[selectedSquare];
+        const logicDef = project.squareLogic?.[primarySquare];
         if (logicDef) {
             setVariables((logicDef as any).variables || []);
             lastSavedDataRef.current = JSON.stringify({ xml: (logicDef as any).blocklyXml || '', variables: (logicDef as any).variables || [] });
@@ -147,10 +157,11 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             setVariables([]);
             lastSavedDataRef.current = JSON.stringify({ xml: '', variables: [] });
         }
-    }, [selectedSquare, project]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [targetSquares.join(','), project]);
 
     const handleSave = useCallback(async (xml: string, currentVars: any[] = variablesRef.current, logicJson: any[] = []) => {
-        if (!project || !selectedSquare || isSavingRef.current) return;
+        if (!project || targetSquares.length === 0 || isSavingRef.current) return;
 
         const currentData = { xml, variables: currentVars, logic: logicJson };
         if (JSON.stringify(currentData) === lastSavedDataRef.current) return;
@@ -158,19 +169,19 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            const updatedSquareLogic = {
-                ...(project.squareLogic || {}),
-                [selectedSquare]: {
+            const updatedSquareLogic: Record<string, any> = { ...(project.squareLogic || {}) };
+            for (const squareId of targetSquares) {
+                updatedSquareLogic[squareId] = {
                     projectId,
-                    squareId: selectedSquare,
+                    squareId,
                     logic: logicJson,
                     blocklyXml: xml,
                     variables: currentVars,
                     updatedAt: new Date(),
                     userId: project.userId,
-                    createdAt: project.squareLogic?.[selectedSquare]?.createdAt || new Date()
-                }
-            };
+                    createdAt: project.squareLogic?.[squareId]?.createdAt || new Date()
+                };
+            }
 
             await saveProject({
                 squareLogic: updatedSquareLogic as Record<string, SquareLogicDefinition>
@@ -183,7 +194,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             setIsSaving(false);
             isSavingRef.current = false;
         }
-    }, [project, projectId, selectedSquare, variables, saveProject]);
+    }, [project, projectId, targetSquares, saveProject]);
 
     useEffect(() => {
         handleSaveRef.current = handleSave;
@@ -516,12 +527,28 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             </div>
 
             <div className="flex-1 relative bg-[#0c0e12]">
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
+                <div className="absolute top-4 left-4 z-[60] flex gap-2">
                     <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/30 uppercase tracking-widest leading-none flex items-center">
-                        Square: <span className="ml-2 bg-blue-500 text-white px-1.5 rounded">{selectedSquare || 'None'}</span>
+                        {bulkMode ? 'Squares:' : 'Square:'}
+                        <span className="ml-2 bg-blue-500 text-white px-1.5 rounded">
+                            {bulkMode
+                                ? (selectedSquares.length > 0 ? `${selectedSquares.length} selected` : 'None')
+                                : (selectedSquare || 'None')}
+                        </span>
                     </div>
                     <button onClick={() => setIsSelecting(!isSelecting)} className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isSelecting ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105' : 'bg-white/5 text-stone-500 hover:text-white hover:bg-white/10 border border-white/10'}`}>
-                        {isSelecting ? 'Click a square on board...' : 'Select Square'}
+                        {isSelecting ? 'Click a square on board...' : (bulkMode ? 'Select Squares' : 'Select Square')}
+                    </button>
+                    <button
+                        onClick={() => {
+                            setBulkMode(!bulkMode);
+                            if (!bulkMode && selectedSquare) {
+                                setSelectedSquares([selectedSquare]);
+                            }
+                        }}
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${bulkMode ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] scale-105' : 'bg-white/5 text-stone-500 hover:text-white hover:bg-white/10 border border-white/10'}`}
+                    >
+                        {bulkMode ? 'Bulk Edit: On' : 'Bulk Edit'}
                     </button>
                 </div>
 
@@ -531,7 +558,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     onDrop={handleDrop}
                 >
                     <BlocklyWorkspace
-                        key={selectedSquare || 'none'}
+                        key={primarySquare || 'none'}
                         toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }}
                         workspaceConfiguration={{
                             grid: { spacing: 25, length: 1, colour: '#ffffff05', snap: true },
@@ -546,7 +573,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     />
                 </div>
 
-                {(!selectedSquare || isSelecting) && (
+                {((bulkMode ? selectedSquares.length === 0 : !selectedSquare) || isSelecting) && (
                     <div className="absolute inset-0 z-50 bg-[#0f1115]/95 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in zoom-in-95 duration-500 ease-out">
                         <div className="mb-8 text-center animate-in slide-in-from-top-8 duration-700 delay-100">
                             <h1 className="text-4xl font-black text-white mb-2 tracking-tighter">SELECT SQUARE TO EDIT</h1>
@@ -571,14 +598,20 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                                 const isActive = (project.activeSquares && project.activeSquares.length > 0)
                                     ? (isCoordActive || isAlgebraicActive)
                                     : true;
-                                const isSelected = selectedSquare === id;
+                                const isSelected = bulkMode ? selectedSquares.includes(id) : selectedSquare === id;
 
                                 return (
                                     <button
                                         key={id}
                                         onClick={() => {
-                                            setSelectedSquare(id);
-                                            setIsSelecting(false);
+                                            if (bulkMode) {
+                                                setSelectedSquares(prev =>
+                                                    prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+                                                );
+                                            } else {
+                                                setSelectedSquare(id);
+                                                setIsSelecting(false);
+                                            }
                                         }}
                                         className={`
                                                 w-14 h-14 rounded-xl transition-all duration-200 flex items-center justify-center relative group
@@ -594,7 +627,15 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                                 );
                             })}
                         </div>
-                        {selectedSquare && (
+                        {bulkMode ? (
+                            <button
+                                onClick={() => setIsSelecting(false)}
+                                disabled={selectedSquares.length === 0}
+                                className="mt-8 px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all"
+                            >
+                                Edit {selectedSquares.length} Square{selectedSquares.length === 1 ? '' : 's'}
+                            </button>
+                        ) : selectedSquare && (
                             <button
                                 onClick={() => setIsSelecting(false)}
                                 className="mt-8 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-stone-400 hover:text-white font-bold transition-all border border-white/10"
