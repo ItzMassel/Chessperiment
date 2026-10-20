@@ -36,6 +36,10 @@ interface BlockTemplate {
     width: number;
 }
 
+// Matches Blockly's built-in "logic_blocks" preset style (see EFFECT_BLOCK_STYLE in
+// blocklyDefinitions.ts), so the palette swatch looks like the block it spawns.
+const EFFECT_SWATCH = '#5b80a5';
+
 const BLOCK_TEMPLATES: BlockTemplate[] = [
     { id: 'on-is-captured', type: 'trigger', label: 'onIsCaptured', category: 'trigger', color: '#FFD700', description: 'Fires on this piece when it is captured.', width: 320 },
     { id: 'on-captured', type: 'trigger', label: 'onCaptured', category: 'trigger', color: '#FFD700', description: 'Fires on this piece when it captures another.', width: 320 },
@@ -43,15 +47,15 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
     { id: 'on-move', type: 'trigger', label: 'onMove', category: 'trigger', color: '#FFD700', description: 'Fires whenever this piece moves.', width: 180 },
     { id: 'on-environment', type: 'trigger', label: 'onEnvironment', category: 'trigger', color: '#FFD700', description: 'Fires based on the square this piece is on.', width: 320 },
     { id: 'on-var', type: 'trigger', label: 'onVar', category: 'trigger', color: '#FFD700', description: 'Fires when a variable matches a condition.', width: 320 },
-    { id: 'cooldown', type: 'effect', label: 'cooldown', category: 'effects', color: '#4169E1', description: 'Puts this piece on cooldown.', width: 320 },
-    { id: 'transformation', type: 'effect', label: 'transformation', category: 'effects', color: '#4169E1', description: 'Transforms this piece into another type.', width: 320 },
-    { id: 'modify-var', type: 'effect', label: 'modVar', category: 'effects', color: '#4169E1', description: 'Modifies a variable.', width: 320 },
-    { id: 'kill', type: 'terminal', label: 'kill', category: 'effects', color: '#9370DB', description: 'Removes a piece from the board.', width: 280 },
-    { id: 'prevent', type: 'effect', label: 'prevent', category: 'effects', color: '#FF4500', description: 'Prevents the move that triggered this.', width: 320 },
-    { id: 'win', type: 'terminal', label: 'win', category: 'effects', color: '#FFD700', description: 'Declares a win.', width: 180 },
-    { id: 'explode', type: 'effect', label: 'explode', category: 'effects', color: '#FF4500', description: 'Explodes, removing nearby pieces.', width: 280 },
-    { id: 'tell-user', type: 'effect', label: 'tellUser', category: 'effects', color: '#20B2AA', description: 'Shows a message to the player.', width: 320 },
-    { id: 'ask-user', type: 'effect', label: 'askUser', category: 'effects', color: '#9B59B6', description: 'Asks the player a question and waits for an answer.', width: 320 }
+    { id: 'cooldown', type: 'effect', label: 'cooldown', category: 'effects', color: EFFECT_SWATCH, description: 'Puts this piece on cooldown.', width: 320 },
+    { id: 'transformation', type: 'effect', label: 'transformation', category: 'effects', color: EFFECT_SWATCH, description: 'Transforms this piece into another type.', width: 320 },
+    { id: 'modify-var', type: 'effect', label: 'modVar', category: 'effects', color: EFFECT_SWATCH, description: 'Modifies a variable.', width: 320 },
+    { id: 'kill', type: 'terminal', label: 'kill', category: 'effects', color: EFFECT_SWATCH, description: 'Removes a piece from the board.', width: 280 },
+    { id: 'prevent', type: 'effect', label: 'prevent', category: 'effects', color: EFFECT_SWATCH, description: 'Prevents the move that triggered this.', width: 320 },
+    { id: 'win', type: 'terminal', label: 'win', category: 'effects', color: EFFECT_SWATCH, description: 'Declares a win.', width: 180 },
+    { id: 'explode', type: 'effect', label: 'explode', category: 'effects', color: EFFECT_SWATCH, description: 'Explodes, removing nearby pieces.', width: 280 },
+    { id: 'tell-user', type: 'effect', label: 'tellUser', category: 'effects', color: EFFECT_SWATCH, description: 'Shows a message to the player.', width: 320 },
+    { id: 'ask-user', type: 'effect', label: 'askUser', category: 'effects', color: EFFECT_SWATCH, description: 'Asks the player a question and waits for an answer.', width: 320 }
 ];
 
 export default function LogicPageClient({ id, projectId }: { id: string, projectId?: string }) {
@@ -383,7 +387,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
 
     return (
         <SmallScreenNotice>
-            <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans selection:bg-blue-500/30">
+            <div className="flex h-screen w-full bg-[#0f1115] text-white overflow-hidden font-sans selection:bg-blue-500/30">
                 {/* 1. CATEGORY SIDEBAR */}
                 <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30 shadow-2xl relative">
                     <button
@@ -443,7 +447,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                                                 draggable
                                                 onDragStart={(e) => handleVariableDragStart(e, name)}
                                                 onClick={() => spawnVariableBlock(name)}
-                                                className="cursor-grab active:cursor-grabbing px-4 py-2 rounded-xl text-[11px] font-black uppercase bg-orange-500/80 text-black/70 shadow-lg border-b-4 border-black/20 hover:scale-105 transition-all"
+                                                className="cursor-grab active:cursor-grabbing px-4 py-2 rounded-xl text-[11px] font-black uppercase bg-orange-500/80 text-black shadow-lg border-b-4 border-black/20 hover:scale-105 transition-all"
                                             >
                                                 {name}
                                             </button>
@@ -513,7 +517,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                                             className="h-12 rounded-xl px-4 flex items-center shadow-lg transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-blue-500/20 border-b-4 border-black/20 group-active:scale-95"
                                             style={{ backgroundColor: template.color }}
                                         >
-                                            <span className="font-black text-[11px] text-black/70 uppercase tracking-tight">{template.label}</span>
+                                            <span className="font-black text-[11px] text-black uppercase tracking-tight">{template.label}</span>
                                         </div>
                                         <div className="mt-1 px-1">
                                             <p className="text-[10px] text-stone-500 leading-tight">{template.description}</p>
@@ -536,7 +540,6 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                             toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }}
                             workspaceConfiguration={{
                                 grid: { spacing: 25, length: 1, colour: '#ffffff05', snap: true },
-                                renderer: 'piece_custom_renderer',
                                 theme: 'piece_custom_dark',
                                 zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
                                 move: { scrollbars: true, drag: true, wheel: true }
@@ -552,10 +555,10 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
             <style jsx global>{`
                 .blocklyToolboxDiv { display: none !important; }
                 .blocklyMainBackground { fill: #0c0e12 !important; }
+                .blocklyText { fill: #000 !important; }
+                .blocklyHtmlInput { border: 2px solid rgba(0, 0, 0, 0.3) !important; color: #000 !important; }
                 .blocklyFlyout { display: none !important; }
                 .custom-blockly .blocklyWorkspace { background-color: #0c0e12; }
-                .blocklyPathLight, .blocklyPathDark { display: none !important; }
-                .blocklyPath { stroke-width: 1px !important; stroke: rgba(0,0,0,0.2) !important; }
                 .blocklyZoom { left: 24px !important; bottom: 24px !important; right: auto !important; }
                 .blocklyTrash { left: 24px !important; bottom: 100px !important; right: auto !important; }
                 .blocklyNavigationControlGroup { left: 24px !important; bottom: 180px !important; right: auto !important; }

@@ -37,29 +37,33 @@ export interface PieceBlockSchema {
     sockets: PieceSocketSchema[];
     isTrigger: boolean;
     hasNext: boolean; // false => terminal block (previousStatement only)
-    colour: string;
 }
+
+// Every non-trigger block uses this single built-in Blockly block style (inherited from
+// the Classic theme we base our theme on) instead of a hand-picked colour per block, so
+// effects look like a cohesive, standard Blockly category rather than a custom paint job.
+const EFFECT_BLOCK_STYLE = 'logic_blocks';
 
 export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
     'on-is-captured': {
-        isTrigger: true, hasNext: true, colour: '#FFD700',
+        isTrigger: true, hasNext: true,
         sockets: [{ id: 'by', kind: 'select', label: 'by', options: PIECE_TYPE_OPTIONS, dynamicByOptions: true }]
     },
     'on-captured': {
-        isTrigger: true, hasNext: true, colour: '#FFD700',
+        isTrigger: true, hasNext: true,
         sockets: [{ id: 'by', kind: 'select', label: 'piece', options: PIECE_TYPE_OPTIONS, dynamicByOptions: true }]
     },
     'on-threat': {
-        isTrigger: true, hasNext: true, colour: '#FFD700',
+        isTrigger: true, hasNext: true,
         sockets: [{ id: 'by', kind: 'select', label: 'by', options: PIECE_TYPE_OPTIONS, dynamicByOptions: true }]
     },
-    'on-move': { isTrigger: true, hasNext: true, colour: '#FFD700', sockets: [] },
+    'on-move': { isTrigger: true, hasNext: true, sockets: [] },
     'on-environment': {
-        isTrigger: true, hasNext: true, colour: '#FFD700',
+        isTrigger: true, hasNext: true,
         sockets: [{ id: 'condition', kind: 'select', options: ['White Square', 'Black Square', 'Is Attacked'] }]
     },
     'on-var': {
-        isTrigger: true, hasNext: true, colour: '#FFD700',
+        isTrigger: true, hasNext: true,
         sockets: [
             { id: 'varName', kind: 'variable', label: 'Var' },
             { id: 'op', kind: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
@@ -67,18 +71,18 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
         ]
     },
     'cooldown': {
-        isTrigger: false, hasNext: true, colour: '#4169E1',
+        isTrigger: false, hasNext: true,
         sockets: [
             { id: 'duration', kind: 'value-number', label: 'for', defaultValue: 1 },
             { id: 'unit', kind: 'select', options: ['seconds', 'half-moves', 'full-moves'] }
         ]
     },
     'transformation': {
-        isTrigger: false, hasNext: true, colour: '#4169E1',
+        isTrigger: false, hasNext: true,
         sockets: [{ id: 'target', kind: 'select', options: ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }]
     },
     'modify-var': {
-        isTrigger: false, hasNext: true, colour: '#4169E1',
+        isTrigger: false, hasNext: true,
         sockets: [
             { id: 'varName', kind: 'variable' },
             { id: 'op', kind: 'select', options: ['+=', '-=', '='] },
@@ -86,24 +90,24 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
         ]
     },
     'kill': {
-        isTrigger: false, hasNext: false, colour: '#9370DB',
+        isTrigger: false, hasNext: false,
         sockets: [{ id: 'target', kind: 'select', label: 'Target', options: ['Selected Piece', 'Attacker'] }]
     },
     'prevent': {
-        isTrigger: false, hasNext: true, colour: '#FF4500',
+        isTrigger: false, hasNext: true,
         sockets: [{ id: 'action', kind: 'select', label: 'by', options: ['Jump Back', 'Nearest Square', 'Share Square'] }]
     },
-    'win': { isTrigger: false, hasNext: false, colour: '#FFD700', sockets: [] },
+    'win': { isTrigger: false, hasNext: false, sockets: [] },
     'explode': {
-        isTrigger: false, hasNext: true, colour: '#FF4500',
+        isTrigger: false, hasNext: true,
         sockets: [{ id: 'radius', kind: 'value-number', label: 'radius', defaultValue: 1 }]
     },
     'tell-user': {
-        isTrigger: false, hasNext: true, colour: '#20B2AA',
+        isTrigger: false, hasNext: true,
         sockets: [{ id: 'message', kind: 'text', label: 'message' }]
     },
     'ask-user': {
-        isTrigger: false, hasNext: true, colour: '#9B59B6',
+        isTrigger: false, hasNext: true,
         sockets: [
             { id: 'question', kind: 'text', label: 'ask' },
             { id: 'options', kind: 'text', label: 'choices (comma-separated)' }
@@ -112,35 +116,49 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
 };
 
 function initPieceBlock(block: Blockly.Block, type: string, schema: PieceBlockSchema) {
-    const input = block.appendDummyInput();
-    input.appendField(type);
+    // Built as a sequence of inputs in socket declaration order (switching to a fresh
+    // input whenever a value socket needs its own connection), then laid out inline so
+    // the whole thing reads as one normal row — "cooldown for [1] seconds" — rather than
+    // the value socket dangling on a separate line below the rest of the block.
+    let current = block.appendDummyInput();
+    current.appendField(type);
+    let lastWasValue = false;
 
     schema.sockets.forEach(socket => {
-        if (socket.kind === 'value-number' || socket.kind === 'value-text') return;
-        if (socket.label) input.appendField(socket.label);
+        if (socket.kind === 'value-number' || socket.kind === 'value-text') {
+            if (socket.label) current.appendField(socket.label);
+            current = block.appendValueInput(socket.id).setCheck(null);
+            lastWasValue = true;
+            return;
+        }
+
+        if (lastWasValue) {
+            current = block.appendDummyInput();
+            lastWasValue = false;
+        }
+        if (socket.label) current.appendField(socket.label);
         if (socket.kind === 'select') {
             const options = socket.dynamicByOptions ? byFieldOptions : (socket.options || []).map(o => [o, o] as [string, string]);
-            input.appendField(new Blockly.FieldDropdown(options as any), socket.id);
+            current.appendField(new Blockly.FieldDropdown(options as any), socket.id);
         } else if (socket.kind === 'variable') {
-            input.appendField(new Blockly.FieldVariable(null), socket.id);
+            current.appendField(new Blockly.FieldVariable(null), socket.id);
         } else if (socket.kind === 'text') {
-            input.appendField(new Blockly.FieldTextInput(''), socket.id);
+            current.appendField(new Blockly.FieldTextInput(''), socket.id);
         }
     });
 
     if (schema.isTrigger) {
-        input.appendField('check').appendField(
+        if (lastWasValue) {
+            current = block.appendDummyInput();
+            lastWasValue = false;
+        }
+        current.appendField('check').appendField(
             new Blockly.FieldDropdown([['every move', 'every-move'], ['every square', 'every-square']]),
             'freq'
         );
     }
 
-    schema.sockets
-        .filter(s => s.kind === 'value-number' || s.kind === 'value-text')
-        .forEach(socket => {
-            const valueInput = block.appendValueInput(socket.id).setCheck(null);
-            if (socket.label) valueInput.appendField(socket.label);
-        });
+    block.setInputsInline(true);
 
     if (schema.isTrigger) {
         block.setNextStatement(true, 'Effect');
@@ -148,7 +166,7 @@ function initPieceBlock(block: Blockly.Block, type: string, schema: PieceBlockSc
     } else {
         block.setPreviousStatement(true, 'Effect');
         if (schema.hasNext) block.setNextStatement(true, 'Effect');
-        block.setColour(schema.colour);
+        block.setStyle(EFFECT_BLOCK_STYLE);
     }
     block.setTooltip(type);
 }
@@ -324,78 +342,15 @@ export function migrateLegacyLogicIntoWorkspace(
     });
 }
 
-/**
- * Custom Constant Provider for LEGO-style pill-rounded blocks (mirrors the square
- * editor's logic workspace look, kept under distinct registry keys for this editor).
- */
-class PieceConstantProvider extends Blockly.blockRendering.ConstantProvider {
-    constructor() {
-        super();
-        this.NOTCH_WIDTH = 12;
-        this.NOTCH_HEIGHT = 4;
-        this.CORNER_RADIUS = 12;
-        this.TAB_WIDTH = 12;
-        this.TAB_HEIGHT = 4;
-
-        this.EMPTY_BLOCK_SPACER_HEIGHT = 8;
-        this.TOP_ROW_MIN_HEIGHT = 18;
-        this.BOTTOM_ROW_MIN_HEIGHT = 4;
-        this.NOTCH_OFFSET_LEFT = 24;
-
-        this.FIELD_TEXT_BASELINE_CENTER = true;
-    }
-
-    protected override makeOutsideCorners(): any {
-        const radius = this.CORNER_RADIUS;
-        return {
-            topLeft: `a ${radius},${radius} 0 0,1 ${radius},-${radius}`,
-            topRight: `a ${radius},${radius} 0 0,1 ${radius},${radius}`,
-            bottomRight: `a ${radius},${radius} 0 0,1 -${radius},${radius}`,
-            bottomLeft: `a ${radius},${radius} 0 0,1 -${radius},-${radius}`
-        };
-    }
-
-    protected override makeNotch(): any {
-        const width = this.NOTCH_WIDTH;
-        const height = this.NOTCH_HEIGHT;
-        return {
-            type: 1,
-            width,
-            height,
-            pathLeft: `l 3,${height} ${width - 6},0 3,-${height}`,
-            pathRight: `l -3,${height} -${width - 6},0 -3,-${height}`
-        };
-    }
-
-    protected override makePuzzleTab(): any {
-        const width = this.TAB_WIDTH;
-        const height = this.TAB_HEIGHT;
-        return {
-            type: 2,
-            width,
-            height,
-            pathLeft: `l 0,3 ${width},0 0,-3`,
-            pathRight: `l 0,3 -${width},0 0,-3`,
-            pathDown: `l 3,0 ${width - 6},${height} 3,-${height}`,
-            pathUp: `l 3,0 ${width - 6},-${height} 3,${height}`
-        };
-    }
-}
-
-export class PieceRenderer extends Blockly.blockRendering.Renderer {
-    protected override makeConstants_(): Blockly.blockRendering.ConstantProvider {
-        return new PieceConstantProvider();
-    }
-}
-
 // Run registration immediately
 defineCustomPieceBlocks();
 
 if (typeof window !== 'undefined') {
-    if (!Blockly.registry.hasItem(Blockly.registry.Type.RENDERER, 'piece_custom_renderer')) {
-        Blockly.registry.register(Blockly.registry.Type.RENDERER, 'piece_custom_renderer', PieceRenderer);
-    }
-
+    // Deliberately no custom renderer here: Blockly's default (Geras) renderer is the
+    // only one that correctly lays out our multi-row blocks (dummy + value inputs mixed
+    // on the same block). A hand-rolled constant provider tuned for single-row blocks
+    // badly mis-rendered anything with a value input, so this editor just uses stock
+    // Blockly block shapes — only the theme (colours) is customized.
     const PieceDarkTheme = Blockly.Theme.defineTheme('piece_custom_dark', {
         'name': 'piece_custom_dark',
         'base': Blockly.Themes.Classic,
