@@ -570,7 +570,7 @@
                     "modVar": "Changes a variable value.",
                     "kill": "Immediately removes the piece from the game.",
                     "prevent": "Prevents the engine's default behavior.",
-                    "win": "Ends the game immediately with a win for the owner of this piece.",
+                    "win": "Ends the game immediately with a win for either the owner of this piece or the opponent.",
                     "explode": "Removes pieces within a radius around this piece.",
                     "tellUser": "Displays a speech bubble from the piece with a custom message."
                 }

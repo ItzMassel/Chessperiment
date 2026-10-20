@@ -97,7 +97,10 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
         isTrigger: false, hasNext: true,
         sockets: [{ id: 'action', kind: 'select', label: 'by', options: ['Jump Back', 'Nearest Square', 'Share Square'] }]
     },
-    'win': { isTrigger: false, hasNext: false, sockets: [] },
+    'win': {
+        isTrigger: false, hasNext: false,
+        sockets: [{ id: 'who', kind: 'select', label: 'for', options: ['You', 'Opponent'] }]
+    },
     'explode': {
         isTrigger: false, hasNext: true,
         sockets: [{ id: 'radius', kind: 'value-number', label: 'radius', defaultValue: 1 }]

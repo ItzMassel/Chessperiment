@@ -305,17 +305,21 @@ export class LogicRunner {
                 context.preventAction = vals.action || 'Jump Back';
                 break;
 
-            case 'win':
+            case 'win': {
                 // Enqueue win effect
+                const winner: 'white' | 'black' = vals.who === 'Opponent'
+                    ? (piece.color === 'white' ? 'black' : 'white')
+                    : piece.color as 'white' | 'black';
                 if (this.effectExecutor) {
                     this.effectExecutor.enqueue(EffectFactory.win(
-                        piece.color as 'white' | 'black',
+                        winner,
                         'post-move'
                     ));
                 }
                 context.gameWon = true;
-                context.winner = piece.color;
+                context.winner = winner;
                 break;
+            }
 
             case 'tell-user':
                 board.triggerEffect('tell-user', piece.position, { message: vals.message || '' });
