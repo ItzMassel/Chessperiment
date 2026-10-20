@@ -505,6 +505,10 @@
                 "mode": {
                     "label": "Mode",
                     "desc": "A general-purpose numeric variable representing the piece's current mode or state."
+                },
+                "answer": {
+                    "label": "Answer",
+                    "desc": "The option the player picked in the most recent Ask User prompt."
                 }
             },
             "MoveNotation": {
@@ -555,8 +559,12 @@
                     "win": "Win Game",
                     "explode": "Explode",
                     "tellUser": "Tell User",
+                    "askUser": "Ask User",
                     "radius": "Radius",
-                    "message": "Message"
+                    "message": "Message",
+                    "ask": "Ask",
+                    "choices": "Choices",
+                    "answer": "Answer"
                 },
                 "descriptions": {
                     "onIsCaptured": "Triggered when a piece is captured.",
@@ -572,7 +580,8 @@
                     "prevent": "Prevents the engine's default behavior.",
                     "win": "Ends the game immediately with a win for the owner of this piece.",
                     "explode": "Removes pieces within a radius around this piece.",
-                    "tellUser": "Displays a speech bubble from the piece with a custom message."
+                    "tellUser": "Displays a speech bubble from the piece with a custom message.",
+                    "askUser": "Pauses and asks the player to pick one of several options, then continues with their choice stored in the 'answer' variable. Useful for choices like which way to castle."
                 }
             }
         }
