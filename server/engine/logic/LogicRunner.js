@@ -104,34 +104,38 @@ export class LogicRunner {
             case 'on-var':
                 if (vals.varName) {
                     const current = piece.variables[vals.varName] || 0;
-                    // Support text comparison as requested
-                    const isNumber = !isNaN(Number(vals.value)) && !isNaN(Number(current));
-                    if (isNumber) {
-                        const v = Number(vals.value);
-                        const c = Number(current);
-                        switch (vals.op) {
-                            case '==': return c === v;
-                            case '!=': return c !== v;
-                            case '>': return c > v;
-                            case '<': return c < v;
-                            case '>=': return c >= v;
-                            case '<=': return c <= v;
-                        }
-                    }
-                    else {
-                        // Text comparison
-                        const v = String(vals.value);
-                        const c = String(current);
-                        switch (vals.op) {
-                            case '==': return c === v;
-                            case '!=': return c !== v;
-                            default: return false; // Ordered comparison not supported for text
-                        }
-                    }
+                    return this.evaluateComparison(current, vals.op, vals.value);
                 }
                 return false;
             default:
                 return true;
+        }
+    }
+    // Shared comparison logic for 'on-var' triggers and 'if' blocks.
+    static evaluateComparison(left, op, right) {
+        const isNumber = left !== '' && right !== '' && left !== undefined && right !== undefined &&
+            !isNaN(Number(left)) && !isNaN(Number(right));
+        if (isNumber) {
+            const l = Number(left);
+            const r = Number(right);
+            switch (op) {
+                case '==': return l === r;
+                case '!=': return l !== r;
+                case '>': return l > r;
+                case '<': return l < r;
+                case '>=': return l >= r;
+                case '<=': return l <= r;
+                default: return false;
+            }
+        }
+        else {
+            const l = String(left);
+            const r = String(right);
+            switch (op) {
+                case '==': return l === r;
+                case '!=': return l !== r;
+                default: return false; // Ordered comparison not supported for text
+            }
         }
     }
     static runBlock(piece, blockId, context, board) {
@@ -221,6 +225,14 @@ export class LogicRunner {
                 context.gameWon = true;
                 context.winner = piece.color;
                 break;
+            case 'if': {
+                const result = this.evaluateComparison(vals.left, vals.op, vals.right);
+                const branchId = result ? block.thenChildId : block.elseChildId;
+                if (branchId) {
+                    this.runBlock(piece, branchId, context, board);
+                }
+                break;
+            }
         }
         if (block.childId) {
             this.runBlock(piece, block.childId, context, board);
