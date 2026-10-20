@@ -116,7 +116,7 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
     'if': {
         isTrigger: false, hasNext: true,
         sockets: [
-            { id: 'left', kind: 'value-text', label: 'if', defaultValue: '' },
+            { id: 'left', kind: 'value-text', defaultValue: '' },
             { id: 'op', kind: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
             { id: 'right', kind: 'value-text', defaultValue: '' }
         ]
