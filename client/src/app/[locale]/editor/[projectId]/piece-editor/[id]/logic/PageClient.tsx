@@ -130,10 +130,17 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
     }, []);
 
     const handleSave = useCallback(async (xml: string, logicJson: any[], varDefs: { id: string, name: string }[]) => {
-        if (projectLoading || !project || !piece || isSavingRef.current) return;
+        if (projectLoading || !project || !piece) return;
 
         const currentData = JSON.stringify({ xml, logicJson, varDefs });
         if (currentData === lastSavedDataRef.current) return;
+
+        // A save is already in flight: retry shortly instead of silently dropping this one.
+        if (isSavingRef.current) {
+            clearTimeout(saveTimerRef.current);
+            saveTimerRef.current = setTimeout(() => handleSaveRef.current?.(xml, logicJson, varDefs), 500);
+            return;
+        }
 
         isSavingRef.current = true;
         setIsSaving(true);
@@ -144,8 +151,13 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                     : p
             );
 
-            await saveProject({ customPieces: updatedPieces });
-            lastSavedDataRef.current = currentData;
+            // saveProject reports failure by returning false rather than throwing.
+            const ok = await saveProject({ customPieces: updatedPieces });
+            if (ok) {
+                lastSavedDataRef.current = currentData;
+            } else {
+                console.error('Save failed: project was not saved');
+            }
         } catch (error) {
             console.error('Save failed:', error);
         } finally {
