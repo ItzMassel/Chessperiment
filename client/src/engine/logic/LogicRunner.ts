@@ -18,9 +18,31 @@ export class LogicRunner {
     
     // Effect executor for enqueueing effects
     private static effectExecutor: EffectExecutor | null = null;
-    
+
     static setEffectExecutor(executor: EffectExecutor) {
         this.effectExecutor = executor;
+    }
+
+    // "Ask user" prompts that are waiting on a player's answer. Keyed by a per-prompt id so
+    // the remainder of a block chain can be resumed once the UI reports back which option
+    // was picked (see the 'ask-user' case in runBlock and answerUser() below).
+    private static pendingAsks: Map<string, { piece: LogicPiece, childId: string | undefined, context: any, board: BoardClass }> = new Map();
+
+    /**
+     * Resume a block chain that was paused on an 'ask-user' block, now that the player
+     * has picked an answer. Stores the answer in the piece's `answer` variable and
+     * continues executing the rest of the chain from where it left off.
+     */
+    static answerUser(askId: string, answer: string) {
+        const pending = this.pendingAsks.get(askId);
+        if (!pending) return;
+        this.pendingAsks.delete(askId);
+
+        pending.piece.variables['answer'] = answer;
+
+        if (pending.childId) {
+            this.runBlock(pending.piece, pending.childId, pending.context, pending.board);
+        }
     }
 
     static execute(piece: LogicPiece, triggerType: string, context: any, board: BoardClass, effectExecutor?: EffectExecutor) {
@@ -320,6 +342,25 @@ export class LogicRunner {
             case 'tell-user':
                 board.triggerEffect('tell-user', piece.position, { message: vals.message || '' });
                 break;
+
+            case 'ask-user': {
+                const options = String(vals.options || '')
+                    .split(',')
+                    .map((o: string) => o.trim())
+                    .filter(Boolean);
+                const askId = `ask_${piece.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+                this.pendingAsks.set(askId, { piece, childId: block.childId, context, board });
+                board.triggerEffect('ask-user', piece.position, {
+                    id: askId,
+                    question: vals.question || '',
+                    options
+                });
+
+                // Pause here: the rest of this chain resumes from answerUser() once the
+                // player picks an option, so skip the trailing childId call below.
+                return;
+            }
         }
 
         if (block.childId) {
