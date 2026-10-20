@@ -15,6 +15,7 @@ import {
     PRESET_VARIABLES,
     setCustomPieceNameOptions,
     readBlockSocketValues,
+    readIfBranches,
     getCheckFrequency,
     writeBlockSocketValue,
     initializeDefaultSockets,
@@ -55,7 +56,8 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
     { id: 'win', type: 'terminal', label: 'win', category: 'effects', color: EFFECT_SWATCH, description: 'Declares a win.', width: 180 },
     { id: 'explode', type: 'effect', label: 'explode', category: 'effects', color: EFFECT_SWATCH, description: 'Explodes, removing nearby pieces.', width: 280 },
     { id: 'tell-user', type: 'effect', label: 'tellUser', category: 'effects', color: EFFECT_SWATCH, description: 'Shows a message to the player.', width: 320 },
-    { id: 'ask-user', type: 'effect', label: 'askUser', category: 'effects', color: EFFECT_SWATCH, description: 'Asks the player a question and waits for an answer.', width: 320 }
+    { id: 'ask-user', type: 'effect', label: 'askUser', category: 'effects', color: EFFECT_SWATCH, description: 'Asks the player a question and waits for an answer.', width: 320 },
+    { id: 'if', type: 'effect', label: 'if', category: 'effects', color: EFFECT_SWATCH, description: 'Compares two values (literals or variables) and runs its THEN or ELSE branch before continuing.', width: 320 }
 ];
 
 export default function LogicPageClient({ id, projectId }: { id: string, projectId?: string }) {
@@ -114,7 +116,8 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                     type: schema.isTrigger ? 'trigger' : 'effect',
                     instanceId: block.id,
                     socketValues: readBlockSocketValues(block),
-                    childId: block.getNextBlock()?.id || null
+                    childId: block.getNextBlock()?.id || null,
+                    ...readIfBranches(block)
                 };
                 if (schema.isTrigger) {
                     entry.checkFrequency = getCheckFrequency(block);

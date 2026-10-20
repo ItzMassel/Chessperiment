@@ -112,6 +112,14 @@ export const PIECE_BLOCK_SCHEMA: Record<string, PieceBlockSchema> = {
             { id: 'question', kind: 'text', label: 'ask' },
             { id: 'options', kind: 'text', label: 'choices (comma-separated)' }
         ]
+    },
+    'if': {
+        isTrigger: false, hasNext: true,
+        sockets: [
+            { id: 'left', kind: 'value-text', label: 'if', defaultValue: '' },
+            { id: 'op', kind: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
+            { id: 'right', kind: 'value-text', defaultValue: '' }
+        ]
     }
 };
 
@@ -176,6 +184,13 @@ export function defineCustomPieceBlocks() {
         Blockly.Blocks[type] = {
             init() {
                 initPieceBlock(this, type, schema);
+                // 'if' additionally gets two statement inputs for its THEN/ELSE branch
+                // bodies, independent of its own previous/next connection (which continues
+                // the main chain after the if/else resolves either way).
+                if (type === 'if') {
+                    this.appendStatementInput('THEN').setCheck('Effect').appendField('then');
+                    this.appendStatementInput('ELSE').setCheck('Effect').appendField('else');
+                }
             }
         };
     });
@@ -231,6 +246,17 @@ export function readBlockSocketValues(block: Blockly.Block): Record<string, any>
     });
 
     return result;
+}
+
+/** For the 'if' block: ids of the blocks connected to its THEN/ELSE statement inputs. */
+export function readIfBranches(block: Blockly.Block): { thenChildId?: string; elseChildId?: string } {
+    if (block.type !== 'if') return {};
+    const thenBlock = block.getInputTargetBlock('THEN');
+    const elseBlock = block.getInputTargetBlock('ELSE');
+    const branches: { thenChildId?: string; elseChildId?: string } = {};
+    if (thenBlock) branches.thenChildId = thenBlock.id;
+    if (elseBlock) branches.elseChildId = elseBlock.id;
+    return branches;
 }
 
 export function getCheckFrequency(block: Blockly.Block): 'every-move' | 'every-square' {
@@ -333,12 +359,31 @@ export function migrateLegacyLogicIntoWorkspace(
     });
 
     legacyBlocks.forEach(lb => {
-        if (!lb?.childId) return;
         const parent = created.get(lb.instanceId);
-        const child = created.get(lb.childId);
-        if (parent?.nextConnection && child?.previousConnection && !child.previousConnection.isConnected()) {
-            parent.nextConnection.connect(child.previousConnection);
+        if (!parent) return;
+
+        if (lb.childId) {
+            const child = created.get(lb.childId);
+            if (parent.nextConnection && child?.previousConnection && !child.previousConnection.isConnected()) {
+                parent.nextConnection.connect(child.previousConnection);
+            }
         }
+
+        // Legacy 'if' blocks kept their THEN/ELSE bodies as thenChildId/elseChildId
+        // rather than childId; reconnect those into the new block's statement inputs.
+        const branchFields: Array<['thenChildId' | 'elseChildId', 'THEN' | 'ELSE']> = [
+            ['thenChildId', 'THEN'],
+            ['elseChildId', 'ELSE']
+        ];
+        branchFields.forEach(([field, inputName]) => {
+            const childId = lb[field];
+            if (!childId) return;
+            const child = created.get(childId);
+            const input = parent.getInput(inputName);
+            if (input?.connection && child?.previousConnection && !child.previousConnection.isConnected()) {
+                input.connection.connect(child.previousConnection);
+            }
+        });
     });
 }
 
