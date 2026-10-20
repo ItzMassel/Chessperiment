@@ -92,6 +92,43 @@ export const defineCustomBlocks = () => {
             this.setTooltip("Declare a win for a specific side.");
         }
     };
+
+    // Modify a square variable (+=, -=, =). No block existed for this yet even though
+    // SquareLogicRunner already supports it; added here alongside 'if' so comparisons have
+    // something to read/write against.
+    Blockly.Blocks['modify-var'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("var")
+                .appendField(new Blockly.FieldTextInput("myVar"), "varName")
+                .appendField(new Blockly.FieldDropdown([["+=", "+="], ["-=", "-="], ["=", "="]]), "op")
+                .appendField(new Blockly.FieldTextInput("0"), "value");
+            this.setPreviousStatement(true, "Effect");
+            this.setNextStatement(true, "Effect");
+            this.setColour("#4169E1");
+            this.setTooltip("Change a square variable's value.");
+        }
+    };
+
+    // Conditional branch. 'left'/'right' are each either a literal, or the name of an
+    // existing square variable (resolved by SquareLogicRunner at run time). Has its own
+    // previous/next connection (continues the main chain after the if/else), plus two
+    // statement inputs for the THEN/ELSE branch bodies.
+    Blockly.Blocks['if'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("if")
+                .appendField(new Blockly.FieldTextInput("myVar"), "left")
+                .appendField(new Blockly.FieldDropdown([["==", "=="], ["!=", "!="], [">", ">"], ["<", "<"], [">=", ">="], ["<=", "<="]]), "op")
+                .appendField(new Blockly.FieldTextInput("0"), "right");
+            this.appendStatementInput("THEN").setCheck("Effect").appendField("then");
+            this.appendStatementInput("ELSE").setCheck("Effect").appendField("else");
+            this.setPreviousStatement(true, "Effect");
+            this.setNextStatement(true, "Effect");
+            this.setColour("#8B5CF6");
+            this.setTooltip("Compares a variable or literal ('left') to another variable or literal ('right'), then runs the THEN or ELSE branch before continuing.");
+        }
+    };
 };
 
 /**

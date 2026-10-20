@@ -88,6 +88,24 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#9370DB',
         description: 'Declare a win for a specific side.',
         width: 320
+    },
+    {
+        id: 'modify-var',
+        type: 'effect',
+        label: 'modVar',
+        category: 'effects',
+        color: '#4169E1',
+        description: "Change a square variable's value (+=, -=, =).",
+        width: 400
+    },
+    {
+        id: 'if',
+        type: 'effect',
+        label: 'if',
+        category: 'effects',
+        color: '#8B5CF6',
+        description: 'Compare a variable (or literal) to a value or another variable, then branch into THEN or ELSE.',
+        width: 440
     }
 ];
 
@@ -239,6 +257,15 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             const nextBlock = block.getNextBlock();
             if (nextBlock) {
                 blockDef.childId = nextBlock.id;
+            }
+
+            // 'if' blocks keep their THEN/ELSE branch bodies in statement inputs rather
+            // than the main next-connection, so they need their own lookup.
+            if (block.type === 'if') {
+                const thenBlock = block.getInputTargetBlock('THEN');
+                const elseBlock = block.getInputTargetBlock('ELSE');
+                if (thenBlock) (blockDef as any).thenChildId = thenBlock.id;
+                if (elseBlock) (blockDef as any).elseChildId = elseBlock.id;
             }
 
             return blockDef;
