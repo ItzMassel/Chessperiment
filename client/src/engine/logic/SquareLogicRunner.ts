@@ -7,6 +7,10 @@ export interface SquareLogic {
     logic: any[];
     variables: Record<string, any>;
     squareId: Square;
+    // Bounds for variables created as "random" in the square editor. A variable listed
+    // here re-rolls to a fresh integer in [min, max] every time logic reads it, instead
+    // of returning a fixed stored value (see getVariableValue below).
+    randomVars?: Record<string, { min: number, max: number }>;
 }
 
 export class SquareLogicRunner {
@@ -144,7 +148,7 @@ export class SquareLogicRunner {
 
             case 'modify-var':
                 if (vals.varName && vals.op && vals.value !== undefined) {
-                    const current = squareLogic.variables[vals.varName] || 0;
+                    const current = this.getVariableValue(squareLogic, vals.varName) || 0;
                     const val = Number(vals.value);
                     if (!isNaN(val)) {
                         let next = Number(current);
@@ -162,7 +166,7 @@ export class SquareLogicRunner {
                 // 'left'/'right' may each be a literal, or the name of an existing square variable.
                 const resolveOperand = (raw: any) =>
                     (squareLogic.variables && Object.prototype.hasOwnProperty.call(squareLogic.variables, raw))
-                        ? squareLogic.variables[raw]
+                        ? this.getVariableValue(squareLogic, raw)
                         : raw;
                 const left = resolveOperand(block.socketValues?.left);
                 const right = resolveOperand(block.socketValues?.right);
@@ -216,16 +220,33 @@ export class SquareLogicRunner {
             if (val && typeof val === 'object' && (val as any).type === 'variable') {
                 const varObj = val as any;
                 const varName = varObj.name;
-                
+
                 if (varObj.variableOnly || key === 'varName') {
                     resolved[key] = varName;
                 } else {
-                    resolved[key] = squareLogic.variables[varName] !== undefined ? squareLogic.variables[varName] : 0;
+                    resolved[key] = this.getVariableValue(squareLogic, varName);
                 }
             } else {
                 resolved[key] = val;
             }
         }
         return resolved;
+    }
+
+    // Reads a square variable's current value. A variable flagged as random in
+    // randomVars re-rolls to a fresh integer in [min, max] on every read (and the roll is
+    // written back into squareLogic.variables so anything inspecting the stored value,
+    // e.g. saving or debugging, sees the value that was actually used), rather than
+    // returning the same stored number every time it's used.
+    private static getVariableValue(squareLogic: SquareLogic, varName: string): any {
+        const bounds = squareLogic.randomVars?.[varName];
+        if (bounds) {
+            const lo = Math.min(Number(bounds.min) || 0, Number(bounds.max) || 0);
+            const hi = Math.max(Number(bounds.min) || 0, Number(bounds.max) || 0);
+            const rolled = lo + Math.floor(Math.random() * (hi - lo + 1));
+            squareLogic.variables[varName] = rolled;
+            return rolled;
+        }
+        return squareLogic.variables[varName] !== undefined ? squareLogic.variables[varName] : 0;
     }
 }

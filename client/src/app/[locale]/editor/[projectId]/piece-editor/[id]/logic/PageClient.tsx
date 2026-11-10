@@ -20,7 +20,8 @@ import {
     writeBlockSocketValue,
     initializeDefaultSockets,
     ensurePresetVariables,
-    migrateLegacyLogicIntoWorkspace
+    migrateLegacyLogicIntoWorkspace,
+    createRandomNumberBlock
 } from './blocklyDefinitions';
 
 const SAVE_DEBOUNCE_MS = 2000;
@@ -246,6 +247,18 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         return block;
     }, []);
 
+    const spawnRandomNumberBlock = useCallback((x?: number, y?: number) => {
+        if (!workspaceRef.current) return;
+        const ws = workspaceRef.current;
+        const block = createRandomNumberBlock(ws, 1, 6);
+        if (x !== undefined && y !== undefined) {
+            const workspacePoint = Blockly.utils.svgMath.screenToWsCoordinates(ws, new Blockly.utils.Coordinate(x, y));
+            block.moveTo(workspacePoint);
+        } else {
+            block.moveBy(100, 100);
+        }
+    }, []);
+
     const spawnVariableBlock = useCallback((variableName: string, x?: number, y?: number) => {
         if (!workspaceRef.current) return;
         const ws = workspaceRef.current;
@@ -347,6 +360,12 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         setDragGhost(e, variableName, '#FF8C00', 160);
     };
 
+    const handleRandomNumberDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('randomNumber', 'true');
+        e.dataTransfer.effectAllowed = 'move';
+        setDragGhost(e, 'Random 1-6', '#C026D3', 160);
+    };
+
     const setDragGhost = (e: React.DragEvent, label: string, color: string, width: number) => {
         const ghost = document.createElement('div');
         ghost.style.position = 'absolute';
@@ -382,10 +401,13 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         e.preventDefault();
         const blockType = e.dataTransfer.getData('blockType');
         const variableName = e.dataTransfer.getData('variableName');
+        const isRandomNumber = e.dataTransfer.getData('randomNumber');
         if (blockType) {
             spawnBlock(blockType, e.clientX, e.clientY);
         } else if (variableName) {
             spawnVariableBlock(variableName, e.clientX, e.clientY);
+        } else if (isRandomNumber) {
+            spawnRandomNumberBlock(e.clientX, e.clientY);
         }
     };
 
@@ -468,6 +490,21 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Random Value</h3>
+                                    <button
+                                        draggable
+                                        onDragStart={handleRandomNumberDragStart}
+                                        onClick={() => spawnRandomNumberBlock()}
+                                        className="cursor-grab active:cursor-grabbing px-4 py-2 rounded-xl text-[11px] font-black uppercase bg-fuchsia-500/80 text-black shadow-lg border-b-4 border-black/20 hover:scale-105 transition-all"
+                                    >
+                                        🎲 Random Number
+                                    </button>
+                                    <p className="text-[10px] text-stone-500 mt-2 leading-tight">
+                                        Drop into any number field, then set its min/max directly on the block. It rerolls a new value every time that logic runs.
+                                    </p>
                                 </div>
 
                                 <div>
