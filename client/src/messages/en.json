@@ -1045,5 +1045,20 @@
         "updateSuccess": "Content updated!",
         "deleteSuccess": "Content deleted",
         "loadError": "Could not load published content"
+    },
+    "Bench": {
+        "title": "Bench",
+        "whiteBench": "White bench",
+        "blackBench": "Black bench",
+        "pieceCount": "{count, plural, one {# piece} other {# pieces}}",
+        "empty": "Nothing on the bench",
+        "editorHint": "Pieces on the bench start off the board. A player can drop one onto an empty square instead of making a move.",
+        "add": "Add the selected piece",
+        "addDisabled": "Pick a piece from the panel below first",
+        "remove": "Remove from bench",
+        "clear": "Clear bench",
+        "selectToDrop": "Pick an empty square to drop {piece}. A drop uses your turn.",
+        "dropLog": "Drop: {piece} → {square}",
+        "onlineNote": "The bench isn't available in online games yet, so its pieces are left out."
     }
 }

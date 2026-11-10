@@ -8,6 +8,7 @@ Feel free to contribute, you can take a look at the [issues](https://github.com/
 ## Features
 
 - **Board Editor** — Design custom boards with configurable dimensions, square or hex topologies, and active/inactive squares.
+- **Bench** — Keep pieces off the board at the start. In the Board Editor each side gets a bench; when playing (local games for now), a player can drop a bench piece onto an empty square instead of making a move.
 - **Piece Editor** — Create custom pieces with a Scratch-like visual programming editor (Blockly). Define triggers (`on-move`, `on-capture`, `on-threat`, `on-turn-start`) and actions (`kill`, `transform`, `explode`, `win`, `prevent`, etc.).
 - **Custom Game Engine** — Supports standard chess, custom movement rules, hex grids, piece state variables (cooldown, charge, mode), multi-cell pieces, square logic, and a full effect system.
 - **Online Multiplayer** — Real-time gameplay via Socket.IO with room-based matchmaking, chat, and spectator support.

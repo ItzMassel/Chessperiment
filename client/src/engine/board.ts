@@ -8,6 +8,9 @@ import { HexGrid } from '../lib/grid/HexGrid';
 import { SquareLogicRunner, SquareLogic } from './logic/SquareLogicRunner';
 import { BoardTopology } from './topology';
 
+/** Stand-in "square" for pieces that are not on the board (bench pieces, drop origin). */
+export const BENCH_SQUARE: Square = 'bench';
+
 export class BoardClass {
     private stateManager: BoardStateManager;
     public readonly width: number;
@@ -19,7 +22,7 @@ export class BoardClass {
     private squareStates: Record<Square, SquareState> = {}; // Runtime square state
     public topology?: BoardTopology; // For serialization support
 
-    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square', squareLogic?: Record<Square, SquareLogic>) {
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square', squareLogic?: Record<Square, SquareLogic>, benchPieces?: Piece[]) {
         this.width = width;
         this.height = height;
         this.gridType = gridType;
@@ -30,6 +33,9 @@ export class BoardClass {
         );
         this.stateManager = new BoardStateManager(squares, activeSquares);
         if (squareLogic) this.squareLogic = squareLogic;
+        if (benchPieces) {
+            for (const piece of benchPieces) this.addToBench(piece);
+        }
     }
 
     addEffectListener(fn: (effect: { type: string, position: Square, params?: Record<string, any> }) => void) {
@@ -436,41 +442,96 @@ export class BoardClass {
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
             this._moveCastlingRook(from, to, pieceToMove, kingHadMoved);
 
-            // Execute Square Logic: on-step
-            const squareCtx = {
-                piece: pieceToMove,
-                from, to,
-                movePrevented: false,
-                gameWon: false,
-                winner: null as string | null
-            };
-            SquareLogicRunner.execute(to, 'on-step', squareCtx, this);
-            
-            // Execute proximity logic for all squares that have it
-            for (const s in this.squareLogic) {
-                SquareLogicRunner.execute(s as Square, 'on-proximity', squareCtx, this);
-            }
+            this.runPostMoveHooks(pieceToMove, from, to);
 
-            if (squareCtx.gameWon) {
-                this.triggerEffect('win', squareCtx.winner === 'white' ? 'white_win' as any : 'black_win' as any);
-            }
-            
-            // Turn Lifecycle: Update all custom pieces for the player whose turn it is now
-            const currentTurn = this.stateManager.turn;
-            const allSquares = this.getSquares();
-            for (const s in allSquares) {
-                const p = allSquares[s as Square];
-                if (p && (p as any).isCustom && p.color === currentTurn) {
-                    (p as any).updateTurnState(this);
-                }
-            }
-
-            // Threat Detection
-            this.checkThreats();
-            
             return true;
         }
         return false;
+    }
+
+    /**
+     * Everything that happens after a piece has landed on `to` and the turn has
+     * passed: square logic, the next player's turn-state update and threat
+     * detection. Shared by regular moves and bench drops.
+     */
+    private runPostMoveHooks(piece: Piece, from: Square, to: Square): void {
+        // Execute Square Logic: on-step
+        const squareCtx = {
+            piece,
+            from, to,
+            movePrevented: false,
+            gameWon: false,
+            winner: null as string | null
+        };
+        SquareLogicRunner.execute(to, 'on-step', squareCtx, this);
+
+        // Execute proximity logic for all squares that have it
+        for (const s in this.squareLogic) {
+            SquareLogicRunner.execute(s as Square, 'on-proximity', squareCtx, this);
+        }
+
+        if (squareCtx.gameWon) {
+            this.triggerEffect('win', squareCtx.winner === 'white' ? 'white_win' as any : 'black_win' as any);
+        }
+
+        // Turn Lifecycle: Update all custom pieces for the player whose turn it is now
+        const currentTurn = this.stateManager.turn;
+        const allSquares = this.getSquares();
+        for (const s in allSquares) {
+            const p = allSquares[s as Square];
+            if (p && (p as any).isCustom && p.color === currentTurn) {
+                (p as any).updateTurnState(this);
+            }
+        }
+
+        // Threat Detection
+        this.checkThreats();
+    }
+
+    // ── Bench ────────────────────────────────────────────────────────────────
+    // The bench holds pieces that are in the game but not on the board yet. A
+    // player brings one in by dropping it onto an empty square instead of moving.
+
+    /** Pieces waiting on the bench (all of them, or only one color's). */
+    getBench(color?: 'white' | 'black'): Piece[] {
+        return this.stateManager.getBench(color) as Piece[];
+    }
+
+    /** Put a piece on the bench. Its position is cleared since it is off the board. */
+    addToBench(piece: Piece): void {
+        piece.position = BENCH_SQUARE;
+        this.stateManager.addToBench(piece);
+    }
+
+    /**
+     * A pawn dropped on its promotion rank could never promote or move, so square
+     * boards don't allow it. (Hex boards have no fixed promotion rank.)
+     */
+    isDeadPawnDrop(piece: Piece, to: Square): boolean {
+        if (this.gridType !== 'square' || piece.type.toLowerCase() !== 'pawn') return false;
+        const row = toCoords(to)[1];
+        return piece.color === 'white' ? row === this.height - 1 : row === 0;
+    }
+
+    /**
+     * Drop a bench piece onto an empty, active square. This uses up the turn like
+     * a move. Only checks that the drop is physically possible; whether it is
+     * *allowed* (turn order, king safety, ...) is up to ValidatorClass.
+     */
+    dropPiece(pieceId: string, to: Square): boolean {
+        const piece = this.stateManager.getBench().find(p => p.id === pieceId) as Piece | undefined;
+        if (!piece) return false;
+        if (!this.isActive(to) || this.getPiece(to) !== null) return false;
+
+        this.saveSnapshot();
+        this.stateManager.removeFromBench(pieceId);
+        this.stateManager.setPiece(to, piece);
+        piece.position = to;
+        piece.hasMoved = true;
+        this.stateManager.addMoveToHistory(BENCH_SQUARE, to, piece.id);
+
+        this.runPostMoveHooks(piece, BENCH_SQUARE, to);
+        return true;
     }
 
     // RulesEngine._isCastling already validated the move; here we only relocate the rook.
@@ -569,6 +630,7 @@ export class BoardClass {
         turn: 'white' | 'black';
         pieceVariables: Record<string, Record<string, number>>;
         sharedPieces: Record<Square, Piece[]>;
+        bench: Piece[];
     }> = [];
 
     private saveSnapshot() {
@@ -597,11 +659,14 @@ export class BoardClass {
             ) as Piece[];
         }
 
+        const benchCopy = this.getBench().map(p => (p as any).clone ? (p as any).clone() : p) as Piece[];
+
         this.snapshots.push({
             squares: squaresCopy,
             turn: this.getTurn(),
             pieceVariables,
-            sharedPieces: sharedCopy
+            sharedPieces: sharedCopy,
+            bench: benchCopy
         });
     }
 
@@ -629,6 +694,9 @@ export class BoardClass {
                     }
                 }
             }
+
+            // Restore the bench (a drop takes a piece off it)
+            if (snapshot.bench) this.stateManager.setBench(snapshot.bench);
 
             // Restore variables
             const currentSquares = this.getSquares();

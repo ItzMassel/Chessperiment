@@ -1045,5 +1045,20 @@
         "updateSuccess": "Inhalt aktualisiert!",
         "deleteSuccess": "Inhalt gelöscht",
         "loadError": "Veröffentlichte Inhalte konnten nicht geladen werden"
+    },
+    "Bench": {
+        "title": "Bank",
+        "whiteBench": "Weiße Bank",
+        "blackBench": "Schwarze Bank",
+        "pieceCount": "{count, plural, one {# Figur} other {# Figuren}}",
+        "empty": "Nichts auf der Bank",
+        "editorHint": "Figuren auf der Bank stehen am Anfang nicht auf dem Brett. Man kann sie statt eines Zuges auf ein leeres Feld setzen.",
+        "add": "Ausgewählte Figur hinzufügen",
+        "addDisabled": "Wähle zuerst unten im Panel eine Figur aus",
+        "remove": "Von der Bank nehmen",
+        "clear": "Bank leeren",
+        "selectToDrop": "Wähle ein leeres Feld, um {piece} zu setzen. Das Setzen zählt als dein Zug.",
+        "dropLog": "Gesetzt: {piece} → {square}",
+        "onlineNote": "Die Bank gibt es in Online-Partien noch nicht, ihre Figuren fehlen deshalb."
     }
 }

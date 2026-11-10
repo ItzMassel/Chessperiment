@@ -11,11 +11,19 @@ import PieceRenderer from '@/components/game/PieceRenderer';
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';
 import { GridType, Coordinate } from '@/lib/grid/GridType';
+import { BenchTray, BenchSlot } from '@/components/game/BenchTray';
+import type { BenchPiece } from '@/types/Project';
 
 const gridMap: Record<string, GridType> = {
     square: new SquareGrid(),
     hex: new HexGrid()
 };
+
+// Looks a piece up in the project's custom pieces (by key, id/name or name+color).
+const findCustomPiece = (collection: Record<string, any> | undefined, type: string, color: string) =>
+    collection?.[`${type}_${color}`] ||
+    collection?.[type] ||
+    Object.values(collection || {}).find((p: any) => p.name === type && p.color === color);
 
 const getPieceScale = (type: string) => {
     switch (type.toLowerCase()) {
@@ -33,7 +41,7 @@ interface BoardEditorProps {
     editMode: EditMode;
     selectedPiece: { type: string, color: string, movement?: 'run' | 'jump' };
     boardStyle: string;
-    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>, gridType: 'square' | 'hex') => void;
+    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>, gridType: 'square' | 'hex', benchPieces: BenchPiece[]) => void;
     customCollection: Record<string, any>;
     initialData?: {
         rows: number;
@@ -41,6 +49,7 @@ interface BoardEditorProps {
         gridType?: 'square' | 'hex';
         activeSquares: string[];
         placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>;
+        benchPieces?: BenchPiece[];
     };
     onDeselect?: () => void;
 }
@@ -78,12 +87,7 @@ const EditorSquare = React.memo(({
     coord: Coordinate
 }) => {
     const grid = gridMap[gridType];
-    const lookupKey = piece ? `${piece.type}_${piece.color}` : '';
-    const customPiece = piece ? (
-        customCollection?.[lookupKey] ||
-        customCollection?.[piece.type] ||
-        Object.values(customCollection || {}).find((p: any) => p.name === piece.type && p.color === piece.color)
-    ) : undefined;
+    const customPiece = piece ? findCustomPiece(customCollection, piece.type, piece.color) : undefined;
     const pixels = customPiece?.pixels;
     const image = customPiece?.image;
 
@@ -160,6 +164,7 @@ const EditorSquare = React.memo(({
 
 export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection, initialData, onDeselect }: BoardEditorProps) {
     const t = useTranslations('Editor.Board');
+    const tBench = useTranslations('Bench');
     const [rows, setRows] = useState<number>(() => initialData?.rows || Number(localStorage.getItem('rows') || 8));
     const [cols, setCols] = useState<number>(() => initialData?.cols || Number(localStorage.getItem('cols') || 8));
     const [gridType, setGridType] = useState<'square' | 'hex'>(() => initialData?.gridType || (localStorage.getItem('gridType') as 'square' | 'hex') || 'square');
@@ -173,6 +178,10 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             return {};
         }
     });
+
+    // Pieces that start off the board. Kept in a ref too so history entries never see a stale list.
+    const [benchPieces, setBenchPieces] = useState<BenchPiece[]>(() => initialData?.benchPieces ?? []);
+    const benchPiecesRef = useRef<BenchPiece[]>(benchPieces);
 
     const [activeSquares, setActiveSquares] = useState<Set<string>>(() => {
         if (initialData?.activeSquares) return new Set(initialData.activeSquares);
@@ -190,6 +199,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         rows: number;
         cols: number;
         gridType: 'square' | 'hex';
+        benchPieces: BenchPiece[];
     }[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [symmetry, setSymmetry] = useState<'none' | 'horizontal' | 'vertical' | 'rotational'>('none');
@@ -199,14 +209,16 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         aSquares: Set<string>,
         r: number,
         c: number,
-        gt: 'square' | 'hex'
+        gt: 'square' | 'hex',
+        bench: BenchPiece[] = benchPiecesRef.current
     ) => {
         const newState = {
             placedPieces: JSON.parse(JSON.stringify(pPieces)),
             activeSquares: new Set(aSquares),
             rows: r,
             cols: c,
-            gridType: gt
+            gridType: gt,
+            benchPieces: JSON.parse(JSON.stringify(bench))
         };
 
         setHistory(prev => {
@@ -229,6 +241,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         setRows(prevState.rows);
         setCols(prevState.cols);
         setGridType(prevState.gridType);
+        benchPiecesRef.current = prevState.benchPieces;
+        setBenchPieces(prevState.benchPieces);
         setHistoryIndex(prev => prev - 1);
     };
 
@@ -240,6 +254,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         setRows(nextState.rows);
         setCols(nextState.cols);
         setGridType(nextState.gridType);
+        benchPiecesRef.current = nextState.benchPieces;
+        setBenchPieces(nextState.benchPieces);
         setHistoryIndex(prev => prev + 1);
     };
 
@@ -337,11 +353,11 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             localStorage.setItem('placedPieces', JSON.stringify(placedPieces));
             localStorage.setItem('activeSquares', JSON.stringify(Array.from(activeSquares)));
 
-            generateBoardData(rows, cols, activeSquares, placedPieces, gridType);
+            generateBoardData(rows, cols, activeSquares, placedPieces, gridType, benchPieces);
         }, 500); // 500ms debounce
 
         return () => clearTimeout(timer);
-    }, [rows, cols, gridType, placedPieces, activeSquares, generateBoardData]);
+    }, [rows, cols, gridType, placedPieces, activeSquares, benchPieces, generateBoardData]);
 
     const [windowSize, setWindowSize] = useState({ w: 1000, h: 800 });
     useEffect(() => {
@@ -795,6 +811,36 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         saveToHistory({}, activeSquares, rows, cols, gridType);
     };
 
+    // --- Bench ---
+    const applyBench = (next: BenchPiece[]) => {
+        benchPiecesRef.current = next;
+        setBenchPieces(next);
+        saveToHistory(placedPiecesRef.current, activeSquaresRef.current, rowsRef.current, colsRef.current, gridTypeRef.current, next);
+    };
+
+    // The tray decides the color; the piece type comes from the palette (selection or drag).
+    const addToBench = (color: 'white' | 'black', source: { type?: string; movement?: 'run' | 'jump' } = selectedPiece) => {
+        if (!source.type) return;
+        applyBench([
+            ...benchPiecesRef.current,
+            { type: String(source.type), color, ...(source.movement ? { movement: source.movement } : {}) }
+        ]);
+    };
+
+    const removeFromBench = (index: number) => {
+        applyBench(benchPiecesRef.current.filter((_, i) => i !== index));
+    };
+
+    const handleBenchDrop = (color: 'white' | 'black', e: React.DragEvent) => {
+        e.preventDefault();
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('piece'));
+            if (data?.type) addToBench(color, data);
+        } catch (err) {
+            console.error('Bench drop error:', err);
+        }
+    };
+
     const [showHexGuide, setShowHexGuide] = useState(false);
 
     const HexGuide = () => (
@@ -1133,6 +1179,91 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     {showHexGuide && <HexGuide />}
                 </AnimatePresence>
             </div>
+
+            {/* Bench: pieces that start off the board */}
+            <section
+                data-tutorial-target="bench"
+                className="relative z-20 mt-16 w-full max-w-3xl px-4 flex flex-col gap-2"
+                style={{ marginBottom: 'calc(34vh + 1.5rem)' }}
+            >
+                <div className="flex items-center justify-between gap-3 px-1">
+                    <div className="min-w-0">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-stone-700 dark:text-stone-200">{tBench('title')}</h3>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-snug">{tBench('editorHint')}</p>
+                    </div>
+                    {benchPieces.length > 0 && (
+                        <button
+                            onClick={() => applyBench([])}
+                            className="shrink-0 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                        >
+                            {tBench('clear')}
+                        </button>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(['white', 'black'] as const).map(color => {
+                        const canAdd = editMode === 'pieces' && !!selectedPiece.type;
+                        const mine = benchPieces
+                            .map((piece, index) => ({ piece, index }))
+                            .filter(({ piece }) => piece.color === color);
+                        return (
+                            <BenchTray
+                                key={color}
+                                color={color}
+                                label={tBench(color === 'white' ? 'whiteBench' : 'blackBench')}
+                                count={tBench('pieceCount', { count: mine.length })}
+                                emptyText={tBench('empty')}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => handleBenchDrop(color, e)}
+                            >
+                                {mine.map(({ piece, index }) => {
+                                    const custom = findCustomPiece(customCollection, piece.type, piece.color);
+                                    return (
+                                        <BenchSlot
+                                            key={index}
+                                            size={44}
+                                            title={custom?.name || piece.type}
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                removeFromBench(index);
+                                            }}
+                                            corner={
+                                                <button
+                                                    aria-label={tBench('remove')}
+                                                    title={tBench('remove')}
+                                                    onClick={() => removeFromBench(index)}
+                                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white items-center justify-center hidden group-hover:flex shadow"
+                                                >
+                                                    <X size={10} strokeWidth={3} />
+                                                </button>
+                                            }
+                                        >
+                                            <PieceRenderer
+                                                type={custom ? custom.name : piece.type}
+                                                color={piece.color}
+                                                size={36}
+                                                boardStyle={boardStyle}
+                                                pixels={custom?.pixels}
+                                                image={custom?.image}
+                                            />
+                                        </BenchSlot>
+                                    );
+                                })}
+                                <BenchSlot
+                                    size={44}
+                                    disabled={!canAdd}
+                                    title={canAdd ? tBench('add') : tBench('addDisabled')}
+                                    onClick={() => addToBench(color)}
+                                    className="border-dashed"
+                                >
+                                    <Plus size={18} className="text-stone-400 dark:text-white/40" />
+                                </BenchSlot>
+                            </BenchTray>
+                        );
+                    })}
+                </div>
+            </section>
         </div>
     );
 }
