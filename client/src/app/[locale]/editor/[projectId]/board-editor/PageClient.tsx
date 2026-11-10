@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Project } from '@/types/Project';
+import { Project, BenchPiece } from '@/types/Project';
 import { useProject } from '@/hooks/useProject';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -69,13 +69,14 @@ export default function PageClient({ projectId }: PageClientProps) {
         return collection;
     }, [project?.customPieces]);
 
-    const handleGenerateBoardData = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>, gridType: 'square' | 'hex') => {
+    const handleGenerateBoardData = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>, gridType: 'square' | 'hex', benchPieces: BenchPiece[]) => {
         await saveBoard({
             rows,
             cols,
             gridType,
             activeSquares: Array.from(activeSquares),
-            placedPieces: placedPieces as any
+            placedPieces: placedPieces as any,
+            benchPieces
         });
 
         if (!tutorial) return;
@@ -241,7 +242,8 @@ export default function PageClient({ projectId }: PageClientProps) {
                         cols: project.cols,
                         gridType: project.gridType || 'square',
                         activeSquares: project.activeSquares,
-                        placedPieces: project.placedPieces
+                        placedPieces: project.placedPieces,
+                        benchPieces: project.benchPieces || []
                     }}
                 />
             </main>

@@ -7,12 +7,34 @@ export class BoardStateManager {
     private activeSquares: Set<Square> | null;
     // Extra pieces sharing a square (square sharing mechanic)
     private sharedPieces: Record<Square, PieceState[]> = {};
+    // Pieces waiting off the board. They are not part of `squares` until dropped.
+    private bench: PieceState[] = [];
 
     constructor(initialSquares: Record<Square, PieceState | null>, activeSquares?: Square[]) {
         this.squares = initialSquares;
         this.history = [];
         this.turn = "white";
         this.activeSquares = activeSquares ? new Set(activeSquares) : null;
+    }
+
+    /** Pieces on the bench, optionally only those of one color. Order is preserved. */
+    getBench(color?: string): PieceState[] {
+        return color ? this.bench.filter(p => p.color === color) : [...this.bench];
+    }
+
+    setBench(pieces: PieceState[]) {
+        this.bench = [...pieces];
+    }
+
+    addToBench(piece: PieceState) {
+        if (!this.bench.find(p => p.id === piece.id)) this.bench.push(piece);
+    }
+
+    /** Takes a piece off the bench and returns it, or null if it is not there. */
+    removeFromBench(pieceId: string): PieceState | null {
+        const index = this.bench.findIndex(p => p.id === pieceId);
+        if (index === -1) return null;
+        return this.bench.splice(index, 1)[0];
     }
 
     getSharedPieces(square: Square): PieceState[] {
@@ -104,6 +126,9 @@ export class BoardStateManager {
                 typeof (p as any).clone === 'function' ? (p as any).clone() : { ...p }
             );
         }
+        clonedManager.bench = this.bench.map(p =>
+            typeof (p as any).clone === 'function' ? (p as any).clone() : { ...p }
+        );
         return clonedManager;
     }
 }

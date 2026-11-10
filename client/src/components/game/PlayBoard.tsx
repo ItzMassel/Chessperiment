@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Game } from '@/engine/game';
-import { BoardClass } from '@/engine/board';
+import { BoardClass, BENCH_SQUARE } from '@/engine/board';
 import { Piece } from '@/engine/piece';
 import { isNotationMove } from '@/engine/vectorNotation';
 import { object_to_notation } from '@/lib/notations';
@@ -23,6 +23,8 @@ import { useSocket, useSocketConnection } from '@/context/SocketContext';
 
 import { useSession } from 'next-auth/react';
 import EngineToggleCard from '@/components/editor/EngineToggleCard';
+import { BenchTray, BenchSlot } from '@/components/game/BenchTray';
+import { useTranslations } from 'next-intl';
 
 // Draggable Piece Component
 const DraggablePiece = React.memo(({ piece, size, amIAtTurn }: { piece: Piece; size: number; amIAtTurn: boolean }) => {
@@ -60,6 +62,48 @@ const DraggablePiece = React.memo(({ piece, size, amIAtTurn }: { piece: Piece; s
         return null;
     }
 }, (prev, next) => prev.piece.id === next.piece.id && prev.piece.position === next.piece.position && prev.amIAtTurn === next.amIAtTurn);
+
+// A piece sitting on the bench. Click it to pick it up, or drag it onto an empty square.
+const DraggableBenchPiece = React.memo(({ piece, size, canUse, selected, title, onSelect }: {
+    piece: Piece; size: number; canUse: boolean; selected: boolean; title: string; onSelect: (id: string) => void;
+}) => {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `bench:${piece.id}`,
+        data: piece,
+        disabled: !canUse,
+    });
+
+    return (
+        <BenchSlot
+            ref={setNodeRef}
+            size={size + 8}
+            title={title}
+            selected={selected}
+            disabled={!canUse}
+            dragging={isDragging}
+            onClick={() => onSelect(piece.id)}
+            {...(canUse ? { ...attributes, ...listeners } : {})}
+        >
+            <PieceRenderer
+                type={piece.type}
+                color={piece.color}
+                size={size}
+                hasLogic={(piece as any).isCustom}
+                variables={(piece as any).variables}
+                pixels={(piece as any).isCustom ? (piece.color === 'white' ? (piece as any).pixelsWhite : (piece as any).pixelsBlack) : undefined}
+                image={(piece as any).image}
+            />
+        </BenchSlot>
+    );
+}, (prev, next) =>
+    prev.piece.id === next.piece.id && prev.canUse === next.canUse &&
+    prev.selected === next.selected && prev.title === next.title && prev.size === next.size);
+
+// What the history keeps for each position: the squares and the bench.
+type BoardSnapshot = { squares: Record<string, any>; bench: any[] };
+
+const takeSnapshot = (b: BoardClass): BoardSnapshot =>
+    JSON.parse(JSON.stringify({ squares: b.getSquares(), bench: b.getBench() }));
 
 // Helper to render a human-readable summary of move rules
 const VAR_LABELS: Record<string, string> = {
@@ -299,6 +343,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const [board, setBoard] = useState<BoardClass | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+    const [selectedBenchId, setSelectedBenchId] = useState<string | null>(null);
+    const tBench = useTranslations('Bench');
     const [activePiece, setActivePiece] = useState<Piece | null>(null);
     const [logs, setLogs] = useState<{ msg: string, type: 'info' | 'move' | 'effect' }[]>([]);
     const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: Square, params?: Record<string, any> }[]>([]);
@@ -321,7 +367,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     // History State
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
-    const [historySnapshots, setHistorySnapshots] = useState<Record<string, Piece | null>[]>([]);
+    const [historySnapshots, setHistorySnapshots] = useState<BoardSnapshot[]>([]);
     const [viewIndex, setViewIndex] = useState(0);
     const [copySuccess, setCopySuccess] = useState(false);
 
@@ -453,13 +499,19 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
             const normalizedSquareLogic = getNormalizedSquareLogic(activeProject);
 
+            // Bench pieces start off the board. (Online games don't support the bench yet.)
+            const benchPieces: Piece[] = isOnline ? [] : (activeProject.benchPieces || []).map((bp, i) =>
+                createPieceFromData(`bench_${i}_${bp.color}_${bp.type}`, bp.type, bp.color, BENCH_SQUARE, customPieces)
+            );
+
             const newBoard = new BoardClass(
                 initialSquares,
                 activeSquares.length > 0 ? activeSquares.map((a: string) => toAlgebraic(a, actualHeight)) : undefined,
                 cols,
                 rows,
                 activeProject.gridType || 'square',
-                normalizedSquareLogic
+                normalizedSquareLogic,
+                benchPieces
             );
 
             const newGame = new Game(newBoard);
@@ -468,8 +520,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             setBoard(newGame.getBoard());
             boardRef.current = newGame.getBoard();
 
-            const initialSnapshot = JSON.parse(JSON.stringify(newGame.getBoard().getSquares()));
-            setHistorySnapshots([initialSnapshot]);
+            setHistorySnapshots([takeSnapshot(newGame.getBoard())]);
+            setSelectedBenchId(null);
 
             // Only clear local move history if the project ID has changed or we have no moves yet
             if (initializedProjectIdRef.current !== activeProject.id || moveHistory.length === 0) {
@@ -534,7 +586,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
         // Replay history
         const newMoves: string[] = [];
-        const newSnapshots = [historySnapshots[0] || JSON.parse(JSON.stringify(game.getBoard().getSquares()))];
+        const newSnapshots = [historySnapshots[0] || takeSnapshot(game.getBoard())];
 
         for (const moveStr of pendingHistory) {
             const parts = moveStr.split(' -> ');
@@ -543,7 +595,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                 const to = parts[1] as Square;
                 if (game.makeMove(from, to)) {
                     newMoves.push(moveStr);
-                    newSnapshots.push(JSON.parse(JSON.stringify(game.getBoard().getSquares())));
+                    newSnapshots.push(takeSnapshot(game.getBoard()));
                 }
             }
         }
@@ -653,7 +705,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                     addLog(`Opponent: ${moveDesc}`, 'move');
                     new Audio('/sounds/move-self.mp3').play().catch(() => { });
 
-                    const snapshot = JSON.parse(JSON.stringify(currentGame.getBoard().getSquares()));
+                    const snapshot = takeSnapshot(currentGame.getBoard());
                     setHistorySnapshots(prev => [...prev, snapshot]);
                     setMoveHistory(prev => [...prev, moveDesc]);
                     setViewIndex(prev => prev + 1);
@@ -722,7 +774,13 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             if (!g) return;
 
             const legalMoves = g.getLegalMoves(engineColor);
-            if (legalMoves.length > 0) {
+            const legalDrops = g.getLegalDrops(engineColor);
+            // Choose between "move" and "drop" first so a long bench doesn't swamp the few moves.
+            const useDrop = legalDrops.length > 0 && (legalMoves.length === 0 || Math.random() < 0.5);
+            if (useDrop) {
+                const drop = legalDrops[Math.floor(Math.random() * legalDrops.length)];
+                executeDrop(drop.pieceId, drop.to);
+            } else if (legalMoves.length > 0) {
                 const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
                 executeMove(move.from, move.to);
             }
@@ -736,9 +794,18 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
 
     const squares = useMemo(() => board ? board.getSquares() : {}, [board]);
     const currentTurn = board ? board.getTurn() : "white";
+    const bench = useMemo(() => board ? board.getBench() : [], [board]);
 
     // P0: Compute legal moves for the selected piece
     const highlightedSquares = useMemo(() => {
+        // A picked-up bench piece highlights every square it could be dropped on.
+        if (selectedBenchId && game && board) {
+            const benchPiece = board.getBench().find(p => p.id === selectedBenchId);
+            if (!benchPiece || (validationEnabled && benchPiece.color !== currentTurn)) return new Set<string>();
+            if (validationEnabled) return new Set<string>(game.getLegalDropSquares(selectedBenchId));
+            const live = game.getBoard();
+            return new Set<string>(Object.keys(live.getSquares()).filter(sq => live.isActive(sq) && !live.getPiece(sq)));
+        }
         if (!selectedSquare || !game || !board) return new Set<string>();
         const piece = board.getSquares()[selectedSquare];
         if (!piece) return new Set<string>();
@@ -747,7 +814,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         const legalMoves = game.getLegalMoves(piece.color);
         const movesFromSelected = legalMoves.filter(m => m.from === selectedSquare);
         return new Set(movesFromSelected.map(m => m.to));
-    }, [selectedSquare, game, board, currentTurn, validationEnabled, isOnline, myColor]);
+    }, [selectedSquare, selectedBenchId, game, board, currentTurn, validationEnabled, isOnline, myColor]);
 
     const addLog = useCallback((msg: string, type: 'info' | 'move' | 'effect' = 'info') => {
         setLogs(prev => [{ msg, type }, ...prev].slice(0, 50));
@@ -802,7 +869,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const jumpToSnapshot = (index: number) => {
         if (!historySnapshots[index] || !activeProject) return;
 
-        const snapshotSquares = historySnapshots[index];
+        const { squares: snapshotSquares, bench: snapshotBench } = historySnapshots[index];
         const hydratedSquares: Record<string, Piece | null> = {};
         const actualHeight = activeProject.rows || 8;
 
@@ -818,6 +885,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             hydratedSquares[sq] = piece;
         });
 
+        const hydratedBench: Piece[] = (snapshotBench || []).map((pData: any) => {
+            const piece = createPieceFromData(pData.id, pData.type, pData.color, BENCH_SQUARE, activeProject.customPieces || []);
+            if (pData.variables) (piece as any).variables = pData.variables;
+            return piece;
+        });
+
         const restoredBoard = new BoardClass(
             hydratedSquares,
             activeProject.activeSquares?.length
@@ -826,7 +899,8 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             activeProject.cols || 8,
             actualHeight,
             activeProject.gridType || 'square',
-            getNormalizedSquareLogic(activeProject)
+            getNormalizedSquareLogic(activeProject),
+            hydratedBench
         );
 
         const restoredGame = new Game(restoredBoard);
@@ -834,6 +908,7 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         gameRef.current = restoredGame;
         setBoard(restoredBoard);
         boardRef.current = restoredBoard;
+        setSelectedBenchId(null);
         setViewIndex(index);
     };
 
@@ -841,6 +916,17 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         if (!squares) return;
         if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
+
+        const activeId = String(e.active.id);
+        if (activeId.startsWith('bench:')) {
+            const benchPiece = bench.find(p => `bench:${p.id}` === activeId);
+            if (benchPiece && canUseBench(benchPiece)) {
+                setActivePiece(benchPiece);
+                setSelectedSquare(null);
+                setSelectedBenchId(benchPiece.id);
+            }
+            return;
+        }
 
         const piece = squares[e.active.id as Square];
         if (isOnline) {
@@ -852,6 +938,73 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             setActivePiece(piece);
             setSelectedSquare(e.active.id as Square);
         }
+    };
+
+    // Name to show for a piece in logs and tooltips (custom pieces store an id as their type).
+    const pieceLabel = (piece: Piece): string => {
+        const proto = activeProject?.customPieces?.find((cp: any) => cp.id === piece.type || cp.name === piece.type);
+        if (proto?.name) return proto.name;
+        return piece.type.charAt(0).toUpperCase() + piece.type.slice(1);
+    };
+
+    // After every move or drop: has the game ended?
+    const announceStatus = (g: Game) => {
+        const status = g.getGameStatus();
+        if (status === 'checkmate') {
+            const loser = g.getTurn();
+            const winner = loser === 'white' ? 'Black' : 'White';
+            setGameResultMessage(`Checkmate! ${winner} wins!`);
+            setGameOver(true);
+            addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
+            new Audio('/sounds/game-end.mp3').play().catch(() => { });
+        } else if (status === 'stalemate') {
+            setGameResultMessage('Stalemate! Draw!');
+            setGameOver(true);
+            addLog(`[STALEMATE] Draw!`, 'effect');
+            new Audio('/sounds/game-end.mp3').play().catch(() => { });
+        }
+    };
+
+    // Can this bench piece be picked up right now?
+    const canUseBench = (piece: Piece) =>
+        !isOnline && !gameOver && !waitingForOpponent &&
+        viewIndex === historySnapshots.length - 1 &&
+        (!validationEnabled || piece.color === currentTurn);
+
+    // Put a bench piece on the board. Like a move, this uses up the turn.
+    const executeDrop = (pieceId: string, to: Square): boolean => {
+        if (!game || !board || gameOver || isOnline) return false;
+        const benchPiece = game.getBoard().getBench().find(p => p.id === pieceId);
+        if (!benchPiece) return false;
+        const label = pieceLabel(benchPiece);
+
+        const success = validationEnabled ? game.dropPiece(pieceId, to) : game.forceDrop(pieceId, to);
+        if (!success) {
+            console.warn(`[Engine] Drop rejected: ${label} -> ${to}`);
+            return false;
+        }
+
+        addLog(tBench('dropLog', { piece: label, square: to }), 'move');
+        new Audio('/sounds/move-self.mp3').play().catch(() => { });
+
+        const snapshot = takeSnapshot(game.getBoard());
+        setHistorySnapshots(prev => [...prev, snapshot]);
+        setMoveHistory(prev => [...prev, `${label} @ ${to}`]);
+        setViewIndex(prev => prev + 1);
+
+        announceStatus(game);
+
+        const newBoard = game.getBoard().clone();
+        setBoard(newBoard);
+        boardRef.current = newBoard;
+        setSelectedBenchId(null);
+        setSelectedSquare(null);
+        return true;
+    };
+
+    const handleBenchSelect = (pieceId: string) => {
+        setSelectedSquare(null);
+        setSelectedBenchId(prev => prev === pieceId ? null : pieceId);
     };
 
     const executeMove = (from: Square, to: Square) => {
@@ -878,27 +1031,12 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             const sound = new Audio('/sounds/move-self.mp3');
             sound.play().catch(() => { });
 
-            const snapshot = JSON.parse(JSON.stringify(game.getBoard().getSquares()));
+            const snapshot = takeSnapshot(game.getBoard());
             setHistorySnapshots(prev => [...prev, snapshot]);
             setMoveHistory(prev => [...prev, moveDesc]);
             setViewIndex(prev => prev + 1);
 
-            {
-                const status = game.getGameStatus();
-                if (status === 'checkmate') {
-                    const loser = game.getTurn();
-                    const winner = loser === 'white' ? 'Black' : 'White';
-                    setGameResultMessage(`Checkmate! ${winner} wins!`);
-                    setGameOver(true);
-                    addLog(`[CHECKMATE] ${winner} wins!`, 'effect');
-                    new Audio('/sounds/game-end.mp3').play().catch(() => { });
-                } else if (status === 'stalemate') {
-                    setGameResultMessage('Stalemate! Draw!');
-                    setGameOver(true);
-                    addLog(`[STALEMATE] Draw!`, 'effect');
-                    new Audio('/sounds/game-end.mp3').play().catch(() => { });
-                }
-            }
+            announceStatus(game);
         } else {
             console.warn(`[Engine] Move rejected or prevented: ${from} -> ${to}`);
         }
@@ -912,6 +1050,13 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const handleSquareClick = (pos: Square) => {
         if (gameOver) return;
         if (viewIndex !== historySnapshots.length - 1) return;
+
+        // A bench piece is picked up: a click on one of its target squares drops it there.
+        // Any other click just puts it down again and carries on as a normal click.
+        if (selectedBenchId) {
+            if (highlightedSquares.has(pos) && executeDrop(selectedBenchId, pos)) return;
+            setSelectedBenchId(null);
+        }
 
         if (isOnline) {
             if (selectedSquare) {
@@ -976,6 +1121,11 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
         setActivePiece(null);
 
         const { active, over } = e;
+        if (String(active.id).startsWith('bench:')) {
+            if (over) executeDrop(String(active.id).slice('bench:'.length), over.id as Square);
+            setSelectedBenchId(null);
+            return;
+        }
         if (over && active.id !== over.id) {
             executeMove(active.id as Square, over.id as Square);
         }
@@ -1079,6 +1229,38 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
     const allFiles = Array.from({ length: bW }, (_, i) => String.fromCharCode(97 + i));
     const allRanks = Array.from({ length: bH }, (_, i) => String(bH - i));
 
+    // The bench is shown whenever the project has one (and the game isn't online, see onlineNote).
+    const projectHasBench = (activeProject.benchPieces?.length ?? 0) > 0;
+    const showBench = !isOnline && projectHasBench;
+    const selectedBench = selectedBenchId ? bench.find(p => p.id === selectedBenchId) ?? null : null;
+
+    const renderBench = (color: 'white' | 'black') => {
+        const pieces = bench.filter(p => p.color === color);
+        return (
+            // Width 0 + min-width 100%: as wide as the board, but never wider than it.
+            <div style={{ width: 0, minWidth: '100%' }}>
+                <BenchTray
+                    color={color}
+                    label={tBench(color === 'white' ? 'whiteBench' : 'blackBench')}
+                    count={tBench('pieceCount', { count: pieces.length })}
+                    emptyText={tBench('empty')}
+                >
+                    {pieces.map(piece => (
+                        <DraggableBenchPiece
+                            key={piece.id}
+                            piece={piece}
+                            size={40}
+                            canUse={canUseBench(piece)}
+                            selected={selectedBenchId === piece.id}
+                            title={pieceLabel(piece)}
+                            onSelect={handleBenchSelect}
+                        />
+                    ))}
+                </BenchTray>
+            </div>
+        );
+    };
+
     const isFlipped = myColor === 'black';
     const files = isFlipped ? [...allFiles].reverse() : allFiles;
     const ranks = isFlipped ? [...allRanks].reverse() : allRanks;
@@ -1163,6 +1345,10 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                         </div>
                     )}
 
+                    {isOnline && projectHasBench && (
+                        <p className="mb-3 max-w-sm text-center text-[11px] font-bold text-stone-400">{tBench('onlineNote')}</p>
+                    )}
+
                     <DndContext
                         sensors={sensors}
                         onDragStart={handleDragStart}
@@ -1173,8 +1359,13 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                             },
                         }}
                     >
-                        <div className="relative shadow-2xl rounded-xl border-8 border-stone-800 bg-stone-800 shadow-stone-950/50 overflow-visible transition-all duration-300"
+                        <div className="flex flex-col items-center gap-3 transition-all duration-300"
                             style={{ transform: `scale(${zoom})` }}>
+
+                        {/* Black's bench sits above the board, White's below it */}
+                        {showBench && renderBench('black')}
+
+                        <div className="relative shadow-2xl rounded-xl border-8 border-stone-800 bg-stone-800 shadow-stone-950/50 overflow-visible">
 
                             {/* Hex Board Renderer */}
                             {gridType === 'hex' ? (
@@ -1261,6 +1452,15 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
                                     />
                                 )}
                             </AnimatePresence>
+                        </div>
+
+                        {showBench && renderBench('white')}
+
+                        {selectedBench && (
+                            <p className="text-[11px] font-bold text-amber-500 text-center">
+                                {tBench('selectToDrop', { piece: pieceLabel(selectedBench) })}
+                            </p>
+                        )}
                         </div>
 
                         <DragOverlay>
