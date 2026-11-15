@@ -106,13 +106,13 @@ export default function PageClient() {
 
     const [isCreating, setIsCreating] = useState(false);
     // /editor?mode=piece (from the "Piece Editor"/"Board Editor" menu links) opens the piece editor directly
-    const [directMode, setDirectMode] = useState<'piece' | 'board' | null>(null);
+    const [directMode, setDirectMode] = useState<'piece' | 'board' | 'square' | null>(null);
     useEffect(() => {
         const mode = new URLSearchParams(window.location.search).get('mode');
-        setDirectMode(mode === 'piece' || mode === 'board' ? mode : null);
+        setDirectMode(mode === 'piece' || mode === 'board' || mode === 'square' ? mode : null);
     }, []);
     const pieceMode = directMode === 'piece';
-    const editorPage = pieceMode ? 'piece-editor' : 'board-editor';
+    const editorPage = directMode ? `${directMode}-editor` : 'board-editor';
 
     // Coming from the "Piece Editor" menu link: skip the project list and jump straight into the
     // piece editor of the most recently edited project (or create one if there is none yet).
