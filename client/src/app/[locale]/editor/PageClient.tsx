@@ -105,26 +105,28 @@ export default function PageClient() {
     }
 
     const [isCreating, setIsCreating] = useState(false);
-    // /editor?mode=piece (from the "Piece Editor" menu link) opens the piece editor directly
-    const [pieceMode, setPieceMode] = useState(false);
+    // /editor?mode=piece (from the "Piece Editor"/"Board Editor" menu links) opens the piece editor directly
+    const [directMode, setDirectMode] = useState<'piece' | 'board' | null>(null);
     useEffect(() => {
-        setPieceMode(new URLSearchParams(window.location.search).get('mode') === 'piece');
+        const mode = new URLSearchParams(window.location.search).get('mode');
+        setDirectMode(mode === 'piece' || mode === 'board' ? mode : null);
     }, []);
+    const pieceMode = directMode === 'piece';
     const editorPage = pieceMode ? 'piece-editor' : 'board-editor';
 
     // Coming from the "Piece Editor" menu link: skip the project list and jump straight into the
     // piece editor of the most recently edited project (or create one if there is none yet).
     const redirectedRef = useRef(false);
     useEffect(() => {
-        if (!pieceMode || authLoading || loading || migrating || redirectedRef.current) return;
+        if (!directMode || authLoading || loading || migrating || redirectedRef.current) return;
         redirectedRef.current = true;
         if (projects.length > 0) {
             const latest = [...projects].sort((x, y) => new Date(y.updatedAt).getTime() - new Date(x.updatedAt).getTime())[0];
-            router.replace(`/editor/${latest.id}/piece-editor`);
+            router.replace(`/editor/${latest.id}/${editorPage}`);
         } else {
             handleQuickCreate();
         }
-    }, [pieceMode, authLoading, loading, migrating, projects]);
+    }, [directMode, authLoading, loading, migrating, projects]);
 
     const handleCreateNew = () => {
         router.push('/editor/new');
