@@ -1,6 +1,6 @@
 # Supabase Migration Progress
 
-**Status:** 🟡 In Progress
+**Status:** 🟡 In Progress — now migrating *off* Supabase/Firebase entirely onto self-hosted infra
 **Started:** 2026-07-18
 
 ## ✅ Phase 1: Setup Supabase + Drizzle
@@ -37,10 +37,19 @@
 - [ ] scripts/publish-variants.ts
 - [ ] scripts/cleanup-marketplace.ts
 
-## Phase 4: Supabase Storage
-- [ ] Update CreatorProfileSection.tsx
-- [ ] Update creator page ClientPage.tsx
-- [ ] Set up storage buckets
+## Phase 4: Storage
+- [x] Update CreatorProfileSection.tsx (now uploads via `app/actions/storage.ts`)
+- [x] Update creator page ClientPage.tsx (same)
+- [x] Set up storage: self-hosted on local disk (`client/public/uploads/`), not
+      Supabase Storage and not MinIO (MinIO's free binary was discontinued in 2026).
+      `@supabase/supabase-js`, `lib/supabase.ts` and `lib/supabase-client.ts` removed.
+
+## Phase 0 (retroactive): Database now self-hosted too
+- [x] `SUPABASE_DB_URL` now points at a self-hosted PostgreSQL 16 instance on
+      the production server instead of Supabase-hosted Postgres. No code
+      changes were needed — the app only ever used Supabase here as a managed
+      Postgres host via Drizzle. All rows migrated and verified (row counts
+      matched exactly).
 
 ## Phase 5: Analytics → Umami
 - [ ] Deploy Umami in Docker
