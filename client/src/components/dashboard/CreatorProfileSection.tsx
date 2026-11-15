@@ -3,11 +3,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyCreatorProfile, registerCreatorHandle, updateCreatorProfile, CreatorProfile } from '@/app/actions/creator';
+import { uploadImage } from '@/app/actions/storage';
 import { Loader2, UserCheck, AtSign, Edit2, Save, X, Image as ImageIcon, FileText, Upload } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { supabase, isConfigured } from '@/lib/supabase-client';
 
 export default function CreatorProfileSection() {
     const { user } = useAuth();
@@ -124,15 +124,14 @@ export default function CreatorProfileSection() {
     };
 
     async function handlePhotoUpload(file: File) {
-        if (!user || !isConfigured || !supabase) return;
+        if (!user) return;
         setUploadingPhoto(true);
         try {
-            const ext = file.name.split('.').pop();
-            const path = `${user.uid || user.id}/${Date.now()}.${ext}`;
-            const { error } = await supabase.storage.from('avatars').upload(path, file);
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-            setEditForm(prev => ({ ...prev, photoUrl: publicUrl }));
+            const formData = new FormData();
+            formData.append('file', file);
+            const result = await uploadImage('avatars', formData);
+            if (!result.success) throw new Error(result.error);
+            setEditForm(prev => ({ ...prev, photoUrl: result.url }));
             toast.success('Photo uploaded!');
         } catch (error) {
             console.error('Upload error:', error);
