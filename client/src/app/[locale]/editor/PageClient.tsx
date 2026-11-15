@@ -105,6 +105,12 @@ export default function PageClient() {
     }
 
     const [isCreating, setIsCreating] = useState(false);
+    // /editor?mode=piece (from the "Piece Editor" menu link) opens projects in the piece editor
+    const [pieceMode, setPieceMode] = useState(false);
+    useEffect(() => {
+        setPieceMode(new URLSearchParams(window.location.search).get('mode') === 'piece');
+    }, []);
+    const editorPage = pieceMode ? 'piece-editor' : 'board-editor';
 
     const handleCreateNew = () => {
         router.push('/editor/new');
@@ -130,13 +136,13 @@ export default function PageClient() {
             if (user) {
                 const result = await saveProjectAction(newProject as Project);
                 if (result.success && result.projectId) {
-                    router.push(`/editor/${result.projectId}/board-editor`);
+                    router.push(`/editor/${result.projectId}/${editorPage}`);
                 } else {
                     throw new Error(result.error || 'Failed to create project');
                 }
             } else {
                 const projectId = LocalProjectStore.saveProject(newProject);
-                router.push(`/editor/${projectId}/board-editor`);
+                router.push(`/editor/${projectId}/${editorPage}`);
             }
         } catch (error) {
             console.error('Error in quick create:', error);
@@ -306,6 +312,7 @@ export default function PageClient() {
                 onDelete={handleDeleteProject}
                 onCreateNew={handleCreateNew}
                 onPublish={handlePublish}
+                pieceMode={pieceMode}
             />
 
             <PublishModal
