@@ -7,10 +7,10 @@ import { MarketplaceItem } from '@/lib/marketplace-types';
 import { getCreatorMarketplaceItems } from '@/lib/marketplace-data';
 import { updateMarketplaceItem, deleteMarketplaceItem } from '@/app/actions/marketplace';
 import { getMyCreatorProfile } from '@/app/actions/creator';
+import { uploadImage } from '@/app/actions/storage';
 import { Loader2, Edit, Trash2, Eye, Star, GitFork, Gamepad2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { supabase, isConfigured } from '@/lib/supabase-client';
 import { MarketplaceBoardPreview } from '@/components/marketplace/MarketplaceBoardPreview';
 
 export default function ClientPage() {
@@ -81,15 +81,14 @@ export default function ClientPage() {
     }
 
     async function handleThumbnailUpload(file: File) {
-        if (!user || !isConfigured || !supabase) return;
+        if (!user) return;
         setUploading(true);
         try {
-            const ext = file.name.split('.').pop();
-            const path = `${user.uid || user.id}/${Date.now()}.${ext}`;
-            const { error } = await supabase.storage.from('marketplace-thumbnails').upload(path, file);
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from('marketplace-thumbnails').getPublicUrl(path);
-            setEditData(prev => ({ ...prev, imageUrl: publicUrl }));
+            const formData = new FormData();
+            formData.append('file', file);
+            const result = await uploadImage('marketplace-thumbnails', formData);
+            if (!result.success) throw new Error(result.error);
+            setEditData(prev => ({ ...prev, imageUrl: result.url }));
             toast.success('Image uploaded!');
         } catch (error) {
             console.error('Upload error:', error);

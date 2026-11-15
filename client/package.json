@@ -12,10 +12,12 @@
     "variants:publish": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts', {stdio:'inherit',env:{...process.env}})\"",
     "variants:publish:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/publish-variants.ts --apply', {stdio:'inherit',env:{...process.env}})\"",
     "firestore:to:supabase": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/firestore-to-supabase.ts', {stdio:'inherit',env:{...process.env}})\"",
-    "firestore:to:supabase:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/firestore-to-supabase.ts --apply', {stdio:'inherit',env:{...process.env}})\""
+    "firestore:to:supabase:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/firestore-to-supabase.ts --apply', {stdio:'inherit',env:{...process.env}})\"",
+    "auth:migrate": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/migrate-auth-to-postgres.ts', {stdio:'inherit',env:{...process.env}})\"",
+    "auth:migrate:apply": "node --env-file=.env.local -e \"require('child_process').execSync('npx tsx scripts/migrate-auth-to-postgres.ts --apply', {stdio:'inherit',env:{...process.env}})\""
   },
   "dependencies": {
-    "@auth/firebase-adapter": "^2.11.1",
+    "@auth/drizzle-adapter": "^1.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -27,7 +29,6 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sanity/image-url": "^1.2.0",
-    "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^2.4.6",
     "@vercel/analytics": "^1.6.1",
@@ -41,7 +42,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "drizzle-orm": "^0.45.2",
-    "firebase": "^12.8.0",
     "firebase-admin": "^14.2.0",
     "framer-motion": "^12.23.26",
     "jose": "^6.2.2",

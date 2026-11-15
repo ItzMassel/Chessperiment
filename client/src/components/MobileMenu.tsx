@@ -3,7 +3,6 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { X, ChevronDown } from 'lucide-react';
 import { Link, usePathname } from "@/i18n/navigation";
-import { isConfigured } from "@/lib/firebase-client";
 
 
 type IconProps = { className?: string };
@@ -80,7 +79,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen, user }: { locale
         { href: "/creator", label: t('creator') },
         { href: "/about", label: t('about') },
         { href: "/features", label: t('features') },
-        ...(isConfigured && !user ? [{ href: "/login", label: t('login') }] : []),
+        ...(!user ? [{ href: "/login", label: t('login') }] : []),
     ];
 
     return (

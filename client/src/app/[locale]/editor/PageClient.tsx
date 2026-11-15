@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { auth } from '@/lib/firebase-client';
 import { Project } from '@/types/Project';
 import {
     migrateUserAction,
@@ -75,26 +74,23 @@ export default function PageClient() {
                 console.log('No cloud projects found, checking migration...');
                 // Trigger migration in background or show UI? For now keep it as is
                 // but only if migration hasn't been done
-                const idToken = await auth?.currentUser?.getIdToken();
-                if (idToken) {
-                    setMigrating(true);
-                    const migrationResult = await migrateUserAction(idToken);
-                    if (migrationResult.success) {
-                        const refetchResult = await getUserProjectsAction();
-                        if (refetchResult.success && refetchResult.data) {
-                            const migratedProjects = refetchResult.data;
-                            setProjects(prev => {
-                                const combined = [...migratedProjects, ...prev.filter(gp => !migratedProjects.find(up => up.id === gp.id))];
-                                return combined.sort((a, b) => {
-                                    if (a.isStarred && !b.isStarred) return -1;
-                                    if (!a.isStarred && b.isStarred) return 1;
-                                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-                                });
+                setMigrating(true);
+                const migrationResult = await migrateUserAction();
+                if (migrationResult.success) {
+                    const refetchResult = await getUserProjectsAction();
+                    if (refetchResult.success && refetchResult.data) {
+                        const migratedProjects = refetchResult.data;
+                        setProjects(prev => {
+                            const combined = [...migratedProjects, ...prev.filter(gp => !migratedProjects.find(up => up.id === gp.id))];
+                            return combined.sort((a, b) => {
+                                if (a.isStarred && !b.isStarred) return -1;
+                                if (!a.isStarred && b.isStarred) return 1;
+                                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                             });
-                        }
+                        });
                     }
-                    setMigrating(false);
                 }
+                setMigrating(false);
             }
         } catch (error) {
             console.error('Error loading projects:', error);

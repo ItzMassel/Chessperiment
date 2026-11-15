@@ -1,7 +1,6 @@
 "use client"
 
 import { signOut as nextAuthSignOut } from "next-auth/react"
-import { auth, isConfigured } from "@/lib/firebase-client"
 import { useAuth } from "@/context/AuthContext"
 import { useTranslations } from "next-intl"
 import { LogIn, LogOut, User as UserIcon, ChevronUp } from "lucide-react"
@@ -18,18 +17,9 @@ export function UserPanel() {
     const router = useRouter()
 
     const handleLogout = async () => {
-        if (auth) {
-            const { signOut: firebaseSignOut } = await import("firebase/auth")
-            await firebaseSignOut(auth)
-        }
         await nextAuthSignOut()
         setIsOpen(false)
         router.refresh()
-    }
-
-    // Hide the user panel entirely in offline mode when no user is signed in
-    if (!isConfigured && !user) {
-        return null
     }
 
     if (loading) {

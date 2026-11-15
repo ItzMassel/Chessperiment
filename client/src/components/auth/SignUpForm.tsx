@@ -1,12 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { auth } from "@/lib/firebase-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
+import { signUpAction } from "@/app/actions/auth"
 
 interface SignUpFormProps {
     onSwitchToLogin: () => void
@@ -23,14 +22,6 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-
-    if (!auth) {
-        return (
-            <div className="w-full p-6 text-center">
-                <p className="text-white/60">Firebase is not configured. Sign-up is unavailable in offline mode.</p>
-            </div>
-        )
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -49,44 +40,35 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         setLoading(true)
 
         try {
-            // 1. Create Auth User
-            const userCredential = await createUserWithEmailAndPassword(auth!, email, password)
-            const user = userCredential.user
-
-            // Send Verification Email
-            try {
-                const { sendEmailVerification } = await import("firebase/auth")
-                await sendEmailVerification(user)
-            } catch (emailErr) {
-                console.warn("Failed to send verification email:", emailErr)
+            const result = await signUpAction(email, password, displayName)
+            if (!result.success) {
+                if (result.error === "Email already in use") {
+                    setError(t("emailAlreadyInUse"))
+                } else {
+                    setError(result.error || t("signUpError"))
+                }
+                return
             }
 
-            // 2. Update Profile
-            if (displayName) {
-                await updateProfile(user, { displayName })
-            }
-
-            // 3. Sync with NextAuth session
-            const idToken = await userCredential.user.getIdToken();
-            await signIn("credentials", {
-                idToken,
+            // Sync with NextAuth session
+            const signInResult = await signIn("credentials", {
+                email,
+                password,
                 redirect: false
             });
+
+            if (signInResult?.error) {
+                console.error("NextAuth signin error:", signInResult.error)
+                setError(t("signUpError"))
+                return
+            }
 
             // Redirect to home
             router.push("/")
 
         } catch (err: any) {
             console.error(err)
-            if (err.code === "auth/email-already-in-use") {
-                setError(t("emailAlreadyInUse"))
-            } else if (err.code === "auth/invalid-email") {
-                setError(t("invalidEmail"))
-            } else if (err.code === "auth/weak-password") {
-                setError(t("weakPassword"))
-            } else {
-                setError(err.message || t("signUpError"))
-            }
+            setError(err.message || t("signUpError"))
         } finally {
             setLoading(false)
         }

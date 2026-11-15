@@ -6,6 +6,13 @@ const nextConfig = {
     'jsdom',
     'blockly',
   ],
+  experimental: {
+    serverActions: {
+      // Raised from the 1MB default for avatar/marketplace-thumbnail uploads
+      // (see app/actions/storage.ts), capped server-side at 5MB per file.
+      bodySizeLimit: '6mb',
+    },
+  },
   // Redirects: www → non-www
   trailingSlash: false,
   compress: true,

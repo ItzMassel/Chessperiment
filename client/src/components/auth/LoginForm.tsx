@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/lib/firebase-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { signIn } from "next-auth/react"
@@ -23,44 +21,28 @@ export default function LoginForm({ onSwitchToSignup, onSwitchToReset }: LoginFo
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    if (!auth) {
-        return (
-            <div className="w-full p-6 text-center">
-                <p className="text-white/60">Firebase is not configured. Login is unavailable in offline mode.</p>
-            </div>
-        )
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
         setLoading(true)
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth!, email, password)
-            const idToken = await userCredential.user.getIdToken()
-
-            // Sync with NextAuth session
             const result = await signIn("credentials", {
-                idToken,
+                email,
+                password,
                 redirect: false
             })
 
             if (result?.error) {
-                console.error("NextAuth signin error:", result.error)
+                setError(t("invalidCredentials"))
+                return
             }
 
             // Redirect to home
             router.push("/")
         } catch (err: any) {
             console.error(err)
-            if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-                setError(t("invalidCredentials"))
-            } else if (err.code === "auth/too-many-requests") {
-                setError(t("tooManyRequests"))
-            } else {
-                setError(t("loginError"))
-            }
+            setError(t("loginError"))
         } finally {
             setLoading(false)
         }
