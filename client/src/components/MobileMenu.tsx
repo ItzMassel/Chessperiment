@@ -104,16 +104,27 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen, user }: { locale
 
                         {/* Editor button: expands to the three editors */}
                         <div>
-                            <button
-                                type="button"
-                                className="group flex w-full items-center gap-4 rounded-3xl bg-amber-400/10 border border-amber-400/20 p-3 pr-5 text-left active:scale-[0.98] transition-all"
-                                onClick={() => setEditorOpen(o => !o)}
-                                aria-expanded={editorOpen}
-                            >
-                                <EditorsIcon className="w-16 h-16 shrink-0" />
-                                <span className="flex-1 text-3xl font-black text-stone-900 dark:text-white">{t('editor')}</span>
-                                <ChevronDown className={`text-amber-500 transition-transform duration-300 ${editorOpen ? 'rotate-180' : ''}`} size={28} strokeWidth={3} />
-                            </button>
+                            <div className="flex w-full items-stretch rounded-3xl bg-amber-400/10 border border-amber-400/20 overflow-hidden">
+                                {/* Main part: project overview */}
+                                <Link
+                                    href="/editor"
+                                    className="flex flex-1 items-center gap-4 p-3 active:bg-amber-400/10 transition-colors"
+                                    onClick={close}
+                                >
+                                    <EditorsIcon className="w-16 h-16 shrink-0" />
+                                    <span className="text-3xl font-black text-stone-900 dark:text-white">{t('editor')}</span>
+                                </Link>
+                                {/* Arrow: opens the editor picker */}
+                                <button
+                                    type="button"
+                                    className="px-5 border-l border-amber-400/20 text-amber-500 active:bg-amber-400/20 transition-colors"
+                                    onClick={() => setEditorOpen(o => !o)}
+                                    aria-expanded={editorOpen}
+                                    aria-label={t('editor')}
+                                >
+                                    <ChevronDown className={`transition-transform duration-300 ${editorOpen ? 'rotate-180' : ''}`} size={28} strokeWidth={3} />
+                                </button>
+                            </div>
                             {editorOpen && (
                                 <div className="grid grid-cols-3 gap-3 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                     {editors.map(({ mode, label, Icon }) => (
