@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { sendPasswordResetEmail } from "firebase/auth"
-import { auth } from "@/lib/firebase-client"
+import { requestPasswordResetAction } from "@/app/actions/auth"
 import { Loader2, ArrowLeft, Mail } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -18,14 +17,6 @@ export default function PasswordResetForm({ onSwitchToLogin }: PasswordResetForm
     const [message, setMessage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
 
-    if (!auth) {
-        return (
-            <div className="w-full p-6 text-center">
-                <p className="text-white/60">Firebase is not configured. Password reset is unavailable in offline mode.</p>
-            </div>
-        )
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
@@ -33,17 +24,15 @@ export default function PasswordResetForm({ onSwitchToLogin }: PasswordResetForm
         setLoading(true)
 
         try {
-            await sendPasswordResetEmail(auth!, email)
-            setMessage(t("passwordResetSent"))
-        } catch (err: any) {
-            console.error(err)
-            if (err.code === "auth/user-not-found") {
-                setError(t("emailNotFound"))
-            } else if (err.code === "auth/invalid-email") {
-                setError(t("invalidEmail"))
+            const result = await requestPasswordResetAction(email)
+            if (result.success) {
+                setMessage(t("passwordResetSent"))
             } else {
                 setError(t("errorSendingReset"))
             }
+        } catch (err: any) {
+            console.error(err)
+            setError(t("errorSendingReset"))
         } finally {
             setLoading(false)
         }

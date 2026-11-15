@@ -2,7 +2,6 @@
 import { useTranslations } from "next-intl";
 import { X } from 'lucide-react';
 import { Link, usePathname } from "@/i18n/navigation";
-import { isConfigured } from "@/lib/firebase-client";
 
 export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen, user }: { locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void, user: any }) {
     const t = useTranslations('Header');
@@ -55,7 +54,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen, user }: { locale
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
 
-                        {isConfigured && !user && <Link
+                        {!user && <Link
                             href="/login"
                             className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                             onClick={() => setIsMenuOpen(false)}

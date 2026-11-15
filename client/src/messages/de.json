@@ -654,7 +654,10 @@
         "resetPassword": "Passwort zurücksetzen",
         "resetPasswordDesc": "Gib deine E-Mail ein, um einen Link zum Zurücksetzen deines Passworts zu erhalten.",
         "sendResetLink": "Link senden",
-        "or": "ODER"
+        "or": "ODER",
+        "newPassword": "Neues Passwort",
+        "invalidResetLink": "Dieser Link zum Zurücksetzen ist ungültig oder abgelaufen.",
+        "passwordResetSuccess": "Passwort zurückgesetzt! Weiterleitung zum Login..."
     },
     "Profile": {
         "gamesPlayed": "Gespielte Spiele",
