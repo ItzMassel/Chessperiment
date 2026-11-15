@@ -4,7 +4,6 @@ import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { outfit, mono } from '@/lib/fonts';
 import { Menu, X } from 'lucide-react';
-import { isConfigured } from '@/lib/firebase-client';
 import { NotificationBell } from './NotificationBell';
 
 export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen, user }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void, user: any }) {
@@ -62,7 +61,7 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen, user }: { 
                     <Link href="/creator" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('creator')}</Link>
                     <Link href="/about" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('about')}</Link>
                     <Link href="/features" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('features')}</Link>
-                    {isConfigured && !user && <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>}
+                    {!user && <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>}
                 </div>
                 <div className="flex items-center gap-2 ml-4">
                     {user && <NotificationBell />}

@@ -1,11 +1,11 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { User as NextAuthUser } from 'next-auth';
-import { auth, isConfigured } from '@/lib/firebase-client';
 
-// Extend User type to include uid for Firebase compatibility
+// Extend User type to include uid for backwards compatibility with code that
+// used to read the Firebase UID off the user object.
 export interface User extends NextAuthUser {
     uid: string;
 }
@@ -19,50 +19,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: session, status } = useSession();
-    const [firebaseUser, setFirebaseUser] = useState<any>(null);
-    const [firebaseLoading, setFirebaseLoading] = useState(isConfigured);
 
-    useEffect(() => {
-        if (!isConfigured || !auth) {
-            setFirebaseLoading(false);
-            return;
-        }
-        let unsubscribe: (() => void) | undefined;
-        const init = async () => {
-            const { onAuthStateChanged } = await import('firebase/auth');
-            unsubscribe = onAuthStateChanged(auth as any, (user) => {
-                setFirebaseUser(user);
-                setFirebaseLoading(false);
-            });
-        };
-        init();
-        return () => unsubscribe?.();
-    }, []);
-
-    // Determine the user object
     const user = useMemo(() => {
-        let u: User | null = null;
-        if (session?.user) {
-            u = {
-                ...session.user,
-                uid: (session.user as any).id || (session.user as any).uid || session.user.email || '',
-            } as User;
-        } else if (firebaseUser) {
-            u = {
-                id: firebaseUser.uid,
-                uid: firebaseUser.uid,
-                name: firebaseUser.displayName || null,
-                email: firebaseUser.email || null,
-                image: firebaseUser.photoURL || null,
-            } as User;
-        }
-        return u;
-    }, [session?.user, firebaseUser]);
+        if (!session?.user) return null;
+        return {
+            ...session.user,
+            uid: (session.user as any).id || (session.user as any).uid || session.user.email || '',
+        } as User;
+    }, [session?.user]);
 
     const value: AuthContextType = useMemo(() => ({
         user,
-        loading: status === 'loading' || firebaseLoading,
-    }), [user, status, firebaseLoading]);
+        loading: status === 'loading',
+    }), [user, status]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

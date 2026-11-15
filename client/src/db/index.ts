@@ -25,11 +25,17 @@ export const db = new Proxy({} as ReturnType<typeof drizzle>, {
   },
 });
 
+// For code that needs the real (non-proxied) instance — e.g. @auth/drizzle-adapter,
+// which does `instanceof`-style checks that the lazy proxy above can't satisfy
+// since its target is a plain `{}`, not an actual drizzle instance.
+export { getDb };
+
 export * from './projects';
 export * from './stats';
 export * from './marketplace';
 export * from './creators';
 export * from './notifications';
 export * from './library';
+export * from './users';
 
 export { schema };

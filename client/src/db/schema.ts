@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, boolean, timestamp, jsonb, doublePrecision } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, boolean, timestamp, jsonb, doublePrecision, primaryKey } from 'drizzle-orm/pg-core';
 
 export const projects = pgTable('projects', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -199,4 +199,57 @@ export const pixelPieces = pgTable('pixel_pieces', {
   pixels: jsonb('pixels').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ─── Auth (self-hosted, replaces Firebase Auth + the Firestore NextAuth adapter) ───
+// `users.id` preserves each user's old Firebase UID (credentials users) or old
+// Firestore adapter doc id (Google OAuth users) so existing rows elsewhere
+// (projects.userId, creator_profiles.userId, etc. — plain text, no FK) keep resolving.
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  email: text('email').unique(),
+  emailVerified: timestamp('email_verified', { withTimezone: true }),
+  image: text('image'),
+  // Null until the user sets a password locally, or lazily migrates from
+  // Firebase on next successful login (see lib/firebase-legacy-auth.ts).
+  passwordHash: text('password_hash'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const accounts = pgTable('accounts', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(),
+  provider: text('provider').notNull(),
+  providerAccountId: text('provider_account_id').notNull(),
+  refresh_token: text('refresh_token'),
+  access_token: text('access_token'),
+  expires_at: integer('expires_at'),
+  token_type: text('token_type'),
+  scope: text('scope'),
+  id_token: text('id_token'),
+  session_state: text('session_state'),
+}, (table) => [
+  primaryKey({ columns: [table.provider, table.providerAccountId] }),
+]);
+
+export const sessions = pgTable('sessions', {
+  sessionToken: text('session_token').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { withTimezone: true }).notNull(),
+});
+
+export const verificationTokens = pgTable('verification_tokens', {
+  identifier: text('identifier').notNull(),
+  token: text('token').notNull(),
+  expires: timestamp('expires', { withTimezone: true }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.identifier, table.token] }),
+]);
+
+// Our own password-reset flow (replaces Firebase's sendPasswordResetEmail).
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });

@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { outfit } from "@/lib/fonts"
-import { isConfigured } from "@/lib/firebase-client"
 
 import { useState } from "react"
 import SignUpForm from "@/components/auth/SignUpForm"
@@ -16,37 +15,6 @@ export default function LoginPage({ bungee }: { bungee: any }) {
     const searchParams = useSearchParams()
     const error = searchParams.get("error")
     const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
-
-    if (!isConfigured) {
-        return (
-            <div className={`relative min-h-screen flex items-center justify-center px-4 overflow-hidden ${outfit.className}`}>
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src="/images/auth/login-bg.png"
-                        alt="Chess Background"
-                        fill
-                        className="object-cover scale-105 animate-pulse-slow"
-                        priority
-                    />
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-                    <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/40" />
-                </div>
-                <div className="relative z-10 w-full max-w-md">
-                    <div className="p-12 bg-white/5 dark:bg-stone-900/40 backdrop-blur-2xl border border-white/10 rounded-[3rem] shadow-2xl text-center">
-                        <h1 className={`${bungee} text-4xl text-white mb-6`}>chessperiment</h1>
-                        <div className="h-1 w-16 bg-amber-500 mx-auto rounded-full mb-8" />
-                        <p className="text-white/60 text-lg mb-4">
-                            Offline Mode
-                        </p>
-                        <p className="text-white/40 text-sm">
-                            Accounts are not available in self-hosted mode.
-                            Create a Firebase project and configure the environment variables to enable accounts.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className={`relative min-h-screen flex items-center justify-center px-4 overflow-hidden ${outfit.className}`}>

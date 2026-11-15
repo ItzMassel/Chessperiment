@@ -654,7 +654,10 @@
         "resetPassword": "Reset Password",
         "resetPasswordDesc": "Enter your email to receive a link to reset your password.",
         "sendResetLink": "Link senden",
-        "or": "ODER"
+        "or": "ODER",
+        "newPassword": "New Password",
+        "invalidResetLink": "This reset link is invalid or has expired.",
+        "passwordResetSuccess": "Password reset! Redirecting to login..."
     },
     "Profile": {
         "gamesPlayed": "Games Played",
