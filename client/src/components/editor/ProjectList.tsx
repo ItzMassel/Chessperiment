@@ -12,9 +12,10 @@ interface ProjectListProps {
     onDelete: (projectId: string) => void;
     onCreateNew: () => void;
     onPublish: (projectId: string) => void;
+    pieceMode?: boolean;
 }
 
-export default function ProjectList({ projects, onToggleStar, onDelete, onCreateNew, onPublish }: ProjectListProps) {
+export default function ProjectList({ projects, onToggleStar, onDelete, onCreateNew, onPublish, pieceMode }: ProjectListProps) {
     const t = useTranslations('Editor');
 
     if (projects.length === 0) {
@@ -63,6 +64,7 @@ export default function ProjectList({ projects, onToggleStar, onDelete, onCreate
                     onToggleStar={onToggleStar}
                     onDelete={onDelete}
                     onPublish={onPublish}
+                    pieceMode={pieceMode}
                 />
             ))}
         </div>
