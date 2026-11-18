@@ -101,6 +101,28 @@ export default function PageClient() {
     }
 
     const [isCreating, setIsCreating] = useState(false);
+    // /editor?mode=piece (from the "Piece Editor"/"Board Editor" menu links) opens the piece editor directly
+    const [directMode, setDirectMode] = useState<'piece' | 'board' | 'square' | null>(null);
+    useEffect(() => {
+        const mode = new URLSearchParams(window.location.search).get('mode');
+        setDirectMode(mode === 'piece' || mode === 'board' || mode === 'square' ? mode : null);
+    }, []);
+    const pieceMode = directMode === 'piece';
+    const editorPage = directMode ? `${directMode}-editor` : 'board-editor';
+
+    // Coming from the "Piece Editor" menu link: skip the project list and jump straight into the
+    // piece editor of the most recently edited project (or create one if there is none yet).
+    const redirectedRef = useRef(false);
+    useEffect(() => {
+        if (!directMode || authLoading || loading || migrating || redirectedRef.current) return;
+        redirectedRef.current = true;
+        if (projects.length > 0) {
+            const latest = [...projects].sort((x, y) => new Date(y.updatedAt).getTime() - new Date(x.updatedAt).getTime())[0];
+            router.replace(`/editor/${latest.id}/${editorPage}`);
+        } else {
+            handleQuickCreate();
+        }
+    }, [directMode, authLoading, loading, migrating, projects]);
 
     const handleCreateNew = () => {
         router.push('/editor/new');
@@ -126,13 +148,13 @@ export default function PageClient() {
             if (user) {
                 const result = await saveProjectAction(newProject as Project);
                 if (result.success && result.projectId) {
-                    router.push(`/editor/${result.projectId}/board-editor`);
+                    router.push(`/editor/${result.projectId}/${editorPage}`);
                 } else {
                     throw new Error(result.error || 'Failed to create project');
                 }
             } else {
                 const projectId = LocalProjectStore.saveProject(newProject);
-                router.push(`/editor/${projectId}/board-editor`);
+                router.push(`/editor/${projectId}/${editorPage}`);
             }
         } catch (error) {
             console.error('Error in quick create:', error);
@@ -302,6 +324,7 @@ export default function PageClient() {
                 onDelete={handleDeleteProject}
                 onCreateNew={handleCreateNew}
                 onPublish={handlePublish}
+                pieceMode={pieceMode}
             />
 
             <PublishModal

@@ -7,13 +7,14 @@ import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 
 interface ProjectCardProps {
+    pieceMode?: boolean;
     project: Project;
     onToggleStar: (projectId: string) => void;
     onDelete: (projectId: string) => void;
     onPublish: (projectId: string) => void;
 }
 
-export default function ProjectCard({ project, onToggleStar, onDelete, onPublish }: ProjectCardProps) {
+export default function ProjectCard({ project, onToggleStar, onDelete, onPublish, pieceMode }: ProjectCardProps) {
     const t = useTranslations('Editor');
     const locale = useLocale();
 
@@ -102,7 +103,7 @@ export default function ProjectCard({ project, onToggleStar, onDelete, onPublish
 
                 <div className="flex items-center gap-2 pt-4 border-t border-gray-100 dark:border-gray-700/50">
                     <Link
-                        href={`/${locale}/editor/${project.id}/board-editor`}
+                        href={`/${locale}/editor/${project.id}/${pieceMode ? 'piece-editor' : 'board-editor'}`}
                         className="flex-1 text-center py-2.5 px-4 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 text-sm font-bold transition-all shadow-lg shadow-gray-200 dark:shadow-none"
                     >
                         {t('editBoard')}
