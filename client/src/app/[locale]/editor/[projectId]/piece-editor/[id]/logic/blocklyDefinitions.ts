@@ -202,10 +202,9 @@ export function ensurePresetVariables(workspace: Blockly.Workspace) {
     });
 }
 
-/** Reads a value-input socket (a connected variables_get / math_number / text block). */
-export function readValueSocket(block: Blockly.Block, inputName: string): any {
-    const input = block.getInput(inputName);
-    const target = input?.connection?.targetBlock();
+/** Reads a literal/variable/random value out of a single block (used for value sockets,
+ *  and recursively for the min/max children of a 'math_random_int' block). */
+function readLiteralFromBlock(target: Blockly.Block | null | undefined): any {
     if (!target) return undefined;
 
     if (target.type === 'variables_get') {
@@ -220,7 +219,47 @@ export function readValueSocket(block: Blockly.Block, inputName: string): any {
     if (target.type === 'text') {
         return target.getFieldValue('TEXT');
     }
+    if (target.type === 'math_random_int') {
+        // "Random Number" value block: re-rolled fresh every time the engine reads it
+        // (see LogicRunner.resolveSocketValues), so only its min/max bounds are stored.
+        const fromValue = readLiteralFromBlock(target.getInputTargetBlock('FROM'));
+        const toValue = readLiteralFromBlock(target.getInputTargetBlock('TO'));
+        const min = typeof fromValue === 'number' ? fromValue : 0;
+        const max = typeof toValue === 'number' ? toValue : 0;
+        return { type: 'random', min, max };
+    }
     return undefined;
+}
+
+/** Reads a value-input socket (a connected variables_get / math_number / text / random block). */
+export function readValueSocket(block: Blockly.Block, inputName: string): any {
+    const input = block.getInput(inputName);
+    const target = input?.connection?.targetBlock();
+    return readLiteralFromBlock(target);
+}
+
+/** Attaches a math_number shadow block with the given value to one of a block's inputs. */
+function attachNumberShadow(block: Blockly.BlockSvg, inputName: string, value: number) {
+    const ws = block.workspace as Blockly.WorkspaceSvg;
+    const input = block.getInput(inputName);
+    if (!input?.connection) return;
+    const shadow = ws.newBlock('math_number') as Blockly.BlockSvg;
+    shadow.setShadow(true);
+    shadow.setFieldValue(String(value), 'NUM');
+    shadow.initSvg();
+    shadow.render();
+    input.connection.connect(shadow.outputConnection!);
+}
+
+/** Creates a "Random Number" value block (Blockly's built-in math_random_int, with min/max
+ *  shadow literals attached) ready to drop into any value-number/value-text socket. */
+export function createRandomNumberBlock(ws: Blockly.WorkspaceSvg, min: number = 1, max: number = 6): Blockly.BlockSvg {
+    const block = ws.newBlock('math_random_int') as Blockly.BlockSvg;
+    block.initSvg();
+    attachNumberShadow(block, 'FROM', min);
+    attachNumberShadow(block, 'TO', max);
+    block.render();
+    return block;
 }
 
 /** Reads every socket defined for a block's schema into a plain socketValues object. */
@@ -293,6 +332,9 @@ export function writeBlockSocketValue(block: Blockly.BlockSvg, socketId: string,
             varBlock.initSvg();
             varBlock.render();
             input.connection.connect(varBlock.outputConnection!);
+        } else if (value && typeof value === 'object' && value.type === 'random') {
+            const randomBlock = createRandomNumberBlock(ws, Number(value.min) || 0, Number(value.max) || 0);
+            input.connection.connect(randomBlock.outputConnection!);
         } else {
             const shadowType = socket.kind === 'value-number' ? 'math_number' : 'text';
             const shadow = ws.newBlock(shadowType) as Blockly.BlockSvg;
@@ -404,6 +446,13 @@ if (typeof window !== 'undefined') {
                 'colourPrimary': '#FFD700',
                 'colourSecondary': '#FFEC8B',
                 'colourTertiary': '#CDBE70'
+            },
+            // Colours the built-in math_random_int block (our "Random Number" value block)
+            // to match the fuchsia palette swatch it's dragged in from.
+            'math_blocks': {
+                'colourPrimary': '#C026D3',
+                'colourSecondary': '#E879F9',
+                'colourTertiary': '#86198F'
             }
         },
         'componentStyles': {

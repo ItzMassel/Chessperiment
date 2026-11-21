@@ -372,15 +372,20 @@ export default function PlayBoard({ project, projectId, roomId, mode, isMarketpl
             Object.entries(project.squareLogic).forEach(([sqId, def]) => {
                 const algSq = toAlgebraic(sqId, actualHeight);
                 const varRecord: Record<string, any> = {};
+                const randomVars: Record<string, { min: number, max: number }> = {};
                 if (def.variables && Array.isArray(def.variables)) {
                     def.variables.forEach((v: any) => {
                         varRecord[v.name || v.id] = v.value;
+                        if (v.isRandom) {
+                            randomVars[v.name || v.id] = { min: Number(v.min) || 0, max: Number(v.max) || 0 };
+                        }
                     });
                 }
                 normalizedSquareLogic[algSq] = {
                     logic: def.logic || [],
                     variables: varRecord,
-                    squareId: algSq
+                    squareId: algSq,
+                    randomVars
                 };
             });
         }

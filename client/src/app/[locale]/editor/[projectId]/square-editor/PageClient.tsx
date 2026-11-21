@@ -124,7 +124,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const [bulkMode, setBulkMode] = useState(false);
     const [selectedSquares, setSelectedSquares] = useState<string[]>([]);
     const [activeCategory, setActiveCategory] = useState<string>('trigger');
-    const [variables, setVariables] = useState<{ id: string, name: string, value: any }[]>([]);
+    const [variables, setVariables] = useState<{ id: string, name: string, value: any, isRandom?: boolean, min?: number, max?: number }[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
     const lastSavedDataRef = useRef<string>('');
@@ -132,6 +132,9 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const [mounted, setMounted] = useState(false);
     const [isCreatingVar, setIsCreatingVar] = useState(false);
     const [newVarName, setNewVarName] = useState('');
+    const [newVarIsRandom, setNewVarIsRandom] = useState(false);
+    const [newVarMin, setNewVarMin] = useState('1');
+    const [newVarMax, setNewVarMax] = useState('6');
     const workspaceRef = useRef<Blockly.Workspace | null>(null);
     const variablesRef = useRef(variables);
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -293,9 +296,19 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const createVariable = () => {
         if (!newVarName) return;
         const id = `var-${Date.now()}`;
-        const updated = [...variables, { id, name: newVarName, value: 0 }];
+        const entry: { id: string, name: string, value: any, isRandom?: boolean, min?: number, max?: number } =
+            { id, name: newVarName, value: 0 };
+        if (newVarIsRandom) {
+            entry.isRandom = true;
+            entry.min = Number(newVarMin) || 0;
+            entry.max = Number(newVarMax) || 0;
+        }
+        const updated = [...variables, entry];
         setVariables(updated);
         setNewVarName('');
+        setNewVarIsRandom(false);
+        setNewVarMin('1');
+        setNewVarMax('6');
         setIsCreatingVar(false);
         handleSave(currentXml, updated);
     };
@@ -376,7 +389,14 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         },
         create_square_variable: async (args: Record<string, any>) => {
             const id = `var-${Date.now()}`;
-            const updated = [...variables, { id, name: args.name, value: 0 }];
+            const entry: { id: string, name: string, value: any, isRandom?: boolean, min?: number, max?: number } =
+                { id, name: args.name, value: 0 };
+            if (args.isRandom) {
+                entry.isRandom = true;
+                entry.min = Number(args.min) || 0;
+                entry.max = Number(args.max) || 0;
+            }
+            const updated = [...variables, entry];
             setVariables(updated);
             handleSave(currentXml, updated);
             return JSON.stringify({ success: true, variableId: id });
@@ -512,6 +532,11 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                             {variables.map(v => (
                                 <div key={v.id} className="group relative bg-white/5 p-4 rounded-xl border border-white/10">
                                     <span className="text-orange-400 font-bold">{v.name}</span>
+                                    {v.isRandom && (
+                                        <span className="ml-2 text-[10px] font-bold text-fuchsia-400 uppercase tracking-wider">
+                                            🎲 {v.min}-{v.max}
+                                        </span>
+                                    )}
                                     <button onClick={(e) => { e.stopPropagation(); deleteVariable(v.id); }} className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                         <X size={12} />
                                     </button>
@@ -520,8 +545,18 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                             {isCreatingVar ? (
                                 <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col gap-3">
                                     <input autoFocus value={newVarName} onChange={e => setNewVarName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createVariable()} placeholder="Variable name..." className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                                    <label className="flex items-center gap-2 text-xs text-stone-400 font-bold cursor-pointer">
+                                        <input type="checkbox" checked={newVarIsRandom} onChange={e => setNewVarIsRandom(e.target.checked)} />
+                                        🎲 Random number (rerolls every time it's used)
+                                    </label>
+                                    {newVarIsRandom && (
+                                        <div className="flex gap-2">
+                                            <input value={newVarMin} onChange={e => setNewVarMin(e.target.value)} placeholder="Min" type="number" className="w-1/2 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                                            <input value={newVarMax} onChange={e => setNewVarMax(e.target.value)} placeholder="Max" type="number" className="w-1/2 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                                        </div>
+                                    )}
                                     <button onClick={createVariable} className="py-2 bg-orange-500 rounded-lg text-xs font-bold">Create</button>
-                                    <button onClick={() => setIsCreatingVar(false)} className="py-2 border border-white/10 rounded-lg text-xs font-bold">Cancel</button>
+                                    <button onClick={() => { setIsCreatingVar(false); setNewVarIsRandom(false); }} className="py-2 border border-white/10 rounded-lg text-xs font-bold">Cancel</button>
                                 </div>
                             ) : (
                                 <button onClick={() => setIsCreatingVar(true)} className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-stone-500 font-bold hover:border-orange-500/50 hover:text-orange-500 transition-all">+ New Variable</button>

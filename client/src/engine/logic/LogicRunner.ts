@@ -389,7 +389,14 @@ export class LogicRunner {
         if (!socketValues) return resolved;
 
         for (const [key, val] of Object.entries(socketValues)) {
-            if (val && typeof val === 'object' && (val as any).type === 'variable') {
+            if (val && typeof val === 'object' && (val as any).type === 'random') {
+                // "Random Number" value block: re-rolled on every read, never cached, so
+                // the same block yields a fresh value each time the logic that uses it runs.
+                const { min, max } = val as any;
+                const lo = Math.min(Number(min) || 0, Number(max) || 0);
+                const hi = Math.max(Number(min) || 0, Number(max) || 0);
+                resolved[key] = lo + Math.floor(Math.random() * (hi - lo + 1));
+            } else if (val && typeof val === 'object' && (val as any).type === 'variable') {
                 const varObj = val as any;
                 const varName = varObj.name;
                 

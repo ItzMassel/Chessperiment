@@ -101,7 +101,9 @@ export interface SquareLogicDefinition {
     userId: string;
     squareId: string; // The coordinate or ID of the square
     logic: any[]; // Logic blocks
-    variables?: { id: string, name: string, value: any }[]; // Local variables
+    // Local variables. A variable flagged isRandom re-rolls to a fresh integer within
+    // [min, max] every time logic reads it, instead of keeping a fixed stored value.
+    variables?: { id: string, name: string, value: any, isRandom?: boolean, min?: number, max?: number }[];
     createdAt: Date;
     updatedAt: Date;
 }
