@@ -12,6 +12,7 @@ export const projects = pgTable('projects', {
   gridType: text('grid_type').default('square'),
   activeSquares: jsonb('active_squares').default([]),
   placedPieces: jsonb('placed_pieces').default({}),
+  benchPieces: jsonb('bench_pieces').default([]),
   customPieces: jsonb('custom_pieces').default([]),
   squareLogic: jsonb('square_logic').default({}),
   history: jsonb('history').default([]),

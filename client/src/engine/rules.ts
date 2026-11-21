@@ -243,6 +243,58 @@ export class ValidatorClass {
         return effectExecutor.wasMoveCancelled() || context.movePrevented;
     }
 
+    /**
+     * Can the bench piece `pieceId` be dropped on `to` right now?
+     * A drop is the player's whole turn, so it needs the right turn, an empty
+     * active square, and it must not leave the player's own king in check
+     * (which also means a drop can block a check).
+     */
+    isLegalDrop(pieceId: string, to: Square): boolean {
+        const piece = this.board.getBench().find(p => p.id === pieceId);
+        if (!piece || piece.color !== this.board.getTurn()) return false;
+
+        if (!this.board.isActive(to) || this.board.getPiece(to) !== null) return false;
+        if (this.board.getSquareState(to).disabled) return false;
+        if (this.board.isDeadPawnDrop(piece, to)) return false;
+        if (piece instanceof CustomPiece && piece.shape && piece.shape.extensions.length > 0) {
+            if (!piece.canFitAt(to, this.board)) return false;
+        }
+
+        const tempBoard = this.board.clone();
+        if (!tempBoard.dropPiece(pieceId, to)) return false;
+
+        const kingSquare = this.findKing(piece.color, tempBoard);
+        if (!kingSquare) return true; // King-less variants don't enforce king safety
+
+        const attackerColor = piece.color === 'white' ? 'black' : 'white';
+        return !this.isSquareAttacked(kingSquare, attackerColor, tempBoard);
+    }
+
+    /** Every square the bench piece `pieceId` could legally be dropped on. */
+    getLegalDropSquares(pieceId: string): Square[] {
+        const squares = this.board.getSquares();
+        const result: Square[] = [];
+        for (const to in squares) {
+            if (this.isLegalDrop(pieceId, to as Square)) result.push(to as Square);
+        }
+        return result;
+    }
+
+    /** Does `color` have at least one legal drop? (Stops at the first one found.) */
+    hasLegalDrop(color: 'white' | 'black'): boolean {
+        if (this.board.getTurn() !== color) return false;
+        const squares = Object.keys(this.board.getSquares()) as Square[];
+        // Identical pieces behave identically, so only try one of each kind.
+        const tried = new Set<string>();
+        for (const piece of this.board.getBench(color)) {
+            const kind = `${piece.type}|${JSON.stringify((piece as any).variables ?? {})}`;
+            if (tried.has(kind)) continue;
+            tried.add(kind);
+            if (squares.some(to => this.isLegalDrop(piece.id, to))) return true;
+        }
+        return false;
+    }
+
     isInCheck(color: 'white' | 'black'): boolean {
         const kingSquare = this.findKing(color, this.board);
         if (!kingSquare) return false;

@@ -1,7 +1,7 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from './index';
 import { projects } from './schema';
-import type { Project } from '@/types/Project';
+import type { Project, BenchPiece } from '@/types/Project';
 
 function rowToProject(row: any): Project {
   return {
@@ -18,6 +18,7 @@ function rowToProject(row: any): Project {
     gridType: row.gridType || 'square',
     activeSquares: row.activeSquares || [],
     placedPieces: row.placedPieces || {},
+    benchPieces: row.benchPieces || [],
     customPieces: (row.customPieces || []).map((p: any) => ({
       ...p,
       pixelsWhite: p.pixelsWhite || Array.from({ length: 64 }, () => Array(64).fill('transparent')),
@@ -40,6 +41,7 @@ export async function saveProject(project: Project): Promise<string> {
     gridType: project.gridType || 'square',
     activeSquares: project.activeSquares || [],
     placedPieces: project.placedPieces || {},
+    benchPieces: project.benchPieces || [],
     customPieces: (project.customPieces || []).map(p => ({
       ...p,
       pixelsWhite: Array.isArray(p.pixelsWhite) ? p.pixelsWhite : p.pixelsWhite,
@@ -120,6 +122,7 @@ export async function saveProjectBoard(
     gridType?: 'square' | 'hex';
     activeSquares: string[];
     placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>;
+    benchPieces?: BenchPiece[];
   }
 ): Promise<void> {
   const [row] = await db.select({ id: projects.id })
@@ -136,6 +139,8 @@ export async function saveProjectBoard(
     updatedAt: new Date(),
   };
   if (boardData.gridType) update.gridType = boardData.gridType;
+  // Only touch the bench when the caller sent one, so older callers don't wipe it.
+  if (boardData.benchPieces) update.benchPieces = boardData.benchPieces;
 
   await db.update(projects).set(update).where(eq(projects.id, projectId));
 }
